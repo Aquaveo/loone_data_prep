@@ -38,7 +38,7 @@ def main(input_dir: str, output_dir: str) -> None:
     if "Average_Stage" not in LO_Stage.columns:
         LO_Stage = LO_Stage.loc[:, ~LO_Stage.columns.str.contains('^Unnamed')]
         LO_Stage['Average_Stage'] = LO_Stage.mean(axis=1)
-        LO_Stage.to_csv(f'{input_dir}/LO_Stage.csv')
+        LO_Stage.to_csv(f'{input_dir}/LO_Stage.csv', index=False)
     LO_Storage = stg2sto(f'{input_dir}/StgSto_data.csv', LO_Stage['Average_Stage'], 0)
     LO_SA = stg2ar(f'{input_dir}/Stgar_data.csv', LO_Stage['Average_Stage'], 0)
     LO_Stg_Sto_SA_df = pd.DataFrame(LO_Stage['date'],columns=['date'])
@@ -109,9 +109,11 @@ def main(input_dir: str, output_dir: str) -> None:
     for i in range(len(Q_names)):
         x = DF_Date_Range(Q_list[Q_names[i]], M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
         if len(x.iloc[:,-1:].values) == len(Flow_df['date']):
-            Flow_df['%s'%Q_names[i]] = x.iloc[:,-1:].values
+            Flow_df[Q_names[i]] = x.iloc[:,-1:].values
         else:
-            Flow_df['%s'%Q_names[i]] = np.nan
+            x.rename(columns={x.columns[-1]: Q_names[i]}, inplace=True)
+            Flow_df = pd.merge(Flow_df, x[['date', Q_names[i]]], on='date', how='left')
+
     Flow_df['S127_C_Q'] = Flow_df['S127_C_Q'][Flow_df['S127_C_Q']>=0]
     Flow_df['S127_C_Q'] = Flow_df['S127_C_Q'].fillna(0)
     Flow_df['S127_In'] = Flow_df[["S127_C_Q", "S127_P_Q"]].sum(axis=1)
@@ -165,7 +167,13 @@ def main(input_dir: str, output_dir: str) -> None:
     TP_df = pd.DataFrame(date, columns=['date'])
     for i in range(len(TP_names)):
         y = DF_Date_Range(TP_list[TP_names[i]], M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
-        TP_df['%s'%TP_names[i]] = y.iloc[:,-1:].values
+        if len(y.iloc[:,-1:].values) == len(TP_df['date']):
+            TP_df[TP_names[i]] = y.iloc[:,-1:].values
+        else:
+            y.rename(columns={y.columns[-1]: TP_names[i]}, inplace=True)
+            TP_df = pd.merge(TP_df, y[['date', TP_names[i]]], on='date', how='left')
+
+
 
     #Determine TP Loads (mg)
     TP_Loads_In = pd.DataFrame(date, columns=['date'])
@@ -225,7 +233,7 @@ def main(input_dir: str, output_dir: str) -> None:
     L8C51['S352_Out'] = Flow_df['S352_Out'].values * (35.3147/86400) #cmd to cfs
     L8C51['L8_O_cfs'] = Flow_df['L8_Out'].values * (35.3147/86400) #cmd to cfs
     L8C51['L8C51_cfs'] = L8C51.sum(axis=1) #cfs
-    L8C51.to_csv(f'{output_dir}/L8C51.csv')
+    L8C51.to_csv(f'{output_dir}/L8C51.csv', index=False)
 
     #C43 RO C44 RO
     #Create Files (C43RO, C43RO_Monthly,C44RO, C44RO_Monthly)
@@ -258,16 +266,16 @@ def main(input_dir: str, output_dir: str) -> None:
     C44RO_df['C44RO_cmd'] = C44RO
     C43RO_df['C43RO_cfs'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
     C44RO_df['C44RO_cfs'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
-    C43RO_df.to_csv(f'{output_dir}/C43RO.csv')
-    C44RO_df.to_csv(f'{output_dir}/C44RO.csv')
+    C43RO_df.to_csv(f'{output_dir}/C43RO.csv', index=False)
+    C44RO_df.to_csv(f'{output_dir}/C44RO.csv', index=False)
     C43RO_df = C43RO_df.set_index(C43RO_df['date'])
     C44RO_df = C44RO_df.set_index(C44RO_df['date'])
     C43RO_df.index = pd.to_datetime(C43RO_df.index, unit = 'ns')
     C44RO_df.index = pd.to_datetime(C44RO_df.index, unit = 'ns')
     C43Mon = C43RO_df.resample('M').mean()
     C44Mon = C44RO_df.resample('M').mean()
-    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly.csv')
-    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly.csv')
+    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly.csv', index=False)
+    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly.csv', index=False)
 
     #SLTRIB
     #Create File (SLTRIB_Monthly)
@@ -285,13 +293,13 @@ def main(input_dir: str, output_dir: str) -> None:
     SLTRIBMon = SLTRIB.resample('M').mean()
     SLTRIB.drop(['date'], axis = 1, inplace = True)
     SLTRIB = SLTRIB.reset_index()
-    SLTRIB.to_csv(f'{output_dir}/SLTRIB.csv')
+    SLTRIB.to_csv(f'{output_dir}/SLTRIB.csv', index=False)
     SLTRIBMon.to_csv(f'{output_dir}/SLTRIB_Monthly.csv')
     Basin_RO = pd.DataFrame(SLTRIBMon.index,columns=['date'])
     Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835 #cfs to acft
     Basin_RO['C44RO'] = C44Mon['C44RO_cfs'].values * 86400
     Basin_RO['C43RO'] = C43Mon['C43RO_cfs'].values * 86400
-    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs.csv')
+    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs.csv', index=False)
 
     #EAA MIA RUNOFF
     #Create File (EAA_MIA_RUNOFF_Inputs)
@@ -309,7 +317,7 @@ def main(input_dir: str, output_dir: str) -> None:
     EAA_MIA_RO['WPB'] = Flow_df['S352_Out']/(0.0283168466 * 86400)
     EAA_MIA_RO['S2PMP'] = Flow_df['S2_P_Q']/(0.0283168466 * 86400)
     EAA_MIA_RO['S3PMP'] = Flow_df['S3_P_Q']/(0.0283168466 * 86400)
-    EAA_MIA_RO.to_csv(f'{output_dir}/EAA_MIA_RUNOFF_Inputs.csv')
+    EAA_MIA_RO.to_csv(f'{output_dir}/EAA_MIA_RUNOFF_Inputs.csv', index=False)
 
     #Weekly Tributary Conditions
     #Create File (Trib_cond_wkly_data)
@@ -352,7 +360,7 @@ def main(input_dir: str, output_dir: str) -> None:
     Trib_Cond_Wkly['NetInf'] = Net_Inflow_Weekly['Net_Inflows'].values
     Trib_Cond_Wkly['S65E'] = S65E_Weekly['S65E'].values
     Trib_Cond_Wkly['Palmer'] = PI['PI'].values
-    Trib_Cond_Wkly.to_csv(f'{output_dir}/Trib_cond_wkly_data.csv')
+    Trib_Cond_Wkly.to_csv(f'{output_dir}/Trib_cond_wkly_data.csv', index=False)
 
 
     #Wind Speed
@@ -371,19 +379,19 @@ def main(input_dir: str, output_dir: str) -> None:
     LOWS['L006WS'] = L006WS['L006_WNDS_MPH']
     LOWS['LZ40WS'] = LZ40WS['LZ40_WNDS_MPH']
     LOWS['LO_Avg_WS_MPH'] = LOWS.mean(axis=1)
-    LOWS.to_csv(f'{output_dir}/LOWS.csv')
+    LOWS.to_csv(f'{output_dir}/LOWS.csv', index=False)
 
     #RFVol acft
     #Create File (RF_Volume)
     RFVol = pd.DataFrame(RF_data['date'],columns=['date'])
     RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    RFVol.to_csv(f'{output_dir}/RFVol_LORS_20082023.csv')
+    RFVol.to_csv(f'{output_dir}/RFVol_LORS_20082023.csv', index=False)
 
     #ETVol acft
     #Create File (ETVol)
     ETVol = pd.DataFrame(ET_data['date'],columns=['date'])
     ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    ETVol.to_csv(f'{output_dir}/ETVol_LORS_20082023.csv')
+    ETVol.to_csv(f'{output_dir}/ETVol_LORS_20082023.csv', index=False)
 
 
     #WCA Stages
@@ -404,7 +412,7 @@ def main(input_dir: str, output_dir: str) -> None:
     WCA_Stg['3A-3'] = Stg_3A3['3-63_GAGHT_feet'].values
     WCA_Stg['3A-4'] = Stg_3A4['3-64_GAGHT_feet'].values
     WCA_Stg['3A-28'] = Stg_3A28['3-65_GAGHT_feet'].values
-    WCA_Stg.to_csv(f'{output_dir}/WCA_Stages_Inputs.csv')
+    WCA_Stg.to_csv(f'{output_dir}/WCA_Stages_Inputs.csv', index=False)
 
 
     # Predict Water Temp Function of Air Temp
@@ -459,7 +467,7 @@ def main(input_dir: str, output_dir: str) -> None:
     Filled_WaterT_1df['Water_T'] = Filled_WaterT_1
     Filled_WaterT_2df['Water_T'] = Filled_WaterT_2
     Filled_WaterT = pd.concat([Filled_WaterT_1df, Filled_WaterT_2df]).reset_index(drop= True)
-    Filled_WaterT.to_csv(f'{output_dir}/Filled_WaterT_20082023.csv')
+    Filled_WaterT.to_csv(f'{output_dir}/Filled_WaterT_20082023.csv', index=False)
 
     # TP Observations in Lake
     L001_TP = pd.read_csv(f'{input_dir}/water_quality_L001_PHOSPHATE, TOTAL AS P.csv')
@@ -528,7 +536,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_OP_data_Inter = LO_OP_data_Inter.loc[:,~LO_OP_data_Inter.columns.str.startswith('Unnamed')]
     LO_OP_data_Inter['Mean_OP'] = LO_OP_data_Inter.mean(axis=1)
     LO_OP_data_Inter = DF_Date_Range(LO_OP_data_Inter, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    LO_OP_data_Inter.to_csv(f'{output_dir}/LO_OP.csv')
+    LO_OP_data_Inter.to_csv(f'{output_dir}/LO_OP.csv', index=False)
 
 
     # Interpolated NH4 Observations in Lake
@@ -547,11 +555,11 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_NH4_data_Inter = pd.merge(LO_NH4_data_Inter,L007_NH4_Inter, how = 'left', on = 'date')
     LO_NH4_data_Inter = pd.merge(LO_NH4_data_Inter,L008_NH4_Inter, how = 'left', on = 'date')
     LO_NH4_data_Inter = pd.merge(LO_NH4_data_Inter,LZ40_NH4_Inter, how = 'left', on = 'date')
-    LO_NH4_data_Inter.to_csv(f'{output_dir}/LO_NH4_Inter.csv')
+    LO_NH4_data_Inter.to_csv(f'{output_dir}/LO_NH4_Inter.csv', index=False)
     #Read clean LO_NH4 data
     LO_NH4_Clean_Inter = pd.read_csv(f'{output_dir}/LO_NH4_Inter.csv')
     LO_NH4_Clean_Inter['Mean_NH4'] = LO_NH4_Clean_Inter.mean(axis=1)
-    LO_NH4_Clean_Inter.to_csv(f'{output_dir}/LO_NH4_Clean_daily.csv')
+    LO_NH4_Clean_Inter.to_csv(f'{output_dir}/LO_NH4_Clean_daily.csv', index=False)
     LO_NH4_Clean_Inter = LO_NH4_Clean_Inter.set_index(['date'])
     LO_NH4_Clean_Inter.index = pd.to_datetime(LO_NH4_Clean_Inter.index, unit = 'ns')
     LO_NH4_Monthly_Inter = LO_NH4_Clean_Inter.resample('M').mean()
@@ -595,7 +603,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_DIN['NH4'] = LO_NH4_Clean_Inter['Mean_NH4'].values
     LO_DIN['NO'] = LO_NO_Clean_Inter['Mean_NO'].values
     LO_DIN['DIN_mg/m3'] = LO_DIN[['NH4','NO']].sum(axis=1)*1000
-    LO_DIN.to_csv(f'{output_dir}/LO_DIN.csv')
+    LO_DIN.to_csv(f'{output_dir}/LO_DIN.csv', index=False)
 
     # Interpolated DO Observations in Lake
     #Create File (LO_Avg_DO)
@@ -617,7 +625,7 @@ def main(input_dir: str, output_dir: str) -> None:
     #Read clean LO_DO data
     LO_DO_data_Inter['Mean_DO'] = LO_DO_data_Inter.mean(axis=1)
     LO_DO_data_Inter = DF_Date_Range(LO_DO_data_Inter, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    LO_DO_data_Inter.to_csv(f'{output_dir}/LO_DO_Clean_daily.csv')
+    LO_DO_data_Inter.to_csv(f'{output_dir}/LO_DO_Clean_daily.csv', index=False)
     LO_DO_data_Inter = LO_DO_data_Inter.set_index(['date'])
     LO_DO_data_Inter.index = pd.to_datetime(LO_DO_data_Inter.index, unit = 'ns')
     LO_DO_Monthly_Inter = LO_DO_data_Inter.resample('M').mean()
@@ -636,7 +644,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_RADT_data = LO_RADT_data.loc[:,~LO_RADT_data.columns.str.startswith('Unnamed')]
     LO_RADT_data['Mean_RADT'] = LO_RADT_data.mean(axis=1)
     LO_RADT_data = DF_Date_Range(LO_RADT_data, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    LO_RADT_data.to_csv(f'{output_dir}/LO_RADT_data_20082022.csv')
+    LO_RADT_data.to_csv(f'{output_dir}/LO_RADT_data.csv', index=False)
 
     #RADP Data in Lake Okeechobee
     #Create File (LO_RADP)
@@ -650,7 +658,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_RADP_data = LO_RADP_data.loc[:,~LO_RADP_data.columns.str.startswith('Unnamed')]
     LO_RADP_data['Mean_RADP'] = LO_RADP_data.mean(axis=1)
     LO_RADP_data = DF_Date_Range(LO_RADP_data, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    LO_RADP_data.to_csv(f'{output_dir}/LO_RADP_data_20082022.csv')
+    LO_RADP_data.to_csv(f'{output_dir}/LO_RADP_data.csv', index=False)
 
     # Interpolated Chla Corrected Observations in Lake
     L001_Chla_Inter = pd.read_csv(f'{input_dir}/water_quality_L001_CHLOROPHYLL-A, CORRECTED_Interpolated.csv')
@@ -670,7 +678,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_Chla_data_Inter = LO_Chla_data_Inter.loc[:,~LO_Chla_data_Inter.columns.str.startswith('Unnamed')]
     #Read clean LO_Chla data
     LO_Chla_data_Inter['Mean_Chla'] = LO_Chla_data_Inter.mean(axis=1)
-    LO_Chla_data_Inter.to_csv(f'{output_dir}/LO_Chla_Clean_daily.csv')
+    LO_Chla_data_Inter.to_csv(f'{output_dir}/LO_Chla_Clean_daily.csv', index=False)
     #Monthly
     LO_Chla_data_Inter = LO_Chla_data_Inter.set_index(['date'])
     LO_Chla_data_Inter.index = pd.to_datetime(LO_Chla_data_Inter.index, unit = 'ns')
@@ -695,7 +703,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_Chla_LC_data_Inter = LO_Chla_LC_data_Inter.loc[:,~LO_Chla_LC_data_Inter.columns.str.startswith('Unnamed')]
     #Read clean LO_Chla_LC data
     LO_Chla_LC_data_Inter['Mean_Chla_LC'] = LO_Chla_LC_data_Inter.mean(axis=1)
-    LO_Chla_LC_data_Inter.to_csv(f'{output_dir}/LO_Chla_LC_Clean_daily.csv')
+    LO_Chla_LC_data_Inter.to_csv(f'{output_dir}/LO_Chla_LC_Clean_daily.csv', index=False)
     #Monthly
     LO_Chla_LC_data_Inter = LO_Chla_LC_data_Inter.set_index(['date'])
     LO_Chla_LC_data_Inter.index = pd.to_datetime(LO_Chla_LC_data_Inter.index, unit = 'ns')
@@ -712,14 +720,23 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_Chla_LC_df = pd.DataFrame(LO_Chla_LC_data_Inter.index,columns=['date'])
     LO_Chla_LC_df['Chla'] = LO_Chla_LC_data_Inter['Mean_Chla_LC']
 
-    LO_Chla_Merge = pd.concat([LO_Chla_df, LO_Chla_LC_df]).reset_index(drop= True)
-    LO_Chla_Merge.to_csv(f'{output_dir}/LO_Merged_Chla.csv')
+    LO_Chla_Merge = pd.concat([LO_Chla_df, LO_Chla_LC_df]).reset_index(drop=True)
+    LO_Chla_Merge.to_csv(f'{output_dir}/LO_Merged_Chla.csv', index=False)
 
     LO_Chla_Merge = LO_Chla_Merge.set_index(['date'])
     LO_Chla_Merge.index = pd.to_datetime(LO_Chla_Merge.index, unit = 'ns')
     LO_Chla_Merge_Monthly_Inter = LO_Chla_Merge.resample('M').mean()
     LO_Chla_Merge_Monthly_Inter.to_csv(f'{output_dir}/LO_Chla_Monthly_Inter.csv')
 
+    # Create Files S65E_Avg_Chla
+    S65E_Chla_Inter = pd.read_csv(f'{input_dir}/water_quality_S65E_CHLOROPHYLL-A, CORRECTED_Interpolated.csv')
+    S65E_Chla_LC_Inter = pd.read_csv(f'{input_dir}/water_quality_S65E_CHLOROPHYLL-A(LC)_Interpolated.csv')
+
+    S65E_Chla_Merge = pd.concat([S65E_Chla_Inter, S65E_Chla_LC_Inter]).reset_index(drop=True)
+    S65E_Chla_Merge = S65E_Chla_Merge.drop_duplicates(subset="date", keep='first')  # there are duplicates in the data
+    # S65E_Chla_Merge.rename(columns={S65E_Chla_Merge.columns[-1]:'Chla'}, inplace = True)
+    S65E_Chla_Merge = S65E_Chla_Merge.loc[:, ~S65E_Chla_Merge.columns.str.contains('^Unnamed')]
+    S65E_Chla_Merge.to_csv(f'{output_dir}/S65E_Chla_Merged.csv', index=False)
 
     #NO Loads
     #Create File (Daily_NOx_External_Loads)
@@ -740,15 +757,17 @@ def main(input_dir: str, output_dir: str) -> None:
     NO_names = ['S65_NO','S71_NO','S72_NO','S84_NO','S127_NO','S133_NO','S135_NO','S154_NO','S191_NO','S308_NO','FISHP_NO','L8_NO','S4_NO']
     NO_list = {'S65_NO':S65_NO,'S71_NO':S71_NO,'S72_NO':S72_NO,'S84_NO':S84_NO,'S127_NO':S127_NO,'S133_NO':S133_NO,'S135_NO':S135_NO,
             'S154_NO':S154_NO,'S191_NO':S191_NO,'S308_NO':S308_NO,'FISHP_NO':FISHP_NO,'L8_NO':L8_NO,'S4_NO':S4_NO}
-    date_NO = pd.date_range(start = '1/1/2008',end ='12/31/2022',freq = 'D')
+    date_NO = pd.date_range(start = '1/1/2008',end ='3/31/2023',freq = 'D')
 
     NO_df = pd.DataFrame(date_NO, columns=['date'])
     for i in range(len(NO_names)):
         y = DF_Date_Range(NO_list[NO_names[i]], St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+
         if len(y.iloc[:,-1:].values) == len(NO_df['date']):
-            NO_df['%s'%NO_names[i]] = y.iloc[:,-1:].values
+            NO_df[NO_names[i]] = y.iloc[:,-1:].values
         else:
-            NO_df['%s'%NO_names[i]] = np.nan  # would be better to merge the column and fillna for missing dates
+            y.rename(columns={y.columns[-1]: NO_names[i]}, inplace=True)
+            NO_df = pd.merge(NO_df, y[['date', NO_names[i]]], on='date', how='left')
 
     Flow_df = DF_Date_Range(Flow_df, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
 
@@ -769,37 +788,37 @@ def main(input_dir: str, output_dir: str) -> None:
     NO_Loads_In['S4_NO_Ld'] = Flow_df['S4_P_Q'].values * NO_df['S4_NO'].values * 1000
     #Calculate the total External Loads to Lake Okeechobee
     NO_Loads_In['External_NO_Ld_mg'] = NO_Loads_In.sum(axis=1)
-    NO_Loads_In.to_csv(f'{output_dir}/LO_External_Loadings_NO.csv')
+    NO_Loads_In.to_csv(f'{output_dir}/LO_External_Loadings_NO.csv', index=False)
 
     #Determine Chla Loads
     #Create File (Chla_Loads_In)
-    S65E_Chla = pd.read_csv(f'{input_dir}/S65E_Chla_Merged.csv')
+    S65E_Chla = pd.read_csv(f'{output_dir}/S65E_Chla_Merged.csv')
     S65E_Chla = DF_Date_Range(S65E_Chla, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
     Chla_Loads_In = pd.DataFrame(date_NO, columns=['date'])
     Chla_Loads_In['Chla_Loads'] = Flow_df['Inflows'].values * S65E_Chla['Data'].values
-    Chla_Loads_In.to_csv(f'{output_dir}/Chla_Loads_In.csv')
+    Chla_Loads_In.to_csv(f'{output_dir}/Chla_Loads_In.csv', index=False)
 
 
 
     #Write Data into csv files
     #write Avg Stage (ft,m) Storage (acft, m3) SA (acres) to csv
-    LO_Stg_Sto_SA_df.to_csv(f'{output_dir}/Average_LO_Storage_3MLag.csv')
+    LO_Stg_Sto_SA_df.to_csv(f'{output_dir}/Average_LO_Storage_3MLag.csv', index=False)
     #Write S65 TP concentrations (mg/L)
-    S65_total_TP.to_csv(f'{output_dir}/S65_TP_3MLag.csv')
+    S65_total_TP.to_csv(f'{output_dir}/S65_TP_3MLag.csv', index=False)
     # TP External Loads 3 Months Lag (mg)
-    TP_Loads_In_3MLag_df.to_csv(f'{output_dir}/LO_External_Loadings_3MLag.csv')
+    TP_Loads_In_3MLag_df.to_csv(f'{output_dir}/LO_External_Loadings_3MLag.csv', index=False)
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
-    Flow_df.to_csv(f'{output_dir}/Flow_df_3MLag.csv')
+    Flow_df.to_csv(f'{output_dir}/Flow_df_3MLag.csv', index=False)
     #Inflows (cmd)
-    LO_Inflows_BK.to_csv(f'{output_dir}/LO_Inflows_BK.csv')
+    LO_Inflows_BK.to_csv(f'{output_dir}/LO_Inflows_BK.csv', index=False)
     #Outflows (cmd)
-    Outflows_consd.to_csv(f'{output_dir}/Outflows_consd.csv')
+    Outflows_consd.to_csv(f'{output_dir}/Outflows_consd.csv', index=False)
     # NetFlows (cmd)
-    Netflows.to_csv(f'{output_dir}/Netflows_acft.csv')
+    Netflows.to_csv(f'{output_dir}/Netflows_acft.csv', index=False)
     #Total flows to WCAs (acft)
-    TotalQWCA.to_csv(f'{output_dir}/TotalQWCA_Obs.csv')
+    TotalQWCA.to_csv(f'{output_dir}/TotalQWCA_Obs.csv', index=False)
     # INDUST Outflows (cmd)
-    INDUST_Outflows.to_csv(f'{output_dir}/INDUST_Outflows.csv')
+    INDUST_Outflows.to_csv(f'{output_dir}/INDUST_Outflows.csv', index=False)
 
 if __name__ == "__main__":
     main(sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/"))

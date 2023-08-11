@@ -65,18 +65,21 @@ def get_dbkeys(
     recorder: str,
     freq: str = "DA",
     detail_level: str = "dbkey",
-    *args: str) -> None:
+    *args: str) -> str:
     station_ids_str = "\"" + "\", \"".join(station_ids) + "\""
 
-    r(
+    dbkeys = r(
         f"""
         library(dbhydroR)
 
         station_ids <- c({station_ids_str})
         dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}",stat = "{stat}",recorder="{recorder}",freq = "{freq}", detail.level = "{detail_level}")
         print(dbkeys)
+        return(dbkeys)
         """
     )
+
+    return dbkeys
 
 def data_interpolations(
     workspace: str,
@@ -176,7 +179,7 @@ def data_interpolations(
             #Data_daily[i] = interpolate.interp1d(Final_df['Days'],Final_df['TSS'] , kind = 'linear')(Cum_days[i])
             Data_daily[i] = np.interp(Cum_days[i], Final_df['Days_cum'], Final_df['Data'])
         Data_df['Data'] = Data_daily
-        Data_df.to_csv(f'{workspace}/{name}_Interpolated.csv')
+        Data_df.to_csv(f'{workspace}/{name}_Interpolated.csv', index=False)
 
 def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
     """Interpolate all needed files for Lake Okeechobee
@@ -191,7 +194,7 @@ def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
 
 def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 'nu_20082023.csv'):
     # Read Mean H2O_T in LO
-    LO_Temp = pd.read_csv(os.path.join(f'{workspace}/', f'{in_file_name}'))
+    LO_Temp = pd.read_csv(os.path.join(workspace, in_file_name))
     LO_T = LO_Temp['Water_T']
 
     n = len(LO_T.index)
@@ -214,7 +217,7 @@ def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 
 
     nu_df = pd.DataFrame(LO_Temp['date'],columns=['date'])
     nu_df['nu'] = nu
-    nu_df.to_csv(os.path.join(f'{workspace}/' f'{out_file_name}'))
+    nu_df.to_csv(os.path.join(workspace, out_file_name), index=False)
 
 def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_in: str = "LO_Stg_Sto_SA_2008-2023.csv" ,
                        wind_shear_stress_out:str = "WindShearStress.csv", current_shear_stress_out: str ="Current_ShearStress.csv"):
@@ -265,7 +268,7 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
 
     Wind_ShearStress = pd.DataFrame(LO_WS['date'],columns=['date'])
     Wind_ShearStress['ShearStress'] = W_ShearStress*10 #Convert N/m2 to Dyne/cm2
-    Wind_ShearStress.to_csv(os.path.join(f'{workspace}/', wind_shear_stress_out))
+    Wind_ShearStress.to_csv(os.path.join(workspace, wind_shear_stress_out), index=False)
 
     # #Monthly
     # Wind_ShearStress['Date'] = pd.to_datetime(Wind_ShearStress['Date'])
@@ -347,7 +350,7 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
     for i in range(n):
         current_stress_3[i] = Current_bottom_shear_stress_3(0.05,0.41,nu,ks,LO_Wd[i],ru)
     Current_ShearStress_df['Current_Stress_3'] = current_stress_3*10 #Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df.to_csv(os.path.join(f'{workspace}/', current_shear_stress_out))
+    Current_ShearStress_df.to_csv(os.path.join(workspace, current_shear_stress_out), index=False)
 
 def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
         stgsto_data = pd.read_csv(stg_sto_data_path)

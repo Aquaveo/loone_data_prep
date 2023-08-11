@@ -11,7 +11,7 @@ def get(
     name: str,
     dbkeys: list = ["16022", "12509", "12519", "16265", "15611"],
     date_min: str = "1950-01-01",
-    max_date: str = datetime.now().strftime("%Y-%m-%d"),
+    date_max: str = datetime.now().strftime("%Y-%m-%d"),
     **kwargs: str | list ) -> None:
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
     r(
@@ -20,7 +20,7 @@ def get(
         library(rio)
         library(dbhydroR)
         #Stage Data
-        {name} = get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{max_date}")
+        {name} = get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}")
         write.csv({name},file ='{workspace}/{name}.csv')
         """
     )
