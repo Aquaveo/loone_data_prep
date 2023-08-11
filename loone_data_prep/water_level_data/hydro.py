@@ -12,7 +12,8 @@ def get(
     dbkeys: list = ["16022", "12509", "12519", "16265", "15611"],
     date_min: str = "1950-01-01",
     date_max: str = datetime.now().strftime("%Y-%m-%d"),
-    **kwargs: str | list ) -> None:
+    **kwargs: str | list
+) -> None:
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
     r(
         f"""
@@ -24,6 +25,7 @@ def get(
         write.csv({name},file ='{workspace}/{name}.csv')
         """
     )
+
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]

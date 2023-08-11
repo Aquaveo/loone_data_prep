@@ -12,7 +12,8 @@ def get(
     station_ids: list = ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
     date_min: str = "1950-01-01",
     date_max: str = datetime.now().strftime("%Y-%m-%d"),
-    **kwargs: str | list) -> None:
+    **kwargs: str | list
+) -> None:
     station_ids_str = "\"" + "\", \"".join(station_ids) + "\""
     r(
         f"""
@@ -61,8 +62,9 @@ def get(
             }}
             Sys.sleep(1) # Wait for 1 seconds before the next iteration
         }}
-        """
+        """  # noqa: E501
     )
+
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]

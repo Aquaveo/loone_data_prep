@@ -12,6 +12,7 @@ D = {
     "Stg_3A28": {"dbkeys": ["16538"], "date_min": "1972-01-01", "date_max": "2023-04-30"}
 }
 
+
 def main(workspace: str, d: dict = D) -> dict:
     missing_files = []
     for name, params in d.items():
@@ -27,6 +28,7 @@ def main(workspace: str, d: dict = D) -> dict:
         return {"error": f"The following files could not be downloaded: {missing_files}"}
 
     return {"success": "Completed water level data download."}
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")

@@ -56,6 +56,7 @@ INTERP_DICT = {
     },
 }
 
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get_dbkeys(
     station_ids: list,
@@ -65,7 +66,8 @@ def get_dbkeys(
     recorder: str,
     freq: str = "DA",
     detail_level: str = "dbkey",
-    *args: str) -> str:
+    *args: str
+) -> str:
     station_ids_str = "\"" + "\", \"".join(station_ids) + "\""
 
     dbkeys = r(
@@ -73,20 +75,22 @@ def get_dbkeys(
         library(dbhydroR)
 
         station_ids <- c({station_ids_str})
-        dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}",stat = "{stat}",recorder="{recorder}",freq = "{freq}", detail.level = "{detail_level}")
+        dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}", stat = "{stat}", recorder="{recorder}", freq = "{freq}", detail.level = "{detail_level}")
         print(dbkeys)
         return(dbkeys)
-        """
+        """  # noqa: E501
     )
 
     return dbkeys
+
 
 def data_interpolations(
     workspace: str,
     parameter: str = 'RADP',
     units: str = 'MICROMOLE/m^2/s',
     station_ids: list = ["L001", "L005", "L006", "LZ40"],
-    *args: str) -> None:
+    *args: str
+) -> None:
     """
     Args:
         workspace (str): _description_
@@ -140,9 +144,9 @@ def data_interpolations(
                 else:
                     for j in range(len(Data_df.loc[i]['date'])):
                         New_date.append(Data_df.loc[i]['date'][j])
-                        New_data.append(Data_df.loc[i]['%s_%s_%s'%(station,parameter,units)][j])
+                        New_data.append(Data_df.loc[i]['%s_%s_%s'%(station, parameter, units)][j])
             elif i not in Data_df.index:
-                New_date.append(datetime.datetime(Monthly_df.loc[i]['date'].year,Monthly_df.loc[i]['date'].month,1))
+                New_date.append(datetime.datetime(Monthly_df.loc[i]['date'].year, Monthly_df.loc[i]['date'].month, 1))
                 New_data.append(np.NaN)
 
         New_date = pd.to_datetime(New_date, format = '%Y-%m-%d')
@@ -153,13 +157,13 @@ def data_interpolations(
             elif New_date[i].month == New_date[i-1].month:
                 Days_cum.append(Days_cum[i-1]+(Days[i]-Days[i-1]))
             elif New_date[i].month != New_date[i-1].month:
-                Days_cum.append(Days_cum[i-1]+Days[i]+monthrange(New_date[i-1].year,New_date[i-1].month)[1]-Days[i-1])
+                Days_cum.append(Days_cum[i-1]+Days[i]+monthrange(New_date[i-1].year, New_date[i-1].month)[1]-Days[i-1])
         Final_df = pd.DataFrame()
         Final_df['date'] = New_date
         Final_df['Data'] = New_data
         Final_df['Days'] = Days
         Final_df['Days_cum'] = Days_cum
-        # Final_df.to_csv('C:/Work/Research/LOONE/Nitrogen Module/Interpolated_Data/In-Lake/L008_DO_No_Months_Missing_Trial.csv')
+        # Final_df.to_csv('C:/Work/Research/LOONE/Nitrogen Module/Interpolated_Data/In-Lake/L008_DO_No_Months_Missing_Trial.csv')  # noqa: E501
         #Remove Negative Data Values
         Final_df = Final_df[Final_df['Data'] >= 0]
         Final_df['date'] = pd.to_datetime(Final_df['date'], format = '%Y-%m-%d')
@@ -174,12 +178,13 @@ def data_interpolations(
         #Set initial values
         Cum_days[0] = Data_df['date'].iloc[0].day
         Data_daily[0] = Final_df['Data'].iloc[0]
-        for i in range (1,Data_len):
+        for i in range (1, Data_len):
             Cum_days[i] = Cum_days[i-1]+1
-            #Data_daily[i] = interpolate.interp1d(Final_df['Days'],Final_df['TSS'] , kind = 'linear')(Cum_days[i])
+            #Data_daily[i] = interpolate.interp1d(Final_df['Days'], Final_df['TSS'] , kind = 'linear')(Cum_days[i])
             Data_daily[i] = np.interp(Cum_days[i], Final_df['Days_cum'], Final_df['Data'])
         Data_df['Data'] = Data_daily
         Data_df.to_csv(f'{workspace}/{name}_Interpolated.csv', index=False)
+
 
 def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
     """Interpolate all needed files for Lake Okeechobee
@@ -191,6 +196,7 @@ def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
     for param, values in d.items():
         print(f"Interpolating parameter: {param} for station IDs: {values['station_ids']}.")
         data_interpolations(workspace, param, values["units"], values["station_ids"])
+
 
 def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 'nu_20082023.csv'):
     # Read Mean H2O_T in LO
@@ -206,59 +212,63 @@ def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 
             def func(x):
                 # return[log(x[0]/nu20)-((20-T)/(T+96))*(1.2364-1.37E-3*(20-T)+5.7E-6*(20-T)**2)]
                 return[(x[0]/nu20)-10**(((20-T)/(T+96))*(1.2364-1.37E-3*(20-T)+5.7E-6*(20-T)**2))]
-            sol = fsolve(func,[9.70238995692062E-07])
+            sol = fsolve(func, [9.70238995692062E-07])
             nu = sol[0]
             return(nu)
 
-    nu = np.zeros(n,dtype = object)
+    nu = np.zeros(n, dtype = object)
 
     for i in range(n):
         nu[i] = nu_Func.nu(LO_T[i])
 
-    nu_df = pd.DataFrame(LO_Temp['date'],columns=['date'])
+    nu_df = pd.DataFrame(LO_Temp['date'], columns=['date'])
     nu_df['nu'] = nu
     nu_df.to_csv(os.path.join(workspace, out_file_name), index=False)
 
-def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_in: str = "LO_Stg_Sto_SA_2008-2023.csv" ,
-                       wind_shear_stress_out:str = "WindShearStress.csv", current_shear_stress_out: str ="Current_ShearStress.csv"):
 
+def wind_induced_waves(
+    workspace: str, wind_speed_in: str = "LOWS.csv",
+    lo_stage_in: str = "LO_Stg_Sto_SA_2008-2023.csv" ,
+    wind_shear_stress_out: str = "WindShearStress.csv",
+    current_shear_stress_out: str ="Current_ShearStress.csv"
+):
     # Read Mean Wind Speed in LO
     LO_WS = pd.read_csv(os.path.join(f'{workspace}/', wind_speed_in))
-    LO_WS['WS_mps'] = LO_WS['LO_Avg_WS_MPH']*0.44704 #MPH to m/s
+    LO_WS['WS_mps'] = LO_WS['LO_Avg_WS_MPH']*0.44704  # MPH to m/s
     #Read LO Stage to consider water depth changes
     LO_Stage = pd.read_csv(os.path.join(f'{workspace}/', lo_stage_in))
     LO_Stage['Stage_m'] = LO_Stage['Stage_ft'] * 0.3048
     Bottom_Elev = 0.5 # m (Karl E. Havens • Alan D. Steinman 2013)
     LO_Wd = LO_Stage['Stage_m'] - Bottom_Elev
-    g = 9.81 #m/s2 gravitational acc
-    d = 1.5 # m  LO Mean water depth
-    F = 57500 # Fetch length of wind (m) !!!!!!
+    g = 9.81  # m/s2 gravitational acc
+    d = 1.5  # m  LO Mean water depth
+    F = 57500  # Fetch length of wind (m) !!!!!!
     nu = 1.0034/1E6 # m2/s (kinematic viscosity of water at T = 20 C)
-    ru = 1000 #kg/m3
+    ru = 1000  # kg/m3
 
     n = len(LO_WS.index)
 
     class Wind_Func:
-        def H(g,d,F,WS):
-            H = (0.283*np.tanh(0.53*(g*d/WS**2)**0.75)*np.tanh(0.00565*(g*F/WS**2)**0.5/np.tanh(0.53*(g*d/WS**2)**(3/8))))*WS**2/g
+        def H(g, d, F, WS):
+            H = (0.283*np.tanh(0.53*(g*d/WS**2)**0.75)*np.tanh(0.00565*(g*F/WS**2)**0.5/np.tanh(0.53*(g*d/WS**2)**(3/8))))*WS**2/g  # noqa: E501
             return(H)
 
-        def T(g,d,F,WS):
-            T = (7.54*np.tanh(0.833*(g*d/WS**2)**(3/8))*np.tanh(0.0379*(g*F/WS**2)**0.5/np.tanh(0.833*(g*d/WS**2)**(3/8))))*WS/g
+        def T(g, d, F, WS):
+            T = (7.54*np.tanh(0.833*(g*d/WS**2)**(3/8))*np.tanh(0.0379*(g*F/WS**2)**0.5/np.tanh(0.833*(g*d/WS**2)**(3/8))))*WS/g  # noqa: E501
             return(T)
 
-        def L(g,d,T):
+        def L(g, d, T):
 
             def func(x):
                 return[(g*T**2/2*np.pi)*np.tanh(2*np.pi*d/x[0]) - x[0]]
-            sol = fsolve(func,[1])
+            sol = fsolve(func, [1])
             L = sol[0]
             return(L)
 
-    W_H = np.zeros(n,dtype = object)
-    W_T = np.zeros(n,dtype = object)
-    W_L = np.zeros(n,dtype = object)
-    W_ShearStress = np.zeros(n,dtype = object)
+    W_H = np.zeros(n, dtype = object)
+    W_T = np.zeros(n, dtype = object)
+    W_L = np.zeros(n, dtype = object)
+    W_ShearStress = np.zeros(n, dtype = object)
     for i in range(n):
         W_H[i] = Wind_Func.H(g, LO_Wd[i], F, LO_WS['WS_mps'].iloc[i])
         W_T[i] = Wind_Func.T(g, LO_Wd[i], F, LO_WS['WS_mps'].iloc[i])
@@ -266,8 +276,8 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
         W_ShearStress[i] = W_H[i]*(ru*(nu*(2*np.pi/W_T[i])**3)**0.5)/(2*np.sinh(2*np.pi*LO_Wd[i]/W_L[i]))
 
 
-    Wind_ShearStress = pd.DataFrame(LO_WS['date'],columns=['date'])
-    Wind_ShearStress['ShearStress'] = W_ShearStress*10 #Convert N/m2 to Dyne/cm2
+    Wind_ShearStress = pd.DataFrame(LO_WS['date'], columns=['date'])
+    Wind_ShearStress['ShearStress'] = W_ShearStress*10  # Convert N/m2 to Dyne/cm2
     Wind_ShearStress.to_csv(os.path.join(workspace, wind_shear_stress_out), index=False)
 
     # #Monthly
@@ -278,12 +288,12 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
     # Wind_ShearStress_df = Wind_ShearStress_df.set_index(['Date'])
     # Wind_ShearStress_df.index = pd.to_datetime(Wind_ShearStress_df.index, unit = 'ns')
     # Wind_ShearStress_df = Wind_ShearStress_df.resample('M').mean()
-    # Wind_ShearStress_df.to_csv('C:/Work/Research/Data Analysis/Lake_O_Weather_Data/WindSpeed_Processed/WindShearStress_M.csv')
+    # Wind_ShearStress_df.to_csv('C:/Work/Research/Data Analysis/Lake_O_Weather_Data/WindSpeed_Processed/WindShearStress_M.csv')  # noqa: E501
 
-    #The drag coefficient
+    # The drag coefficient
     CD = 0.001 * (0.75+0.067*LO_WS['WS_mps'])
-    air_ru = 1.293 #kg/m3
-    def tau_w(WS,CD,air_ru):
+    air_ru = 1.293  # kg/m3
+    def tau_w(WS, CD, air_ru):
         tau_w = air_ru * CD * (WS**2)
         return tau_w
 
@@ -295,27 +305,27 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
         # Calculate the bottom shear stress
         tau_b = ru * kappa**2 * u_b**2
         return tau_b
-    Current_Stress = np.zeros(n,dtype = object)
-    Wind_Stress = np.zeros(n,dtype = object)
+    Current_Stress = np.zeros(n, dtype = object)
+    Wind_Stress = np.zeros(n, dtype = object)
     for i in range(n):
-        Wind_Stress[i] = tau_w(LO_WS['WS_mps'].iloc[i],CD[i],air_ru)
-        Current_Stress[i] = Current_bottom_shear_stress(ru,Wind_Stress[i])
+        Wind_Stress[i] = tau_w(LO_WS['WS_mps'].iloc[i], CD[i], air_ru)
+        Current_Stress[i] = Current_bottom_shear_stress(ru, Wind_Stress[i])
 
-    Current_ShearStress_df = pd.DataFrame(LO_WS['date'],columns=['date'])
-    Current_ShearStress_df['Current_Stress'] = Current_Stress*10 #Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df['Wind_Stress'] = Wind_Stress*10 #Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df = pd.DataFrame(LO_WS['date'], columns=['date'])
+    Current_ShearStress_df['Current_Stress'] = Current_Stress*10  # Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df['Wind_Stress'] = Wind_Stress*10  # Convert N/m2 to Dyne/cm2
     Current_ShearStress_df['Wind_Speed_m/s'] = LO_WS['WS_mps']
 
-    def Current_bottom_shear_stress_2(u,k,nu,ks,z,ru):
+    def Current_bottom_shear_stress_2(u, k, nu, ks, z, ru):
         def func1(u_str1):
             return[u_str1[0]-u*k*np.exp(z/(0.11*nu/u_str1[0]))]
-        sol1 = fsolve(func1,[1])
+        sol1 = fsolve(func1, [1])
         def func2(u_str2):
             return[u_str2[0]-u*k*np.exp(z/(0.0333*ks))]
-        sol2 = fsolve(func2,[1])
+        sol2 = fsolve(func2, [1])
         def func3(u_str3):
             return[u_str3[0]-u*k*np.exp(z/((0.11*nu/u_str3[0])+0.0333*ks))]
-        sol3 = fsolve(func3,[1])
+        sol3 = fsolve(func3, [1])
         if sol1[0]*ks/nu <=5:
             u_str = sol1[0]
         elif sol2[0]*ks/nu >= 70:
@@ -325,16 +335,16 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
         tau_c = ru * u_str**2
         return(tau_c)
 
-    def Current_bottom_shear_stress_3(u,k,nu,ks,z,ru):
+    def Current_bottom_shear_stress_3(u, k, nu, ks, z, ru):
         def func1(u_str1):
             return[u_str1[0]-u*k*(1/np.log(z/(0.11*nu/u_str1[0])))]
-        sol1 = fsolve(func1,[1])
+        sol1 = fsolve(func1, [1])
         def func2(u_str2):
             return[u_str2[0]-u*k*(1/np.log(z/(0.0333*ks)))]
-        sol2 = fsolve(func2,[1])
+        sol2 = fsolve(func2, [1])
         def func3(u_str3):
             return[u_str3[0]-u*k*(1/np.log(z/((0.11*nu/u_str3[0])+0.0333*ks)))]
-        sol3 = fsolve(func3,[1])
+        sol3 = fsolve(func3, [1])
         if sol1[0]*ks/nu <=5:
             u_str = sol1[0]
         elif sol2[0]*ks/nu >= 70:
@@ -345,12 +355,13 @@ def wind_induced_waves(workspace: str, wind_speed_in: str ="LOWS.csv", lo_stage_
             u_str = 0
         tau_c = ru * u_str**2
         return(tau_c)
-    ks = 5.27E-4 #m
-    current_stress_3 = np.zeros(n,dtype = object)
+    ks = 5.27E-4  # m
+    current_stress_3 = np.zeros(n, dtype = object)
     for i in range(n):
-        current_stress_3[i] = Current_bottom_shear_stress_3(0.05,0.41,nu,ks,LO_Wd[i],ru)
-    Current_ShearStress_df['Current_Stress_3'] = current_stress_3*10 #Convert N/m2 to Dyne/cm2
+        current_stress_3[i] = Current_bottom_shear_stress_3(0.05, 0.41, nu, ks, LO_Wd[i], ru)
+    Current_ShearStress_df['Current_Stress_3'] = current_stress_3*10  # Convert N/m2 to Dyne/cm2
     Current_ShearStress_df.to_csv(os.path.join(workspace, current_shear_stress_out), index=False)
+
 
 def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
         stgsto_data = pd.read_csv(stg_sto_data_path)
@@ -359,10 +370,11 @@ def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1
         y = stgsto_data['Storage']
         if i == 0:
         #return storage given stage
-            return interpolate.interp1d(x,y, fill_value='extrapolate', kind = 'linear')(v)
+            return interpolate.interp1d(x, y, fill_value='extrapolate', kind = 'linear')(v)
         else:
         #return stage given storage
-            return interpolate.interp1d(y,x, fill_value='extrapolate', kind = 'linear')(v)
+            return interpolate.interp1d(y, x, fill_value='extrapolate', kind = 'linear')(v)
+
 
 def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
     import pandas as pd
@@ -373,10 +385,11 @@ def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
     y = stgar_data['Surf_Area']
     if i == 0:
         #return surface area given stage
-        return interpolate.interp1d(x,y, fill_value='extrapolate', kind = 'linear')(v)
+        return interpolate.interp1d(x, y, fill_value='extrapolate', kind = 'linear')(v)
     else:
         #return stage given surface area
-        return interpolate.interp1d(y,x, fill_value='extrapolate', kind = 'linear')(v)
+        return interpolate.interp1d(y, x, fill_value='extrapolate', kind = 'linear')(v)
+
 
 @retry(Exception, tries=3, delay=15, backoff=2)
 def get_pi(workspace: str) -> None:
@@ -385,6 +398,7 @@ def get_pi(workspace: str) -> None:
     #State:Florida Division:4.South Central
     df = pd.read_csv("https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/pdi-0804.csv")
     df.to_csv(os.path.join(workspace, "PI.csv"))
+
 
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":

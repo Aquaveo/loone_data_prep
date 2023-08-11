@@ -5,14 +5,18 @@ from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
+DATE_NOW = datetime.now().strftime("%Y-%m-%d")
+
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
     workspace: str,
     param: str,
     dbkeys: list = ["16021", "12515", "12524", "13081"],
     date_min: str = "2000-01-01",
-    date_max: str = datetime.now().strftime("%Y-%m-%d"),
-    **kwargs: str | list) -> None:
+    date_max: str = DATE_NOW,
+    **kwargs: str | list
+) -> None:
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
 
     r(
@@ -45,7 +49,7 @@ def get(
             # Add a delay between requests
             Sys.sleep(2) # Wait for 2 seconds before the next iteration
         }}
-        """
+        """  # noqa: E501
     )
 
     if param == "RAIN":
@@ -71,7 +75,7 @@ def get(
             head(merged_data)
             # Save merged data as a CSV file
             write.csv(merged_data, "{workspace}/LAKE_RAINFALL_DATA.csv", row.names = TRUE)
-            """
+            """  # noqa: E501
         )
 
     if param == "ETPI":
@@ -98,8 +102,9 @@ def get(
             head(merged_data)
             # Save merged data as a CSV file
             write.csv(merged_data, "{workspace}/LOONE_AVERAGE_ETPI_DATA.csv", row.names = TRUE)
-            """
+            """  # noqa: E501
         )
+
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]

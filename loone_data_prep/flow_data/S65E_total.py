@@ -3,6 +3,7 @@ from retry import retry
 from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(workspace):
     r(
@@ -16,6 +17,7 @@ def get(workspace):
         write.csv(S65E_total,file ='{workspace}/S65E_total.csv')
         """
     )
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")

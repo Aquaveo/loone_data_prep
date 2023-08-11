@@ -7,7 +7,8 @@ from loone_data_prep.flow_data import hydro, S65E_total
 # Database keys for needed inflow data
 DBKEYS = ["91370", "91371", "91373", "91377", "91379", "91401", "91429",
           "91473", "91508", "91510", "91513", "91599", "91608", "91656",
-          "91668", "91675", "91687","15627", "15640", "15626","15642","15638"]
+          "91668", "91675", "91687", "15627", "15640", "15626", "15642", "15638"]
+
 
 def main(workspace: str, dbkeys: list = DBKEYS) -> dict:
     # Retrieve inflow data
@@ -36,6 +37,7 @@ def main(workspace: str, dbkeys: list = DBKEYS) -> dict:
         return {'error': 'S65E_total.csv file could not be downloaded.'}
 
     return {'success': 'Completed inflow flow data download.'}
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")

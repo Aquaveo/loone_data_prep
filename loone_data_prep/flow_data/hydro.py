@@ -12,7 +12,8 @@ def get(
     workspace: str,
     dbkey: str,
     date_min: str = "1990-01-01",
-    date_max: str = datetime.now().strftime("%Y-%m-%d")) -> None:
+    date_max: str = datetime.now().strftime("%Y-%m-%d")
+) -> None:
     r_str = f"""
     # Load the required libraries
     library(dbhydroR)

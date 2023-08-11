@@ -5,7 +5,8 @@ from loone_data_prep.flow_data import hydro
 
 
 DBKEYS = ["91370", "91373", "91379", "91508", "91510", "91513", "91677",
-          "15628", "15640", "15626", "00865","JW224","00436","15018","91606","JW223"]
+          "15628", "15640", "15626", "00865", "JW224", "00436", "15018", "91606", "JW223"]
+
 
 def main(workspace: str, dbkeys: list = DBKEYS) -> dict:
     # Retrieve outflow data
@@ -30,6 +31,7 @@ def main(workspace: str, dbkeys: list = DBKEYS) -> dict:
         return {'error': f'The data from the following dbkeys could not be downloaded: {dbkeys}'}
 
     return {'success': 'Completed outflow flow data download.'}
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")

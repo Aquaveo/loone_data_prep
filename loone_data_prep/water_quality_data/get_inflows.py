@@ -20,6 +20,7 @@ D = {
                                                  'CULV10A', 'S133', 'S127', 'S135', 'S191']}
 }
 
+
 def main(workspace: str, d: dict = D) -> dict:
     missing_files = []
     for name, params in d.items():
@@ -34,6 +35,7 @@ def main(workspace: str, d: dict = D) -> dict:
         return {"error": f"The following files could not be downloaded: {missing_files}"}
 
     return {"success": "Completed water quality data download."}
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")
