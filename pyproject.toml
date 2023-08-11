@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "loone_data_prep"
+version = "0.0.2"
+dependencies = [
+    "rpy2",
+    "retry",
+    "pandas",
+    "scipy"
+]
