@@ -5,13 +5,17 @@ from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
+DEFAULT_DBKEYS = ["16022", "12509", "12519", "16265", "15611"]
+DATE_NOW = datetime.now().strftime("%Y-%m-%d")
+
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
     workspace: str,
     name: str,
-    dbkeys: list = ["16022", "12509", "12519", "16265", "15611"],
+    dbkeys: list = DEFAULT_DBKEYS,
     date_min: str = "1950-01-01",
-    date_max: str = datetime.now().strftime("%Y-%m-%d"),
+    date_max: str = DATE_NOW,
     **kwargs: str | list
 ) -> None:
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""

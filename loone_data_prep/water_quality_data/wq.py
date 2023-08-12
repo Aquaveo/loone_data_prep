@@ -5,13 +5,17 @@ from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
+DEFAULT_STATION_IDS = ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]
+DATE_NOW = datetime.now().strftime("%Y-%m-%d")
+
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
     workspace: str,
     name: str,
-    station_ids: list = ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+    station_ids: list = DEFAULT_STATION_IDS,
     date_min: str = "1950-01-01",
-    date_max: str = datetime.now().strftime("%Y-%m-%d"),
+    date_max: str = DATE_NOW,
     **kwargs: str | list
 ) -> None:
     station_ids_str = "\"" + "\", \"".join(station_ids) + "\""

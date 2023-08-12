@@ -24,7 +24,7 @@ def main(workspace: str, d: dict = D) -> dict:
             print(f"After various tries, files are still missing for {name}.")
 
     if True in missing_files:
-        return {"error": f"Missing files."}
+        return {"error": "Missing files."}
 
     return {"success": "Completed weather data download."}
 

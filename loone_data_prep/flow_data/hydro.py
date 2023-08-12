@@ -7,12 +7,15 @@ from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
+DATE_NOW = datetime.now().strftime("%Y-%m-%d")
+
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
     workspace: str,
     dbkey: str,
     date_min: str = "1990-01-01",
-    date_max: str = datetime.now().strftime("%Y-%m-%d")
+    date_max: str = DATE_NOW
 ) -> None:
     r_str = f"""
     # Load the required libraries
