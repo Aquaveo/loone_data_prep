@@ -189,10 +189,10 @@ def _format_ensembles_DataFrame(dataframe: pd.core.frame.DataFrame):
     for column_name in dataframe.columns:
         column_names.append(column_name.replace('m^3/s', 'm^3/d'))
         
+    dataframe.columns = column_names
+        
     # Rename index from datetimes to date
     dataframe.rename_axis('date', inplace=True)
-        
-    dataframe.columns = column_names
     
     # Return resulting DataFrame
     return dataframe
