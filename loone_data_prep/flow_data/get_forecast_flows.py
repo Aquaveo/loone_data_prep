@@ -245,6 +245,13 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     column_min = dataframe[['flow_min_m^3/s']].copy()
     column_min = column_min.groupby([column_min.index]).min()
     
+    # Convert values in each column from m^3/h to m^3/d
+    column_max = column_max.transform(lambda x: x * HOURS_IN_DAY)
+    column_75percentile = column_75percentile.transform(lambda x: x * HOURS_IN_DAY)
+    column_average = column_average.transform(lambda x: x * HOURS_IN_DAY)
+    column_25percentile = column_25percentile.transform(lambda x: x * HOURS_IN_DAY)
+    column_min = column_min.transform(lambda x: x * HOURS_IN_DAY)
+    
     # Append modified columns into one pandas DataFrame
     dataframe_result = pd.DataFrame()
     dataframe_result.index = dataframe.groupby([dataframe.index]).mean().index
