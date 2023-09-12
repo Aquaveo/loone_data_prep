@@ -1,4 +1,4 @@
-from utils import get_dbkeys
+from loone_data_prep.utils import get_dbkeys
 import os
 import sys
 import pandas as pd
@@ -87,42 +87,6 @@ def get_flow_forecast_stats(reach_id: str):
         (pandas.core.frame.DataFrame): The forecast stats
     """
     return geoglows.streamflow.forecast_stats(reach_id)
-
-def ensembles_to_csv_old(workspace: str, ensembles: pd.core.frame.DataFrame, station_id: str, keep_null_values = False):
-    """Writes the data of each ensemble in the given DataFrame to its own file.
-       The name of each file is of the format: <station_id>_FLOW_cmd_geoglows_ens<ensemble id>.csv
-
-    Args:
-        workspace (str): The path to the directory to write the files out to.
-        ensembles (pandas.core.frame.DataFrame): The DataFrame that holds the flow data.
-        station_id (str): The id of the station that the data is from.
-        keep_null_values (bool): Whether the resulting csv files should keep entries that have no data value.
-    """
-    file_name_template = '{station_id}_FLOW_cmd_geoglows_ens{ensemble_id}.csv'
-    datetimes = ensembles.index.to_pydatetime()
-    
-    # Write each column to its own file (each column is an ensemble)
-    for column_name in ensembles.columns:
-        # Get the name and path of the file for this column
-        ensemble_id = column_name.split('_')[1]
-        file_name = file_name_template.format(station_id=station_id, ensemble_id=ensemble_id)
-        file_path = os.path.join(workspace, file_name)
-        
-        # Get the current column
-        column = ensembles.loc[:,column_name]
-        
-        # Write the file
-        with open(file_path, 'w') as file:
-            # Write Header
-            file.write(f'datetime,{file_name.rstrip(".csv")}\n')
-            
-            # Write Data
-            for i in range(0, len(column)):
-                # Skip missing values
-                if keep_null_values == False and pd.isnull(column.iloc[i]):
-                    continue
-                # Write datetime,value
-                file.write(f'{datetimes[i].strftime("%Y-%m-%d:%H")},{column.iloc[i]}\n')
 
 def ensembles_to_csv(workspace: str, station_id: str, ensembles: pd.core.frame.DataFrame, stats: pd.core.frame.DataFrame):
     """Writes the ensembles and stats from the given DataFrames to a file .csv file. 
