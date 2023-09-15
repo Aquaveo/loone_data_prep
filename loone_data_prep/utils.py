@@ -2,13 +2,16 @@ import sys
 import os
 import datetime
 import math
+from glob import glob
 from calendar import monthrange
 import numpy as np
 import pandas as pd
+from sklearn.metrics import r2_score
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
 from rpy2.robjects import r
+from rpy2.robjects.vectors import StrVector as rpy2StrVector, DataFrame as rpy2DataFrame
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
@@ -56,6 +59,23 @@ INTERP_DICT = {
         "station_ids": ["L001", "L005", "L006", "LZ40"]
     },
 }
+DEFAULT_PREDICTION_STATIONS_IDS = ['S65E_S', 'S71_S', 'S72_S', 'S191_S', 'FECSR78', 'S4_P', 'S84_S', 'S127_P',
+                                   'S127_C', 'S133_P', 'S154_C', 'S135_P', 'S135_C']
+DEFAULT_EXPFUNC_CONSTANTS = {
+    "S65E_S": {"a": 2.00040151533473, "b": 0.837387838314323},
+    "S71_S": {"a": 2.55809777403484, "b": 0.765894033054918},
+    "S72_S": {"a": 2.85270576092534, "b": 0.724935760736887},
+    "S191_S": {"a": 3.0257439276073, "b": 0.721906661127014},
+    "FECSR78": {"a": 2.59223308404186, "b": 0.756802713030507},
+    "S4_P": {"a": 2.86495657296006, "b": 0.72203267810211},
+    "S84_S": {"a": 2.53265243618408, "b": 0.750938593484588},
+    "S127_P": {"a": 2.34697955615531, "b": 0.794046635942522},
+    "S127_C": {"a": 2.73825064156312, "b": 0.715023290260209},
+    "S133_P": {"a": 2.64107054734111, "b": 0.756152588482486},
+    "S154_C": {"a": 3.10305150879462, "b": 0.7099895764193},
+    "S135_P": {"a": 2.50975664040355, "b": 0.760702496334553},
+    "S135_C": {"a": 2.43076251736749, "b": 0.759494593788417},
+}
 
 
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
@@ -68,7 +88,24 @@ def get_dbkeys(
     freq: str = "DA",
     detail_level: str = "dbkey",
     *args: str
-) -> str:
+) -> rpy2StrVector | rpy2DataFrame:
+    """Get dbkeys. See DBHydroR documentation for more information:
+    https://cran.r-project.org/web/packages/dbhydroR/dbhydroR.pdf
+
+    Args:
+        station_ids (list): List of station IDs.
+        category (str): Category of data to retrieve. Options are "WEATHER", "SW", "GW", or "WQ".
+        param (str): Parameter of data to retrieve.
+        stat (str): Statistic of data to retrieve.
+        recorder (str): Recorder of data to retrieve.
+        freq (str, optional): Frequency of data to retrieve. Defaults to "DA".
+        detail_level (str, optional): Detail level of data to retrieve. Defaults to "dbkey". Options are "dbkey",
+            "summary", or "full".
+
+    Returns:
+        rpy2StrVector | rpy2DataFrame: dbkeys info at the specified detail level.
+    """
+
     station_ids_str = "\"" + "\", \"".join(station_ids) + "\""
 
     dbkeys = r(
@@ -406,6 +443,77 @@ def get_pi(workspace: str) -> None:
     df.to_csv(os.path.join(workspace, "PI.csv"))
 
 
+def nutrient_prediction(
+    workspace: str,
+    station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS,
+    constants: dict = DEFAULT_EXPFUNC_CONSTANTS
+) -> None:
+    for station in station_ids:
+        print(f"Predicting nutrient loads for station: {station}.")
+        # Construct paths for flow and phosphate files
+        flow_file_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
+        phosphate_file_path = os.path.join(
+            workspace,
+            f"water_quality_{station.split('_')[0]}_PHOSPHATE, TOTAL AS P.csv"
+        )
+
+        # Check if data file exists
+        if os.path.exists(flow_file_path) and os.path.exists(phosphate_file_path):
+            # If it exists, read in the data
+            flow = pd.read_csv(flow_file_path)
+            phosphate = pd.read_csv(phosphate_file_path)
+        else:
+            # If it doesn't exist, skip to the next iteration of the loop
+            continue
+
+        # Get the file base name from the flow file path
+        basename = os.path.basename(flow_file_path).replace(".csv", "")
+
+        # Merge the flow and phosphate data on the 'date' column
+        flow_phosphate = pd.merge(flow, phosphate, how='left', on='date')
+
+        # Remove any columns that start with 'Unnamed'
+        flow_phosphate = flow_phosphate.loc[:,~flow_phosphate.columns.str.startswith('Unnamed')]
+
+        # Drop the 'days' column
+        flow_phosphate.drop(columns=['days'], inplace=True)
+
+        # Remove any rows with missing values
+        flow_phosphate = flow_phosphate.dropna()
+
+        # Remove any rows where all values are 0
+        flow_phosphate = flow_phosphate[(flow_phosphate != 0).all(1)]
+
+        # Remove rows where the flow is negative
+        flow_phosphate = flow_phosphate[flow_phosphate[f"{station}_FLOW_cmd"] >= 0]
+
+        for col in flow_phosphate.columns:
+            if basename in col:
+                # Calculate the TP loads using the flow and phosphate data
+                TP_Loads_Calculated = \
+                    flow_phosphate[col] * flow_phosphate[f'{station.split("_")[0]}_PHOSPHATE, TOTAL AS P_mg/L'] * 1000
+
+                # Calculate the logarithm of the flow data
+                Q_Log = np.log(flow_phosphate[col])
+
+                # Calculate the logarithm of the calculated TP loads
+                TP_Loads_Calculated_Log = np.log(TP_Loads_Calculated)
+
+                # Calculate the predicted TP loads using the logarithm of the flow data
+                TP_Loads_Predicted_Log = constants[station]['a'] * Q_Log ** constants[station]['b']
+
+                # Calculate the R-squared value between the calculated and predicted TP loads
+                r_squared = r2_score(TP_Loads_Calculated_Log, TP_Loads_Predicted_Log)
+                print(f"R-squared_{station}(logged):", r_squared, "\n")
+
+                # Calculate the predicted TP loads using the exponential of the predicted TP loads logarithm
+                flow_phosphate[f'TP_Loads_Predicted_{col.split("_")[-1]}'] = np.exp(TP_Loads_Predicted_Log)
+
+            # Save the predicted TP loads to a CSV file
+            flow_phosphate.to_csv(os.path.join(workspace, f'{station}_PHOSPHATE_predicted.csv'))
+
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
         get_dbkeys(sys.argv[2].strip("[]").replace(" ", "").split(','), *sys.argv[3:])
@@ -422,4 +530,6 @@ if __name__ == "__main__":
     elif sys.argv[1] == "wind_induced_waves":
         wind_induced_waves(sys.argv[2].rstrip("/"), *sys.argv[3:])
     elif sys.argv[1] == "get_pi":
-        get_pi(sys.argv[2])
+        get_pi(sys.argv[2].rstrip("/"))
+    elif sys.argv[1] == "nutrient_prediction":
+        nutrient_prediction(sys.argv[2].rstrip("/"))
