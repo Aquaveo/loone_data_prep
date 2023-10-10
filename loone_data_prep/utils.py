@@ -58,7 +58,7 @@ INTERP_DICT = {
         "station_ids": ["L001", "L005", "L006", "LZ40"]
     },
 }
-DEFAULT_PREDICTION_STATIONS_IDS = ['S65E_S', 'S71_S', 'S72_S', 'S191_S', 'FECSR78', 'S4_P', 'S84_S', 'S127_P',
+DEFAULT_PREDICTION_STATIONS_IDS = ['S65E_S', 'S71_S', 'S72_S', 'S191_S', 'FISHP', 'S4_P', 'S84_S', 'S127_P',
                                    'S127_C', 'S133_P', 'S154_C', 'S135_P', 'S135_C']
 DEFAULT_EXPFUNC_CONSTANTS = {
     "S65E_S": {"a": 2.00040151533473, "b": 0.837387838314323},
@@ -492,7 +492,7 @@ def nutrient_prediction(
         
         # Save the predicted TP loads to a CSV file
         out_dataframe.to_csv(os.path.join(workspace, f'{station}_PHOSPHATE_predicted.csv'))
-            
+
 
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
