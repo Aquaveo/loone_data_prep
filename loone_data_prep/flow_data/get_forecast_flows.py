@@ -5,15 +5,19 @@ import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 import geoglows
+import datetime
 
 STATION_IDS = ['S191_S', 'S65E_S','S65EX1_S', 'S84_S', 'S154_C', 'S71_S', 'S72_S',
     'FISHP', 'S308.DS', 'L8.441', 'S133_P', 'S127_C', 'S127_P',
     'S129_C','S135_C', 'S2_P', 'S3_P','S4_P', 'S351_S',
-    'S352_S', 'S354_S', 'S129 PMP_P', 'S135 PMP_P']
+    'S352_S', 'S354_S', 'S129 PMP_P', 'S135 PMP_P', 
+    'S77_S', 'INDUST', 'S79_S', 'S80_S', 'S40_S', 'S49_S'] # Added these stations. They seemed to be missing.
 
 SECONDS_IN_HOUR = 3600
 SECONDS_IN_DAY = 86400
 HOURS_IN_DAY = 24
+
+FORECAST_DATE = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime('%Y%m%d')
 
 def get_stations_latitude_longitude(station_ids: list[str]):
     """Gets the latitudes and longitudes of the given stations.
@@ -35,7 +39,7 @@ def get_stations_latitude_longitude(station_ids: list[str]):
     # Convert the r dataframe to a pandas dataframe
     with (ro.default_converter + pandas2ri.converter).context():
         pd_dataframe = ro.conversion.get_conversion().rpy2py(r_dataframe)
-
+    
     # Filter out extra rows for each station from the dataframe
     pd_dataframe.drop_duplicates(subset='Station', keep='first', inplace=True)
     
@@ -66,27 +70,29 @@ def get_reach_id(latitude: float, longitude: float):
     
     return reach_data['reach_id']
 
-def get_flow_forecast_ensembles(reach_id: str):
+def get_flow_forecast_ensembles(reach_id: str, forecast_date: str):
     """Gets the 52 ensemble forecasts from geoglows for the given reach_id.
 
     Args:
         reach_id (str): The reach_id to get the 52 ensemble forecasts for.
+        forecast_date (str): A string specifying the date to request in YYYYMMDD format
 
     Returns:
         (pandas.core.frame.DataFrame): The 52 ensemble flow forecasts.
     """
-    return geoglows.streamflow.forecast_ensembles(reach_id)
+    return geoglows.streamflow.forecast_ensembles(reach_id=reach_id, forecast_date=forecast_date)
 
-def get_flow_forecast_stats(reach_id: str):
+def get_flow_forecast_stats(reach_id: str, forecast_date: str):
     """Gets the 15-day time series forecast stats (max, min, etc) from geoglows for the given reach_id.
 
     Args:
         reach_id (str): The reach_id to get the forecast stats for.
+        forecast_date (str): A string specifying the date to request in YYYYMMDD format
 
     Returns:
         (pandas.core.frame.DataFrame): The forecast stats
     """
-    return geoglows.streamflow.forecast_stats(reach_id)
+    return geoglows.streamflow.forecast_stats(reach_id=reach_id, forecast_date=forecast_date)
 
 def ensembles_to_csv(workspace: str, station_id: str, ensembles: pd.core.frame.DataFrame, stats: pd.core.frame.DataFrame):
     """Writes the ensembles and stats from the given DataFrames to a file .csv file. 
@@ -113,6 +119,9 @@ def ensembles_to_csv(workspace: str, station_id: str, ensembles: pd.core.frame.D
     
     # Write out the .csv file
     ensembles.to_csv(file_path)
+    
+    # Notify user of success
+    print(f'File Saved: {file_path}')
 
 def _format_ensembles_DataFrame(dataframe: pd.core.frame.DataFrame):
     """Formats, modifies, and returns the given pandas DataFrame's data to a format that LOONE expects.
@@ -234,12 +243,13 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     # Return resulting DataFrame
     return dataframe_result
      
-def main(workspace: str, station_ids: list[str] = STATION_IDS):
+def main(workspace: str, station_ids: list[str] = STATION_IDS, forecast_date: str = FORECAST_DATE):
     """Downloads the flow forecasts for the given station ids and writes them out as .csv files.
 
     Args:
         workspace (str): Where to write the .csv files to.
         station_ids (list[str]): The station ids to get the flow data for.
+        forecast_date (str): A string specifying the date to request in YYYYMMDD format.
     """
     # Local Variables
     reach_ids = {}
@@ -259,13 +269,12 @@ def main(workspace: str, station_ids: list[str] = STATION_IDS):
             reach_ids[station_id] = get_reach_id(location[0], location[1])
         except Exception as e:
             print(f'Error: Failed to get reach id for station {station_id} ({str(e)})')
-            
     
     # Get the flow data for each station
     for station_id in reach_ids.keys():
         reach_id = reach_ids[station_id]
-        station_ensembles = get_flow_forecast_ensembles(reach_id)
-        station_stats = get_flow_forecast_stats(reach_id)
+        station_ensembles = get_flow_forecast_ensembles(reach_id, forecast_date)
+        station_stats = get_flow_forecast_stats(reach_id, forecast_date)
         ensembles_to_csv(workspace, station_id, station_ensembles, station_stats)
 
 if __name__ == '__main__':

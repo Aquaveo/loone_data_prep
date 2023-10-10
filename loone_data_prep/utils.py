@@ -6,7 +6,6 @@ from glob import glob
 from calendar import monthrange
 import numpy as np
 import pandas as pd
-from sklearn.metrics import r2_score
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
@@ -66,7 +65,7 @@ DEFAULT_EXPFUNC_CONSTANTS = {
     "S71_S": {"a": 2.55809777403484, "b": 0.765894033054918},
     "S72_S": {"a": 2.85270576092534, "b": 0.724935760736887},
     "S191_S": {"a": 3.0257439276073, "b": 0.721906661127014},
-    "FECSR78": {"a": 2.59223308404186, "b": 0.756802713030507},
+    "FISHP": {"a": 2.59223308404186, "b": 0.756802713030507},
     "S4_P": {"a": 2.86495657296006, "b": 0.72203267810211},
     "S84_S": {"a": 2.53265243618408, "b": 0.750938593484588},
     "S127_P": {"a": 2.34697955615531, "b": 0.794046635942522},
@@ -450,69 +449,50 @@ def nutrient_prediction(
 ) -> None:
     for station in station_ids:
         print(f"Predicting nutrient loads for station: {station}.")
-        # Construct paths for flow and phosphate files
-        flow_file_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
-        phosphate_file_path = os.path.join(
-            workspace,
-            f"water_quality_{station.split('_')[0]}_PHOSPHATE, TOTAL AS P.csv"
-        )
+        # Construct paths for flow file
+        flow_file_path = os.path.join(workspace, f"{station}_FLOW_cmd_geoglows.csv")
 
         # Check if data file exists
-        if os.path.exists(flow_file_path) and os.path.exists(phosphate_file_path):
+        if os.path.exists(flow_file_path):
             # If it exists, read in the data
             flow = pd.read_csv(flow_file_path)
-            phosphate = pd.read_csv(phosphate_file_path)
         else:
             # If it doesn't exist, skip to the next iteration of the loop
             continue
+        
+        # Create structures to hold resulting data
+        out_dataframe = pd.DataFrame(index=flow['date'].copy())
+        prediction_columns = [out_dataframe]
+        
+        # Run predictions for each ensemble
+        for column_name in flow.columns:
+            if 'ensemble' not in column_name:
+                continue
+            
+            # Get the current ensemble as an individual pandas DataFrame
+            flow_column = flow.loc[:, column_name]
+            
+            # Calculate the logarithm of the flow data
+            Q_Log = np.log(flow_column)
 
-        # Get the file base name from the flow file path
-        basename = os.path.basename(flow_file_path).replace(".csv", "")
+            # Calculate the predicted TP loads using the logarithm of the flow data
+            TP_Loads_Predicted_Log = constants[station]['a'] * Q_Log ** constants[station]['b']
 
-        # Merge the flow and phosphate data on the 'date' column
-        flow_phosphate = pd.merge(flow, phosphate, how='left', on='date')
-
-        # Remove any columns that start with 'Unnamed'
-        flow_phosphate = flow_phosphate.loc[:,~flow_phosphate.columns.str.startswith('Unnamed')]
-
-        # Drop the 'days' column
-        flow_phosphate.drop(columns=['days'], inplace=True)
-
-        # Remove any rows with missing values
-        flow_phosphate = flow_phosphate.dropna()
-
-        # Remove any rows where all values are 0
-        flow_phosphate = flow_phosphate[(flow_phosphate != 0).all(1)]
-
-        # Remove rows where the flow is negative
-        flow_phosphate = flow_phosphate[flow_phosphate[f"{station}_FLOW_cmd"] >= 0]
-
-        for col in flow_phosphate.columns:
-            if basename in col:
-                # Calculate the TP loads using the flow and phosphate data
-                TP_Loads_Calculated = \
-                    flow_phosphate[col] * flow_phosphate[f'{station.split("_")[0]}_PHOSPHATE, TOTAL AS P_mg/L'] * 1000
-
-                # Calculate the logarithm of the flow data
-                Q_Log = np.log(flow_phosphate[col])
-
-                # Calculate the logarithm of the calculated TP loads
-                TP_Loads_Calculated_Log = np.log(TP_Loads_Calculated)
-
-                # Calculate the predicted TP loads using the logarithm of the flow data
-                TP_Loads_Predicted_Log = constants[station]['a'] * Q_Log ** constants[station]['b']
-
-                # Calculate the R-squared value between the calculated and predicted TP loads
-                r_squared = r2_score(TP_Loads_Calculated_Log, TP_Loads_Predicted_Log)
-                print(f"R-squared_{station}(logged):", r_squared, "\n")
-
-                # Calculate the predicted TP loads using the exponential of the predicted TP loads logarithm
-                flow_phosphate[f'TP_Loads_Predicted_{col.split("_")[-1]}'] = np.exp(TP_Loads_Predicted_Log)
-
-            # Save the predicted TP loads to a CSV file
-            flow_phosphate.to_csv(os.path.join(workspace, f'{station}_PHOSPHATE_predicted.csv'))
-
-
+            # Calculate the predicted TP loads using the exponential of the predicted TP loads logarithm
+            predicted_column = np.exp(TP_Loads_Predicted_Log)
+            
+            # Store prediction data in a pandas DataFrame (So we can concat all ensemble data into one dataframe)
+            predicted_column = pd.DataFrame(predicted_column.tolist(), index=flow['date'].copy())
+            predicted_column.columns = [column_name]
+            
+            prediction_columns.append(predicted_column)
+        
+        # Concat individual ensemble columns together into one pandas DataFrame
+        out_dataframe = pd.concat(objs=prediction_columns, axis='columns')
+        
+        # Save the predicted TP loads to a CSV file
+        out_dataframe.to_csv(os.path.join(workspace, f'{station}_PHOSPHATE_predicted.csv'))
+            
 
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
