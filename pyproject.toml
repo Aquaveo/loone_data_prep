@@ -9,5 +9,6 @@ dependencies = [
     "rpy2",
     "retry",
     "pandas",
-    "scipy"
+    "scipy",
+    "geoglows",
 ]

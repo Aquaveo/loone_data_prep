@@ -241,8 +241,8 @@ def main(input_dir: str, output_dir: str) -> None:
     # C43 RO C44 RO
     # Create Files (C43RO, C43RO_Monthly, C44RO, C44RO_Monthly)
     # As well as Columns C43Runoff and C44Runoff in File (SFWMM_Daily_Outputs)
-    s79_path = glob(f'{input_dir}/S79_*FLOW*.csv')[0]
-    s80_path = glob(f'{input_dir}/S80_*FLOW*.csv')[0]
+    s79_path = glob(f'{input_dir}/S79_*FLOW_cmd.csv')[0]
+    s80_path = glob(f'{input_dir}/S80_*FLOW_cmd.csv')[0]
     S79 = pd.read_csv(s79_path)
     S79 = S79.fillna(0)
     S80 = pd.read_csv(s80_path)
@@ -282,8 +282,8 @@ def main(input_dir: str, output_dir: str) -> None:
 
     # SLTRIB
     # Create File (SLTRIB_Monthly)
-    S48_S_path = glob(f'{input_dir}/S48_*FLOW*.csv')[0]
-    S49_S_path = glob(f'{input_dir}/S49_*FLOW*.csv')[0]
+    S48_S_path = glob(f'{input_dir}/S48_*FLOW_cmd.csv')[0]
+    S49_S_path = glob(f'{input_dir}/S49_*FLOW_cmd.csv')[0]
     S48_S = pd.read_csv(S48_S_path)
     S49_S = pd.read_csv(S49_S_path)
     S48_S = DF_Date_Range(S48_S, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
