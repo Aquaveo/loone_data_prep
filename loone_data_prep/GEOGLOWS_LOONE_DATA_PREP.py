@@ -154,14 +154,15 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     historical_date = pd.date_range(start=f"{M3_M}/{M3_D}/{M3_Yr}", end=f"{En_M}/{En_D}/{En_Yr}", freq="D")
 
     # Create Flow Dataframe
-    Flow_df = pd.DataFrame(historical_date, columns=["date"])
-    for i in range(len(Q_names)):
-        x = DF_Date_Range(Q_list[Q_names[i]], M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
-        if len(x.iloc[:, -1:].values) == len(Flow_df["date"]):
-            Flow_df[Q_names[i]] = x.iloc[:, -1:].values
-        else:
-            x.rename(columns={x.columns[-1]: Q_names[i]}, inplace=True)
-            Flow_df = pd.merge(Flow_df, x[["date", Q_names[i]]], on="date", how="left")
+    Flow_df = pd.read_csv(f'{output_dir}/Flow_df_3MLag.csv')
+    # Flow_df = pd.DataFrame(historical_date, columns=["date"])
+    # for i in range(len(Q_names)):
+    #     x = DF_Date_Range(Q_list[Q_names[i]], M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
+    #     if len(x.iloc[:, -1:].values) == len(Flow_df["date"]):
+    #         Flow_df[Q_names[i]] = x.iloc[:, -1:].values
+    #     else:
+    #         x.rename(columns={x.columns[-1]: Q_names[i]}, inplace=True)
+    #         Flow_df = pd.merge(Flow_df, x[["date", Q_names[i]]], on="date", how="left")
 
     geoglows_flow_df = pd.DataFrame(date, columns=["date"])
     for i in range(len(Q_names)):
@@ -241,7 +242,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         TP_Loads_In[TP_names[i]] = y[f"ensemble_{ensemble_number}_m^3/d"]
 
     # Calculate the total External Loads to Lake Okeechobee
-    TP_Loads_In["External_P_Ld_mg"] = TP_Loads_In.sum(axis=1)
+    TP_Loads_In["External_P_Ld_mg"] = TP_Loads_In.sum(axis=1, numeric_only=True)
 
     # Create File (LO_External_Loadings_3MLag)
     TP_Loads_In_3MLag = DF_Date_Range(TP_Loads_In, st_year, st_month, st_day, end_year, end_month, end_day)
@@ -270,7 +271,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     TotalQWCA = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
     TotalQWCA["S351_Out"] = geoglows_flow_df["S351_Out"] * (35.3147 / 86400)  # cmd to cfs
     TotalQWCA["S354_Out"] = geoglows_flow_df["S354_Out"] * (35.3147 / 86400)
-    TotalQWCA["RegWCA_cfs"] = TotalQWCA.sum(axis=1)  # cfs
+    TotalQWCA["RegWCA_cfs"] = TotalQWCA.sum(axis=1, numeric_only=True)  # cfs
     TotalQWCA["RegWCA_acft"] = TotalQWCA["RegWCA_cfs"] * 1.9835  # acft
 
     # # Create Column (RegL8C51) in the File (SFWMM_Daily_Outputs)
