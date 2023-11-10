@@ -266,10 +266,10 @@ def main(input_dir: str, output_dir: str) -> None:
             C44RO[i] = 0
         else:
             C44RO[i] = S80['Q_cmd'].iloc[i] - Flow_df['S308_Out'].iloc[i] + Flow_df['S308_In'].iloc[i]
-    C43RO_df['C43RO'] = C43RO
-    C44RO_df['C44RO'] = C44RO
-    C43RO_df['C43RO_cfs'] = C43RO_df['C43RO']/(0.0283168466 * 86400)
-    C44RO_df['C44RO_cfs'] = C44RO_df['C44RO']/(0.0283168466 * 86400)
+    C43RO_df['C43RO_cmd'] = C43RO
+    C44RO_df['C44RO_cmd'] = C44RO
+    C43RO_df['C43RO'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
+    C44RO_df['C44RO'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
     C43RO_df.to_csv(f'{output_dir}/C43RO.csv', index=False)
     C44RO_df.to_csv(f'{output_dir}/C44RO.csv', index=False)
     C43RO_df = C43RO_df.set_index(C43RO_df['date'])
@@ -301,8 +301,8 @@ def main(input_dir: str, output_dir: str) -> None:
     SLTRIBMon.to_csv(f'{output_dir}/SLTRIB_Monthly.csv')
     Basin_RO = pd.DataFrame(SLTRIBMon.index, columns=['date'])
     Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835  # cfs to acft
-    Basin_RO['C44RO'] = C44Mon['C44RO_cfs'].values * 86400
-    Basin_RO['C43RO'] = C43Mon['C43RO_cfs'].values * 86400
+    Basin_RO['C44RO'] = C44Mon['C44RO'].values * 86400
+    Basin_RO['C43RO'] = C43Mon['C43RO'].values * 86400
     Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs.csv', index=False)
 
     # EAA MIA RUNOFF
