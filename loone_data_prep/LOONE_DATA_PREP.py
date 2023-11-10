@@ -6,6 +6,7 @@ Created on Wed Jun 21 00:18:50 2023
 """
 import sys
 from glob import glob
+import datetime
 import pandas as pd
 import numpy as np
 from loone_data_prep.data_analyses_fns import DF_Date_Range
@@ -199,7 +200,8 @@ def main(input_dir: str, output_dir: str) -> None:
     # Create File (LO_External_Loadings_3MLag)
     TP_Loads_In_3MLag = DF_Date_Range(TP_Loads_In, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
     TP_Loads_In_3MLag_df = pd.DataFrame(TP_Loads_In_3MLag['date'], columns=['date'])
-    TP_Loads_In_3MLag_df['External_Loads'] = TP_Loads_In_3MLag['External_P_Ld_mg']
+    TP_Loads_In_3MLag_df['TP_Loads_In_mg'] = TP_Loads_In_3MLag['External_P_Ld_mg']
+    TP_Loads_In_3MLag_df['Atm_Loading_mg'] = [95890410.96] * len(TP_Loads_In_3MLag_df)
 
     # Create File (LO_Inflows_BK)
     LO_Inflows_BK = pd.DataFrame(Flow_df['date'], columns=['date'])
@@ -266,8 +268,8 @@ def main(input_dir: str, output_dir: str) -> None:
             C44RO[i] = S80['Q_cmd'].iloc[i] - Flow_df['S308_Out'].iloc[i] + Flow_df['S308_In'].iloc[i]
     C43RO_df['C43RO_cmd'] = C43RO
     C44RO_df['C44RO_cmd'] = C44RO
-    C43RO_df['C43RO_cfs'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
-    C44RO_df['C44RO_cfs'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
+    C43RO_df['C43RO'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
+    C44RO_df['C44RO'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
     C43RO_df.to_csv(f'{output_dir}/C43RO.csv', index=False)
     C44RO_df.to_csv(f'{output_dir}/C44RO.csv', index=False)
     C43RO_df = C43RO_df.set_index(C43RO_df['date'])
@@ -299,8 +301,8 @@ def main(input_dir: str, output_dir: str) -> None:
     SLTRIBMon.to_csv(f'{output_dir}/SLTRIB_Monthly.csv')
     Basin_RO = pd.DataFrame(SLTRIBMon.index, columns=['date'])
     Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835  # cfs to acft
-    Basin_RO['C44RO'] = C44Mon['C44RO_cfs'].values * 86400
-    Basin_RO['C43RO'] = C43Mon['C43RO_cfs'].values * 86400
+    Basin_RO['C44RO'] = C44Mon['C44RO'].values * 86400
+    Basin_RO['C43RO'] = C43Mon['C43RO'].values * 86400
     Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs.csv', index=False)
 
     # EAA MIA RUNOFF
@@ -381,18 +383,27 @@ def main(input_dir: str, output_dir: str) -> None:
     LOWS['LZ40WS'] = LZ40WS['LZ40_WNDS_MPH']
     LOWS['LO_Avg_WS_MPH'] = LOWS.mean(axis=1, numeric_only=True)
     LOWS.to_csv(f'{output_dir}/LOWS.csv', index=False)
+    LOWS.to_csv(f'{input_dir}/LOWS.csv', index=False)  # Also needed in temporary directory by utils.py's wind_induced_waves()
 
     # RFVol acft
     # Create File (RF_Volume)
     RFVol = pd.DataFrame(RF_data['date'], columns=['date'])
     RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    RFVol.to_csv(f'{output_dir}/RFVol_LORS_20082023.csv', index=False)
+    date_reference = RFVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'RFVol_acft': [0.0, 0.0]})
+    RFVol = pd.concat([df_insert, RFVol])
+    RFVol.to_csv(f'{output_dir}/RFVol.csv', index=False)
 
     # ETVol acft
     # Create File (ETVol)
     ETVol = pd.DataFrame(ET_data['date'], columns=['date'])
     ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    ETVol.to_csv(f'{output_dir}/ETVol_LORS_20082023.csv', index=False)
+    date_reference = ETVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'ETVol_acft': [0.0, 0.0]})
+    ETVol = pd.concat([df_insert, ETVol])
+    ETVol.to_csv(f'{output_dir}/ETVol.csv', index=False)
 
     # WCA Stages
     # Create File (WCA_Stages_Inputs)
@@ -468,7 +479,7 @@ def main(input_dir: str, output_dir: str) -> None:
     Filled_WaterT_1df['Water_T'] = Filled_WaterT_1
     Filled_WaterT_2df['Water_T'] = Filled_WaterT_2
     Filled_WaterT = pd.concat([Filled_WaterT_1df, Filled_WaterT_2df]).reset_index(drop=True)
-    Filled_WaterT.to_csv(f'{output_dir}/Filled_WaterT_20082023.csv', index=False)
+    Filled_WaterT.to_csv(f'{output_dir}/Filled_WaterT.csv', index=False)
 
     # TP Observations in Lake
     L001_TP = pd.read_csv(f'{input_dir}/water_quality_L001_PHOSPHATE, TOTAL AS P.csv')
@@ -886,6 +897,7 @@ def main(input_dir: str, output_dir: str) -> None:
     # Write Data into csv files
     # write Avg Stage (ft, m) Storage (acft, m3) SA (acres) to csv
     LO_Stg_Sto_SA_df.to_csv(f'{output_dir}/Average_LO_Storage_3MLag.csv', index=False)
+    LO_Stg_Sto_SA_df.to_csv(f'{input_dir}/Average_LO_Storage_3MLag.csv', index=False)   # Also needed in temporary directory by utils.py's wind_induced_waves()
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f'{output_dir}/S65_TP_3MLag.csv', index=False)
     # TP External Loads 3 Months Lag (mg)
