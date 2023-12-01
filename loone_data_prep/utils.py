@@ -642,6 +642,10 @@ def nutrient_prediction(
 
         # Save the predicted TP loads to a CSV file
         out_dataframe.to_csv(os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv"))
+        
+        # Save the predicted TP loads to a CSV file (in input_dir)
+        # Output is needed in input_dir by GEOGLOWS_LOONE_DATA_PREP.py and in output_dir for graph visualization in the app
+        out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
 
 
 if __name__ == "__main__":
