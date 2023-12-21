@@ -571,7 +571,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag.csv", index=False)
     # TP External Loads 3 Months Lag (mg)
-    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag.csv", index=False)
+    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False)
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
     geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
     # Inflows (cmd)
