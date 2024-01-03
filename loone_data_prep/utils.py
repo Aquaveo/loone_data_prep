@@ -639,6 +639,14 @@ def nutrient_prediction(
 
         # Concat individual ensemble columns together into one pandas DataFrame
         out_dataframe = pd.concat(objs=prediction_columns, axis="columns")
+        
+        column_mean = out_dataframe.mean(axis='columns')
+        column_percentile_25 = out_dataframe.quantile(q=0.25, axis='columns')
+        column_percentile_75 = out_dataframe.quantile(q=0.75, axis='columns')
+        
+        out_dataframe['mean'] = column_mean
+        out_dataframe['percentile_25'] = column_percentile_25
+        out_dataframe['percentile_75'] = column_percentile_75
 
         # Save the predicted TP loads to a CSV file
         out_dataframe.to_csv(os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv"))
