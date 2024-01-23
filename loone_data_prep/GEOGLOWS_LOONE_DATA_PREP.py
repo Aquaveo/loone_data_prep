@@ -14,7 +14,7 @@ from loone_data_prep.data_analyses_fns import DF_Date_Range
 from loone_data_prep.utils import stg2sto, stg2ar
 import datetime
 
-START_DATE = datetime.datetime.now() - datetime.timedelta(days=2)
+START_DATE = datetime.datetime.now()
 END_DATE = START_DATE + datetime.timedelta(days=15)
 
 M3_Yr = 2008
@@ -165,6 +165,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     #         Flow_df = pd.merge(Flow_df, x[["date", Q_names[i]]], on="date", how="left")
 
     geoglows_flow_df = pd.DataFrame(date, columns=["date"])
+
     for i in range(len(Q_names)):
         x = DF_Date_Range(Q_list[Q_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
         for column_name in x.columns:

@@ -43,7 +43,7 @@ SECONDS_IN_HOUR = 3600
 SECONDS_IN_DAY = 86400
 HOURS_IN_DAY = 24
 
-FORECAST_DATE = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime("%Y%m%d")
+FORECAST_DATE = (datetime.datetime.now()).strftime("%Y%m%d")
 
 GEOGLOWS_ENDPOINT = "https://geoglows.ecmwf.int/api/"
 
