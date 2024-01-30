@@ -14,7 +14,7 @@ from loone_data_prep.data_analyses_fns import DF_Date_Range
 from loone_data_prep.utils import stg2sto, stg2ar
 import datetime
 
-START_DATE = datetime.datetime.now() - datetime.timedelta(days=2)
+START_DATE = datetime.datetime.now()
 END_DATE = START_DATE + datetime.timedelta(days=15)
 
 M3_Yr = 2008
@@ -165,6 +165,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     #         Flow_df = pd.merge(Flow_df, x[["date", Q_names[i]]], on="date", how="left")
 
     geoglows_flow_df = pd.DataFrame(date, columns=["date"])
+
     for i in range(len(Q_names)):
         x = DF_Date_Range(Q_list[Q_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
         for column_name in x.columns:
@@ -571,7 +572,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag.csv", index=False)
     # TP External Loads 3 Months Lag (mg)
-    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag.csv", index=False)
+    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False)
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
     geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
     # Inflows (cmd)
