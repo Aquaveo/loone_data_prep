@@ -1,11 +1,16 @@
-from loone_data_prep.utils import get_dbkeys
 import os
 import sys
+import glob
 import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 import geoglows
 import datetime
+from loone_data_prep.utils import get_dbkeys
+from loone_data_prep.flow_data.forecast_bias_correction import (
+    get_bias_corrected_data,
+)
+
 
 STATION_IDS = [
     "S191_S",
@@ -39,30 +44,72 @@ STATION_IDS = [
     "S49_S",
 ]  # Added these stations. They seemed to be missing.
 
+REACH_IDS = {
+    "S191_S": 13082707,
+    "S65E_S": 13082699,
+    "S65EX1_S": 13082699,
+    "S84_S": 13082700,
+    "S154_C": 13082716,
+    "S71_S": 13082743,
+    "S72_S": 13082727,
+    "FISHP": 13082756,
+    "S308.DS": 13082736,
+    "L8.441": 13082747,
+    "S133_P": 13082709,
+    "S127_C": 13082716,
+    "S127_P": 13082716,
+    "S129_C": 13082727,
+    "S135_C": 13082725,
+    "S2_P": 13082783,
+    "S3_P": 13082809,
+    "S4_P": 13082806,
+    "S351_S": 13082804,
+    "S352_S": 13082762,
+    "S354_S": 13082809,
+    "S129 PMP_P": 13082727,
+    "S135 PMP_P": 13082725,
+    "S77_S": 13082767,
+    "INDUST": 13082806,
+    "S79_S": 13082791,
+    "S80_S": 13082718,
+    "S40_S": 13082797,
+    "S49_S": 13082696
+}
+
 SECONDS_IN_HOUR = 3600
 SECONDS_IN_DAY = 86400
 HOURS_IN_DAY = 24
 
-FORECAST_DATE = (datetime.datetime.now() - datetime.timedelta(days=2)).strftime("%Y%m%d")
+FORECAST_DATE = (
+    datetime.datetime.now() - datetime.timedelta(days=2)
+).strftime("%Y%m%d")
 
 
 def get_stations_latitude_longitude(station_ids: list[str]):
     """Gets the latitudes and longitudes of the given stations.
 
     Args:
-        station_ids (list[str]): The ids of the stations to get the latitudes/longitudes of
+        station_ids (list[str]): The ids of the stations to get the
+            latitudes/longitudes of
 
     Returns:
-        (dict[str, tuple[numpy.float64, numpy.float64]]): A dictionary of format dict<station_id:(latitude,longitude)>
+        (dict[str, tuple[numpy.float64, numpy.float64]]): A dictionary of
+            format dict<station_id:(latitude,longitude)>
 
-    If a station's latitude/longitude fails to download then its station_id won't be a key in the returned dictionary.
+    If a station's latitude/longitude fails to download then its station_id
+        won't be a key in the returned dictionary.
     """
     # The dict that holds the data that gets returned
     station_data = {}
 
     # Get the station/dbkey data
     r_dataframe = get_dbkeys(
-        station_ids=station_ids, category="SW", param="", stat="", recorder="", detail_level="full"
+        station_ids=station_ids,
+        category="SW",
+        param="",
+        stat="",
+        recorder="",
+        detail_level="full",
     )
 
     # Convert the r dataframe to a pandas dataframe
@@ -106,42 +153,62 @@ def get_flow_forecast_ensembles(reach_id: str, forecast_date: str):
 
     Args:
         reach_id (str): The reach_id to get the 52 ensemble forecasts for.
-        forecast_date (str): A string specifying the date to request in YYYYMMDD format
+        forecast_date (str): A string specifying the date to request in
+            YYYYMMDD format
 
     Returns:
         (pandas.core.frame.DataFrame): The 52 ensemble flow forecasts.
     """
-    return geoglows.streamflow.forecast_ensembles(reach_id=reach_id, forecast_date=forecast_date)
+    return geoglows.streamflow.forecast_ensembles(
+        reach_id=reach_id, forecast_date=forecast_date
+    )
 
 
 def get_flow_forecast_stats(reach_id: str, forecast_date: str):
-    """Gets the 15-day time series forecast stats (max, min, etc) from geoglows for the given reach_id.
+    """Gets the 15-day time series forecast stats (max, min, etc) from geoglows
+        for the given reach_id.
 
     Args:
         reach_id (str): The reach_id to get the forecast stats for.
-        forecast_date (str): A string specifying the date to request in YYYYMMDD format
+        forecast_date (str): A string specifying the date to request in
+            YYYYMMDD format
 
     Returns:
         (pandas.core.frame.DataFrame): The forecast stats
     """
-    return geoglows.streamflow.forecast_stats(reach_id=reach_id, forecast_date=forecast_date)
+    return geoglows.streamflow.forecast_stats(
+        reach_id=reach_id, forecast_date=forecast_date
+    )
 
 
 def ensembles_to_csv(
-    workspace: str, station_id: str, ensembles: pd.core.frame.DataFrame, stats: pd.core.frame.DataFrame
+    workspace: str,
+    station_id: str,
+    ensembles: pd.core.frame.DataFrame,
+    stats: pd.core.frame.DataFrame,
+    bias_corrected: bool = False,
 ):
-    """Writes the ensembles and stats from the given DataFrames to a file .csv file.
+    """Writes the ensembles and stats from the given DataFrames to a file .csv
+        file.
         Each ensemble and stat is written in its own column.
-        The name of each file is of the format: <station_id>_FLOW_cmd_geoglows.csv
+        The name of each file is of the format:
+            <station_id>_FLOW_cmd_geoglows.csv
 
     Args:
         workspace (str): The path to the directory to write the files out to.
         station_id (str): The id of the station that the data is from.
-        ensembles (pandas.core.frame.DataFrame): The DataFrame that holds the flow data.
-        stats (pandas.core.frame.DataFrame): The DataFrame that holds the stats data.
+        ensembles (pandas.core.frame.DataFrame): The DataFrame that holds the
+            flow data.
+        stats (pandas.core.frame.DataFrame): The DataFrame that holds the stats
+            data.
+        bias_corrected (bool): Whether or not the data is bias corrected.
     """
     # Get the path to the file that will be written
-    file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
+    if bias_corrected:
+        file_name = f"{station_id}_FLOW_cmd_geoglows_corrected.csv"
+    else:
+        file_name = f"{station_id}_FLOW_geoglows.csv"
+
     file_path = os.path.join(workspace, file_name)
 
     # Format DataFrames for LOONE
@@ -160,15 +227,17 @@ def ensembles_to_csv(
 
 
 def _format_ensembles_DataFrame(dataframe: pd.core.frame.DataFrame):
-    """Formats, modifies, and returns the given pandas DataFrame's data to a format that LOONE expects.
-       The given DataFrame should hold the ensembles retrieved from geoglows.
-       Meant to be used as a helper function in ensembles_to_csv().
+    """Formats, modifies, and returns the given pandas DataFrame's data to a
+        format that LOONE expects.
+        The given DataFrame should hold the ensembles retrieved from geoglows.
+        Meant to be used as a helper function in ensembles_to_csv().
 
     Args:
         dataframe (pandas.core.frame.DataFrame):
 
     Returns:
-        (pandas.core.frame.DataFrame): The resulting formatted/modified pandas DataFrame.
+        (pandas.core.frame.DataFrame): The resulting formatted/modified pandas
+            DataFrame.
     """
     # Remove high resolution columns (ensemble 52)
     if "ensemble_52_m^3/s" in dataframe.columns:
@@ -208,15 +277,17 @@ def _format_ensembles_DataFrame(dataframe: pd.core.frame.DataFrame):
 
 
 def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
-    """Formats, modifies, and returns the given pandas DataFrame's data to a format that LOONE expects.
-       The given DataFrame should hold the stats retrieved from geoglows.
-       Meant to be used as a helper function in ensembles_to_csv().
+    """Formats, modifies, and returns the given pandas DataFrame's data to a
+        format that LOONE expects.
+        The given DataFrame should hold the stats retrieved from geoglows.
+        Meant to be used as a helper function in ensembles_to_csv().
 
     Args:
         dataframe (pandas.core.frame.DataFrame):
 
     Returns:
-        (pandas.core.frame.DataFrame): The resulting formatted/modified pandas DataFrame.
+        (pandas.core.frame.DataFrame): The resulting formatted/modified pandas
+            DataFrame.
     """
     # Remove high resolution columns (ensemble 52, high_res_m^3/s)
     if "high_res_m^3/s" in dataframe.columns:
@@ -240,7 +311,9 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
 
     # 75th Percentile Column (Average)
     column_75percentile = dataframe[["flow_75%_m^3/s"]].copy()
-    column_75percentile = column_75percentile.groupby([column_75percentile.index]).mean()
+    column_75percentile = column_75percentile.groupby(
+        [column_75percentile.index]
+    ).mean()
 
     # Average Column (Weighted Average)
     column_average = dataframe[["flow_avg_m^3/s"]].copy()
@@ -249,7 +322,9 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
 
     # 25th Percentile Column (Average)
     column_25percentile = dataframe[["flow_25%_m^3/s"]].copy()
-    column_25percentile = column_25percentile.groupby([column_25percentile.index]).mean()
+    column_25percentile = column_25percentile.groupby(
+        [column_25percentile.index]
+    ).mean()
 
     # Min Column (Min)
     column_min = dataframe[["flow_min_m^3/s"]].copy()
@@ -257,18 +332,28 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
 
     # Convert values in each column from m^3/h to m^3/d
     column_max = column_max.transform(lambda x: x * HOURS_IN_DAY)
-    column_75percentile = column_75percentile.transform(lambda x: x * HOURS_IN_DAY)
+    column_75percentile = column_75percentile.transform(
+        lambda x: x * HOURS_IN_DAY
+    )
     column_average = column_average.transform(lambda x: x * HOURS_IN_DAY)
-    column_25percentile = column_25percentile.transform(lambda x: x * HOURS_IN_DAY)
+    column_25percentile = column_25percentile.transform(
+        lambda x: x * HOURS_IN_DAY
+    )
     column_min = column_min.transform(lambda x: x * HOURS_IN_DAY)
 
     # Append modified columns into one pandas DataFrame
     dataframe_result = pd.DataFrame()
     dataframe_result.index = dataframe.groupby([dataframe.index]).mean().index
     dataframe_result["flow_max_m^3/d"] = column_max["flow_max_m^3/s"].tolist()
-    dataframe_result["flow_75%_m^3/d"] = column_75percentile["flow_75%_m^3/s"].tolist()
-    dataframe_result["flow_avg_m^3/d"] = column_average["flow_avg_m^3/s"].tolist()
-    dataframe_result["flow_25%_m^3/d"] = column_25percentile["flow_25%_m^3/s"].tolist()
+    dataframe_result["flow_75%_m^3/d"] = column_75percentile[
+        "flow_75%_m^3/s"
+    ].tolist()
+    dataframe_result["flow_avg_m^3/d"] = column_average[
+        "flow_avg_m^3/s"
+    ].tolist()
+    dataframe_result["flow_25%_m^3/d"] = column_25percentile[
+        "flow_25%_m^3/s"
+    ].tolist()
     dataframe_result["flow_min_m^3/d"] = column_min["flow_min_m^3/s"].tolist()
 
     # Format datetimes to just dates
@@ -281,13 +366,25 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     return dataframe_result
 
 
-def main(workspace: str, station_ids: list[str] = STATION_IDS, forecast_date: str = FORECAST_DATE):
-    """Downloads the flow forecasts for the given station ids and writes them out as .csv files.
+def main(
+    workspace: str,
+    station_ids: list[str] = STATION_IDS,
+    forecast_date: str = FORECAST_DATE,
+    bias_corrected: bool = False,
+    observed_data_dir: str | None = None,
+):
+    """Downloads the flow forecasts for the given station ids and writes them
+        out as .csv files.
 
     Args:
         workspace (str): Where to write the .csv files to.
         station_ids (list[str]): The station ids to get the flow data for.
-        forecast_date (str): A string specifying the date to request in YYYYMMDD format.
+        forecast_date (str): A string specifying the date to request in
+            YYYYMMDD format.
+        bias_corrected (bool): Whether or not to use bias corrected data.
+            Default is False.
+        observed_data_dir (str): The path to the observed flow data directory
+            (only needed if bias_corrected is True).
     """
     # Local Variables
     reach_ids = {}
@@ -297,25 +394,63 @@ def main(workspace: str, station_ids: list[str] = STATION_IDS, forecast_date: st
 
     # Check for any download failures
     for station_id in station_ids:
-        if station_id not in station_locations.keys():
-            print(f"Error: The longitude and latitude could not be downloaded for station {station_id}")
+        if station_id in REACH_IDS.keys():
+            reach_ids[station_id] = REACH_IDS[station_id]
+        elif station_id not in station_locations.keys():
+            raise Exception(
+                "Error: The longitude and latitude could not be downloaded "
+                f"for station {station_id}"
+            )
 
     # Get station reach ids
-    for station_id in station_locations.keys():
-        location = station_locations[station_id]
-        try:
-            reach_ids[station_id] = get_reach_id(location[0], location[1])
-        except Exception as e:
-            print(f"Error: Failed to get reach id for station {station_id} ({str(e)})")
+    if station_id not in REACH_IDS.keys():
+        for station_id in station_locations.keys():
+            location = station_locations[station_id]
+            try:
+                reach_ids[station_id] = get_reach_id(location[0], location[1])
+            except Exception as e:
+                print(
+                    "Error: Failed to get reach id for station "
+                    f"{station_id} ({str(e)})"
+                )
 
     # Get the flow data for each station
     for station_id in reach_ids.keys():
         reach_id = reach_ids[station_id]
-        station_ensembles = get_flow_forecast_ensembles(reach_id, forecast_date)
+        station_ensembles = get_flow_forecast_ensembles(
+            reach_id, forecast_date
+        )
         station_stats = get_flow_forecast_stats(reach_id, forecast_date)
-        ensembles_to_csv(workspace, station_id, station_ensembles, station_stats)
+
+        if bias_corrected:
+            observed_data_list = glob.glob(
+                os.path.join(observed_data_dir, f"{station_id}*FLOW_cmd.csv")
+            )
+            if observed_data_list:
+                observed_data_path = observed_data_list[0]
+                station_ensembles, station_stats = get_bias_corrected_data(
+                    station_id,
+                    reach_id,
+                    observed_data_path,
+                    station_ensembles,
+                    station_stats,
+                )
+
+            ensembles_to_csv(
+                workspace,
+                station_id,
+                station_ensembles,
+                station_stats,
+                bias_corrected,
+            )
 
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")
-    main(workspace)
+    bias_corrected = sys.argv[2]
+    observed_data_path = sys.argv[3]
+    main(
+        workspace,
+        bias_corrected=bias_corrected,
+        observed_data_dir=observed_data_path,
+    )
