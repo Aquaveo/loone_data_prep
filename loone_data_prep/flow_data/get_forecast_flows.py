@@ -73,7 +73,7 @@ REACH_IDS = {
     "S79_S": 13082791,
     "S80_S": 13082718,
     "S40_S": 13082797,
-    "S49_S": 13082696
+    "S49_S": 13082696,
 }
 
 SECONDS_IN_HOUR = 3600
@@ -207,7 +207,7 @@ def ensembles_to_csv(
     if bias_corrected:
         file_name = f"{station_id}_FLOW_cmd_geoglows_corrected.csv"
     else:
-        file_name = f"{station_id}_FLOW_geoglows.csv"
+        file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
 
     file_path = os.path.join(workspace, file_name)
 
@@ -436,18 +436,18 @@ def main(
                     station_stats,
                 )
 
-            ensembles_to_csv(
-                workspace,
-                station_id,
-                station_ensembles,
-                station_stats,
-                bias_corrected,
-            )
+        ensembles_to_csv(
+            workspace,
+            station_id,
+            station_ensembles,
+            station_stats,
+            bias_corrected,
+        )
 
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")
-    bias_corrected = sys.argv[2]
+    bias_corrected = sys.argv[2].lower() in ["true", "yes", "y", "1"]
     observed_data_path = sys.argv[3]
     main(
         workspace,

@@ -3,6 +3,9 @@ import pandas as pd
 import geoglows
 
 
+SECONDS_IN_DAY = 86400
+
+
 def get_bias_corrected_data(
     station_id: str,
     reach_id: str,
@@ -15,11 +18,12 @@ def get_bias_corrected_data(
         index_col=0,
         usecols=["date", f"{station_id}_FLOW_cmd"],
     )
-    observed_data.rename(
-        columns={f"{station_id}_FLOW_cmd": "Streamflow (m3/s)"}, inplace=True
-    )
     observed_data.index = pd.to_datetime(observed_data.index).tz_localize(
         "UTC"
+    )
+    observed_data = observed_data.transform(lambda x: x / SECONDS_IN_DAY)
+    observed_data.rename(
+        columns={f"{station_id}_FLOW_cmd": "Streamflow (m3/s)"}, inplace=True
     )
     historical_data = geoglows.streamflow.historic_simulation(reach_id)
     station_ensembles = geoglows.bias.correct_forecast(
