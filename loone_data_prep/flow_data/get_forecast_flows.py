@@ -204,11 +204,7 @@ def ensembles_to_csv(
         bias_corrected (bool): Whether or not the data is bias corrected.
     """
     # Get the path to the file that will be written
-    if bias_corrected:
-        file_name = f"{station_id}_FLOW_cmd_geoglows_corrected.csv"
-    else:
-        file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
-
+    file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
     file_path = os.path.join(workspace, file_name)
 
     # Format DataFrames for LOONE
