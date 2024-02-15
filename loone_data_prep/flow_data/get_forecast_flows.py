@@ -80,9 +80,9 @@ SECONDS_IN_HOUR = 3600
 SECONDS_IN_DAY = 86400
 HOURS_IN_DAY = 24
 
-FORECAST_DATE = (
-    datetime.datetime.now() - datetime.timedelta(days=2)
-).strftime("%Y%m%d")
+FORECAST_DATE = (datetime.datetime.now()).strftime("%Y%m%d")
+
+GEOGLOWS_ENDPOINT = "https://geoglows.ecmwf.int/api/"
 
 
 def get_stations_latitude_longitude(station_ids: list[str]):
@@ -160,7 +160,7 @@ def get_flow_forecast_ensembles(reach_id: str, forecast_date: str):
         (pandas.core.frame.DataFrame): The 52 ensemble flow forecasts.
     """
     return geoglows.streamflow.forecast_ensembles(
-        reach_id=reach_id, forecast_date=forecast_date
+        reach_id=reach_id, forecast_date=forecast_date, endpoint=GEOGLOWS_ENDPOINT
     )
 
 
@@ -177,7 +177,7 @@ def get_flow_forecast_stats(reach_id: str, forecast_date: str):
         (pandas.core.frame.DataFrame): The forecast stats
     """
     return geoglows.streamflow.forecast_stats(
-        reach_id=reach_id, forecast_date=forecast_date
+        reach_id=reach_id, forecast_date=forecast_date, endpoint=GEOGLOWS_ENDPOINT
     )
 
 

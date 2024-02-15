@@ -14,7 +14,7 @@ from loone_data_prep.data_analyses_fns import DF_Date_Range
 from loone_data_prep.utils import stg2sto, stg2ar
 import datetime
 
-START_DATE = datetime.datetime.now() - datetime.timedelta(days=2)
+START_DATE = datetime.datetime.now()
 END_DATE = START_DATE + datetime.timedelta(days=15)
 
 M3_Yr = 2008
@@ -154,7 +154,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     historical_date = pd.date_range(start=f"{M3_M}/{M3_D}/{M3_Yr}", end=f"{En_M}/{En_D}/{En_Yr}", freq="D")
 
     # Create Flow Dataframe
-    Flow_df = pd.read_csv(f'{output_dir}/Flow_df_3MLag.csv')
+    # Flow_df = pd.read_csv(f'{output_dir}/Flow_df_3MLag.csv')
     # Flow_df = pd.DataFrame(historical_date, columns=["date"])
     # for i in range(len(Q_names)):
     #     x = DF_Date_Range(Q_list[Q_names[i]], M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
@@ -165,6 +165,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     #         Flow_df = pd.merge(Flow_df, x[["date", Q_names[i]]], on="date", how="left")
 
     geoglows_flow_df = pd.DataFrame(date, columns=["date"])
+
     for i in range(len(Q_names)):
         x = DF_Date_Range(Q_list[Q_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
         for column_name in x.columns:
@@ -247,7 +248,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Create File (LO_External_Loadings_3MLag)
     TP_Loads_In_3MLag = DF_Date_Range(TP_Loads_In, st_year, st_month, st_day, end_year, end_month, end_day)
     TP_Loads_In_3MLag_df = pd.DataFrame(TP_Loads_In_3MLag["date"], columns=["date"])
-    TP_Loads_In_3MLag_df["External_Loads"] = TP_Loads_In_3MLag["External_P_Ld_mg"]
+    TP_Loads_In_3MLag_df["TP_Loads_In_mg"] = TP_Loads_In_3MLag["External_P_Ld_mg"]
+    TP_Loads_In_3MLag_df["Atm_Loading_mg"] = [95890410.96] * len(TP_Loads_In_3MLag_df)
 
     # Create File (LO_Inflows_BK)
     LO_Inflows_BK = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
@@ -570,7 +572,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag.csv", index=False)
     # TP External Loads 3 Months Lag (mg)
-    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag.csv", index=False)
+    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False)
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
     geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
     # Inflows (cmd)
@@ -578,7 +580,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Outflows (cmd)
     Outflows_consd.to_csv(f"{output_dir}/Outflows_consd.csv", index=False)
     # NetFlows (cmd)
-    # Netflows.to_csv(f"{output_dir}/Netflows_acft.csv", index=False)
+    #Netflows.to_csv(f"{output_dir}/Netflows_acft.csv", index=False)
     # # Total flows to WCAs (acft)
     TotalQWCA.to_csv(f"{output_dir}/TotalQWCA_Obs.csv", index=False)
     # INDUST Outflows (cmd)

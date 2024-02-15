@@ -344,7 +344,7 @@ def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
         data_interpolations(workspace, param, values["units"], values["station_ids"])
 
 
-def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = "nu_20082023.csv"):
+def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = "nu.csv"):
     # Read Mean H2O_T in LO
     LO_Temp = pd.read_csv(os.path.join(workspace, in_file_name))
     LO_T = LO_Temp["Water_T"]
@@ -377,17 +377,18 @@ def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 
 
 
 def wind_induced_waves(
-    workspace: str,
+    input_dir: str,
+    output_dir: str,
     wind_speed_in: str = "LOWS.csv",
     lo_stage_in: str = "LO_Stg_Sto_SA_2008-2023.csv",
     wind_shear_stress_out: str = "WindShearStress.csv",
     current_shear_stress_out: str = "Current_ShearStress.csv",
 ):
     # Read Mean Wind Speed in LO
-    LO_WS = pd.read_csv(os.path.join(f"{workspace}/", wind_speed_in))
+    LO_WS = pd.read_csv(os.path.join(f"{input_dir}/", wind_speed_in))
     LO_WS["WS_mps"] = LO_WS["LO_Avg_WS_MPH"] * 0.44704  # MPH to m/s
     # Read LO Stage to consider water depth changes
-    LO_Stage = pd.read_csv(os.path.join(f"{workspace}/", lo_stage_in))
+    LO_Stage = pd.read_csv(os.path.join(f"{input_dir}/", lo_stage_in))
     LO_Stage["Stage_m"] = LO_Stage["Stage_ft"] * 0.3048
     Bottom_Elev = 0.5  # m (Karl E. Havens • Alan D. Steinman 2013)
     LO_Wd = LO_Stage["Stage_m"] - Bottom_Elev
@@ -446,7 +447,7 @@ def wind_induced_waves(
 
     Wind_ShearStress = pd.DataFrame(LO_WS["date"], columns=["date"])
     Wind_ShearStress["ShearStress"] = W_ShearStress * 10  # Convert N/m2 to Dyne/cm2
-    Wind_ShearStress.to_csv(os.path.join(workspace, wind_shear_stress_out), index=False)
+    Wind_ShearStress.to_csv(os.path.join(output_dir, wind_shear_stress_out), index=False)
 
     # # Monthly
     # Wind_ShearStress['Date'] = pd.to_datetime(Wind_ShearStress['Date'])
@@ -541,7 +542,7 @@ def wind_induced_waves(
     for i in range(n):
         current_stress_3[i] = Current_bottom_shear_stress_3(0.05, 0.41, nu, ks, LO_Wd[i], ru)
     Current_ShearStress_df["Current_Stress_3"] = current_stress_3 * 10  # Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df.to_csv(os.path.join(workspace, current_shear_stress_out), index=False)
+    Current_ShearStress_df.to_csv(os.path.join(output_dir, current_shear_stress_out), index=False)
 
 
 def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
@@ -583,15 +584,20 @@ def get_pi(workspace: str) -> None:
 
 
 def nutrient_prediction(
-    workspace: str, station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS, constants: dict = DEFAULT_EXPFUNC_CONSTANTS
+    input_dir: str, output_dir: str, station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS, constants: dict = DEFAULT_EXPFUNC_CONSTANTS
 ) -> None:
     for station in station_ids:
         print(f"Predicting nutrient loads for station: {station}.")
         # Construct paths for flow file
-        flow_file_path = os.path.join(workspace, f"{station}_FLOW_cmd_geoglows.csv")
+        flow_file_path = ''
+        flow_file_path_exists = True
+        try:
+            flow_file_path = glob(os.path.join(input_dir, f"{station}*_FLOW_cmd_geoglows.csv"))[0]
+        except Exception as e:
+            flow_file_path_exists = False
 
         # Check if data file exists
-        if os.path.exists(flow_file_path):
+        if flow_file_path_exists and os.path.exists(flow_file_path):
             # If it exists, read in the data
             flow = pd.read_csv(flow_file_path)
         else:
@@ -633,9 +639,25 @@ def nutrient_prediction(
 
         # Concat individual ensemble columns together into one pandas DataFrame
         out_dataframe = pd.concat(objs=prediction_columns, axis="columns")
+        
+        column_mean = out_dataframe.mean(axis='columns')
+        column_percentile_25 = out_dataframe.quantile(q=0.25, axis='columns')
+        column_percentile_75 = out_dataframe.quantile(q=0.75, axis='columns')
+        column_median = out_dataframe.median(axis='columns')
+        column_std = out_dataframe.std(axis='columns')
+        
+        out_dataframe['mean'] = column_mean
+        out_dataframe['percentile_25'] = column_percentile_25
+        out_dataframe['percentile_75'] = column_percentile_75
+        out_dataframe['median'] = column_median
+        out_dataframe['standard_deviation'] = column_std
 
         # Save the predicted TP loads to a CSV file
-        out_dataframe.to_csv(os.path.join(workspace, f"{station}_PHOSPHATE_predicted.csv"))
+        out_dataframe.to_csv(os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv"))
+        
+        # Save the predicted TP loads to a CSV file (in input_dir)
+        # Output is needed in input_dir by GEOGLOWS_LOONE_DATA_PREP.py and in output_dir for graph visualization in the app
+        out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
 
 
 if __name__ == "__main__":
@@ -652,8 +674,8 @@ if __name__ == "__main__":
     elif sys.argv[1] == "kinematic_viscosity":
         kinematic_viscosity(sys.argv[2].rstrip("/"), *sys.argv[3:])
     elif sys.argv[1] == "wind_induced_waves":
-        wind_induced_waves(sys.argv[2].rstrip("/"), *sys.argv[3:])
+        wind_induced_waves(sys.argv[2].rstrip("/"), sys.argv[3].rstrip("/"), *sys.argv[4:])
     elif sys.argv[1] == "get_pi":
         get_pi(sys.argv[2].rstrip("/"))
     elif sys.argv[1] == "nutrient_prediction":
-        nutrient_prediction(sys.argv[2].rstrip("/"))
+        nutrient_prediction(sys.argv[2].rstrip("/"), sys.argv[3].rstrip("/"))
