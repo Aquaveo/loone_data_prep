@@ -419,10 +419,10 @@ def main(input_dir: str, output_dir: str) -> None:
     Stg_3A28 = DF_Date_Range(Stg_3A28, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
     WCA_Stg = pd.DataFrame(Stg_3A28['date'], columns=['date'])
     WCA_Stg['3A-NW'] = Stg_3ANW['3A-NW_STG_ft NGVD29'].values
-    WCA_Stg['2A-17'] = Stg_2A17['2-17_GAGHT_feet'].values
-    WCA_Stg['3A-3'] = Stg_3A3['3-63_GAGHT_feet'].values
-    WCA_Stg['3A-4'] = Stg_3A4['3-64_GAGHT_feet'].values
-    WCA_Stg['3A-28'] = Stg_3A28['3-65_GAGHT_feet'].values
+    WCA_Stg['2A-17'] = Stg_2A17.iloc[:, -1].values
+    WCA_Stg['3A-3'] = Stg_3A3.iloc[:, -1].values
+    WCA_Stg['3A-4'] = Stg_3A4.iloc[:, -1].values
+    WCA_Stg['3A-28'] = Stg_3A28.iloc[:, -1].values
     WCA_Stg.to_csv(f'{output_dir}/WCA_Stages_Inputs.csv', index=False)
 
     # Predict Water Temp Function of Air Temp
