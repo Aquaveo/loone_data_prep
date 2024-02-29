@@ -602,6 +602,7 @@ def nutrient_prediction(
             flow = pd.read_csv(flow_file_path)
         else:
             # If it doesn't exist, skip to the next iteration of the loop
+            print(f'Skipping nutrient prediction for station: {station}. Flow file does not exist.')
             continue
 
         # Create structures to hold resulting data
