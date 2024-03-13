@@ -186,7 +186,6 @@ def ensembles_to_csv(
     station_id: str,
     ensembles: pd.core.frame.DataFrame,
     stats: pd.core.frame.DataFrame,
-    bias_corrected: bool = False,
 ):
     """Writes the ensembles and stats from the given DataFrames to a file .csv
         file.
@@ -201,7 +200,6 @@ def ensembles_to_csv(
             flow data.
         stats (pandas.core.frame.DataFrame): The DataFrame that holds the stats
             data.
-        bias_corrected (bool): Whether or not the data is bias corrected.
     """
     # Get the path to the file that will be written
     file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
@@ -437,7 +435,6 @@ def main(
             station_id,
             station_ensembles,
             station_stats,
-            bias_corrected,
         )
 
 

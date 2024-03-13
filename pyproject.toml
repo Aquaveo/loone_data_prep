@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loone_data_prep"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
     "rpy2",
     "retry",
     "pandas",
     "scipy",
-    "geoglows",
+    "geoglows>=0.27.1",
 ]
