@@ -5,6 +5,13 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "loone_data_prep"
 version = "0.1.3"
+description = "Prepare data to run the LOONE model."
+long_description_content_type = "text/markdown"
+authors = [
+    { name = "Michael Souffront", email = "msouffront@aquaveo.com" },
+    { name = "James Dolinar", email = "jdolinar@aquaveo.com" },
+    { name = "Osama Tarabih", email = "osamatarabih@usf.edu" },
+]
 dependencies = ["rpy2", "retry", "pandas", "scipy", "geoglows>=0.27.1"]
 
 [tool.setuptools]
