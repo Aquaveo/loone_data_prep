@@ -12,6 +12,3 @@ authors = [
     { name = "Osama Tarabih", email = "osamatarabih@usf.edu" },
 ]
 dependencies = ["rpy2", "retry", "pandas", "scipy", "geoglows>=0.27.1"]
-
-[tool.setuptools]
-readme = "README.md"
