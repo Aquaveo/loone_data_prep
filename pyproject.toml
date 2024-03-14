@@ -6,3 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "loone_data_prep"
 version = "0.1.3"
 dependencies = ["rpy2", "retry", "pandas", "scipy", "geoglows>=0.27.1"]
+
+[tool.setuptools]
+readme = "README.md"
