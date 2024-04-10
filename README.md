@@ -3,7 +3,8 @@ LOONE_DATA_PREP
 
 Prepare data for the LOONE water quality model.
 
-Link to LOONE model repository: [https://github.com/osamatarabih/LOONE](https://github.com/osamatarabih/LOONE)
+Line to the LOONE model: [https://pypi.org/project/loone](https://pypi.org/project/loone)
+Link to LOONE model repository: [https://github.com/Aquaveo/LOONE](https://github.com/Aquaveo/LOONE)
 
 ## Prerequisites:
 
@@ -13,8 +14,14 @@ Link to LOONE model repository: [https://github.com/osamatarabih/LOONE](https://
 ## Installation:
 
 ```bash
-cd /path/to/loone_data_prep/
-pip install .
+pip install loone_data_prep
+```
+
+### Development Installation:
+
+```bash
+cd /path/to/loone_data_prep/repo
+pip install -e .
 ```
 
 ### Examples

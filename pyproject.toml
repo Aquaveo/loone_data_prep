@@ -4,12 +4,15 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loone_data_prep"
-version = "0.1.4"
+version = "0.1.5"
 description = "Prepare data to run the LOONE model."
 readme = "README.md"
+license = { file = "LICENSE" }
 authors = [
-    { name = "Michael Souffront", email = "msouffront@aquaveo.com" },
-    { name = "James Dolinar", email = "jdolinar@aquaveo.com" },
     { name = "Osama Tarabih", email = "osamatarabih@usf.edu" },
 ]
-dependencies = ["rpy2", "retry", "pandas", "scipy", "geoglows>=0.27.1"]
+maintainers = [
+    { name = "Michael Souffront", email = "msouffront@aquaveo.com" },
+    { name = "James Dolinar", email = "jdolinar@aquaveo.com" },
+]
+dependencies = ["rpy2", "retry", "pandas", "scipy", "geoglows==0.27.1"]
