@@ -1,4 +1,5 @@
 import sys
+import os
 import pandas as pd
 import geoglows
 
@@ -12,6 +13,7 @@ def get_bias_corrected_data(
     observed_data_path: str,
     station_ensembles: pd.DataFrame,
     station_stats: pd.DataFrame,
+    cache_path: str = None,
 ) -> dict:
     # Load the observed data from a CSV file
     observed_data = pd.read_csv(
@@ -34,7 +36,23 @@ def get_bias_corrected_data(
     prepared_od = prep_observed_data(observed_data)
 
     # Get the historical simulation data for the given reach ID
-    historical_data = geoglows.streamflow.historic_simulation(reach_id)
+    historical_data = None
+    
+    if cache_path is None:
+        historical_data = geoglows.streamflow.historic_simulation(reach_id)
+    else:
+        # Create the geoglows cache directory if it doesn't exist
+        geoglows_cache_path = os.path.join(cache_path, 'geoglows_cache')
+        if not os.path.exists(geoglows_cache_path):
+            os.makedirs(geoglows_cache_path)
+        
+        # Check if the historical simulation data is already cached
+        if os.path.exists(os.path.join(geoglows_cache_path, f'{reach_id}_historic_simulation.csv')):
+            historical_data = pd.read_csv(os.path.join(geoglows_cache_path, f'{reach_id}_historic_simulation.csv'), index_col=0)
+            historical_data.index = pd.to_datetime(historical_data.index)
+        else:
+            historical_data = geoglows.streamflow.historic_simulation(reach_id)
+            historical_data.to_csv(os.path.join(geoglows_cache_path, f'{reach_id}_historic_simulation.csv'))
 
     # Correct the forecast bias in the station ensembles
     station_ensembles = geoglows.bias.correct_forecast(

@@ -366,6 +366,7 @@ def main(
     forecast_date: str = FORECAST_DATE,
     bias_corrected: bool = False,
     observed_data_dir: str | None = None,
+    cache_path: str | None = None,
 ):
     """Downloads the flow forecasts for the given station ids and writes them
         out as .csv files.
@@ -379,6 +380,8 @@ def main(
             Default is False.
         observed_data_dir (str): The path to the observed flow data directory
             (only needed if bias_corrected is True).
+        cache_path (str): The path to the cache directory for geoglows data. 
+            Should hold a directory named geoglows_cache that holds the cached files. Use None to not use a cache.
     """
     # Local Variables
     reach_ids = {}
@@ -428,6 +431,7 @@ def main(
                     observed_data_path,
                     station_ensembles,
                     station_stats,
+                    cache_path,
                 )
 
         ensembles_to_csv(
