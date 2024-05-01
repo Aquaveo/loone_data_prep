@@ -4,6 +4,7 @@ import datetime
 import math
 from glob import glob
 from calendar import monthrange
+import traceback
 import numpy as np
 import pandas as pd
 from retry import retry
@@ -635,8 +636,9 @@ def nutrient_prediction(
                 predicted_column.columns = [column_name]
 
                 prediction_columns.append(predicted_column)
-            except RuntimeWarning:
-                breakpoint()
+            except RuntimeWarning as e:
+                print(f"Unexpected RuntimeWarning: {str(e)}")
+                traceback.print_exc()
 
         # Concat individual ensemble columns together into one pandas DataFrame
         out_dataframe = pd.concat(objs=prediction_columns, axis="columns")
