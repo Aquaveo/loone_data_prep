@@ -3,6 +3,7 @@ from datetime import datetime
 from retry import retry
 from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
+import pandas as pd
 
 
 DEFAULT_DBKEYS = ["16021", "12515", "12524", "13081"]
@@ -20,6 +21,33 @@ def get(
 ) -> None:
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
 
+    data_type = param
+    data_units_file = None
+    data_units_header = None
+    
+    # Get the units for the file name and column header based on the type of data
+    if data_type == "RAIN":
+        data_units_file = "Inches"
+        data_units_header = "Inches"
+    elif data_type == "ETPI":
+        data_units_file = "Inches"
+        data_units_header = "Inches"
+    elif data_type == "H2OT":
+        data_units_file = "Degrees Celsius"
+        data_units_header = "Degrees Celsius"
+    elif data_type == "RADP":
+        data_units_file = ""
+        data_units_header = "MICROMOLE/m^2/s"
+    elif data_type == "RADT":
+        data_units_file = ""
+        data_units_header = "kW/m^2"
+    elif data_type == "AIRT":
+        data_units_file = "Degrees Celsius"
+        data_units_header = "Degrees Celsius"
+    elif data_type == "WNDS":
+        data_units_file = "MPH"
+        data_units_header = "MPH"
+        
     r(
         f"""
         library(dbhydroR)
@@ -29,17 +57,36 @@ def get(
 
         for (i in dbkeys) {{
             # Retrieve data for the dbkey
-            data <- get_hydro(dbkey = i, date_min = "{date_min}", date_max = "{date_max}")
-
-            # Extract the column names excluding the date column
-            column_names <- names(data)[-1]
-
-            # Generate the filename based on the column names
-            if ("{param}" %in% c("RADP", "RADT")) {{
-                filename <- paste0("{workspace}/", gsub(" ", "_", sub("_[^_]*$", "", paste(column_names, collapse = "_"))), ".csv")
-            }} else {{
-                filename <- paste0("{workspace}/", paste(column_names, collapse = "_"), ".csv")
+            data <- get_hydro(dbkey = i, date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+            
+            # Give data.frame correct column names so it can be cleaned using the clean_hydro function
+            column_names <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
+            colnames(data) <- column_names
+            
+            # Get the station
+            station <- data$station[1]
+            
+            # Add a type and units column to data so it can be cleaned using the clean_hydro function
+            data$type <- "{data_type}"
+            data$units <- "{data_units_header}"
+            
+            # Clean the data.frame
+            data <- clean_hydro(data)
+            
+            # Get the filename of the output file
+            filename <- ""
+            
+            if ("{param}" %in% c("RADP", "RADT")) 
+            {{
+                filename <- paste(station, "{data_type}", sep = "_")
             }}
+            else
+            {{
+                filename <- paste(station, "{data_type}", "{data_units_file}", sep = "_")
+            }}
+            
+            filename <- paste0(filename, ".csv")
+            filename <- paste0("{workspace}/", filename)
 
             # Save data to a CSV file
             write.csv(data, file = filename)
@@ -53,6 +100,14 @@ def get(
         """  # noqa: E501
     )
 
+    # Format files to expected layout
+    for station in ["L001", "L005", "L006", "LZ40"]:
+        _reformat_weather_file(workspace, station, data_type, data_units_file, data_units_header)
+        
+        # Print a message indicating the file has been saved
+        print(f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted.")
+
+    # Merge the data files for the different stations (LAKE_RAINFALL_DATA.csv)
     if param == "RAIN":
         r(
             f"""
@@ -79,6 +134,7 @@ def get(
             """  # noqa: E501
         )
 
+    # Merge the data files for the different stations (LOONE_AVERAGE_ETPI_DATA.csv)
     if param == "ETPI":
         r(
             f"""
@@ -105,6 +161,48 @@ def get(
             write.csv(merged_data, "{workspace}/LOONE_AVERAGE_ETPI_DATA.csv", row.names = TRUE)
             """  # noqa: E501
         )
+
+
+def _reformat_weather_file(workspace: str, station: str, data_type: str, data_units_file: str, data_units_header: str) -> None:
+    '''
+    Reformats the dbhydro weather file to the layout expected by the rest of the LOONE scripts.
+    This function reads in and writes out a .csv file.
+    
+    Args:
+        workspace (str): The path to the workspace directory.
+        station (str): The station name. Ex: L001, L005, L006, LZ40.
+        data_type (str): The type of data. Ex: RAIN, ETPI, H2OT, RADP, RADT, AIRT, WNDS.
+        data_units_file (str): The units for the file name. Ex: Inches, Degrees Celsius, etc.
+        data_units_header (str): The units for the column header. Ex: Inches, Degrees Celsius, etc. Can differ from data_units_file when data_type is either RADP or RADT.
+        
+    Returns:
+        None
+    '''
+    # Read in the data
+    df = None
+    if data_type in ['RADP', 'RADT']:
+        df = pd.read_csv(f"{workspace}/{station}_{data_type}.csv")
+    else:
+        df = pd.read_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
+    
+    # Remove unneeded column columns
+    df.drop(f' _{data_type}_{data_units_header}', axis=1, inplace=True)
+    df.drop('Unnamed: 0', axis=1, inplace=True)
+    
+    # Convert date column to datetime
+    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
+    
+    # Sort the data by date
+    df.sort_values('date', inplace=True)
+    
+    # Renumber the index
+    df.reset_index(drop=True, inplace=True)
+    
+    # Write the updated data back to the file
+    if data_type in ['RADP', 'RADT']:
+        df.to_csv(f"{workspace}/{station}_{data_type}.csv")
+    else:
+        df.to_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
 
 
 if __name__ == "__main__":
