@@ -3,7 +3,7 @@ from datetime import datetime
 from retry import retry
 from rpy2.robjects import r
 from rpy2.rinterface_lib.embedded import RRuntimeError
-
+import pandas as pd
 
 DEFAULT_DBKEYS = ["16022", "12509", "12519", "16265", "15611"]
 DATE_NOW = datetime.now().strftime("%Y-%m-%d")
@@ -18,18 +18,66 @@ def get(
     date_max: str = DATE_NOW,
     **kwargs: str | list
 ) -> None:
+    # Get the type and units for the station
+    data_type = "STG"
+    units = "ft NGVD29"
+    
+    if name in ["Stg_3A3", "Stg_2A17", "Stg_3A4", "Stg_3A28"]:
+        data_type = "GAGHT"
+        units = "feet"
+    
     dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
     r(
         f"""
         # Load the required libraries
         library(rio)
         library(dbhydroR)
-        #Stage Data
-        {name} = get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}")
+        library(dplyr)
+        
+        # Stage Data
+        {name} = get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+        
+        # Give data.frame correct column names so it can be cleaned using the clean_hydro function
+        colnames({name}) <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
+        
+        # Get the station
+        station <- {name}$station[1]
+        
+        # Add a type and units column to data so it can be cleaned using the clean_hydro function
+        {name}$type <- "{data_type}"
+        {name}$units <- "{units}"
+        
+        # Clean the data.frame
+        {name} <- clean_hydro({name})
+        
+        # Drop the " _STG_ft NGVD29" column
+        {name} <- {name} %>% select(-` _{data_type}_{units}`)
+        
+        # Write the data to a csv file
         write.csv({name},file ='{workspace}/{name}.csv')
         """
     )
+    
+    _reformat_water_level_file(workspace, name)
 
+def _reformat_water_level_file(workspace: str, name: str):
+    # Read in the data
+    df = pd.read_csv(f"{workspace}/{name}.csv")
+    
+    # Drop the "Unnamed: 0" column
+    df.drop(columns=['Unnamed: 0'], inplace=True)
+    
+    # Convert date column to datetime
+    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
+    
+    # Sort the data by date
+    df.sort_values('date', inplace=True)
+    
+    # Renumber the index
+    df.reset_index(drop=True, inplace=True)
+    
+    # Write the updated data back to the file
+    df.to_csv(f"{workspace}/{name}.csv")
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]
