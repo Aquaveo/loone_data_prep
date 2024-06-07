@@ -4,12 +4,12 @@ from loone_data_prep.water_level_data import hydro
 
 
 D = {
-    "LO_Stage": {"dbkeys": ["16022", "12509", "12519", "16265", "15611"]},
-    "Stg_3ANW": {"dbkeys": ["LA369"], "date_min": "1972-01-01", "date_max": "2023-04-30"},
-    "Stg_2A17": {"dbkeys": ["16531"], "date_min": "1972-01-01", "date_max": "2023-04-30"},
-    "Stg_3A3": {"dbkeys": ["16532"], "date_min": "1972-01-01", "date_max": "2023-04-30"},
-    "Stg_3A4": {"dbkeys": ["16537"], "date_min": "1972-01-01", "date_max": "2023-04-30"},
-    "Stg_3A28": {"dbkeys": ["16538"], "date_min": "1972-01-01", "date_max": "2023-04-30"}
+    "LO_Stage": {"dbkeys": ["16022", "12509", "12519", "16265", "15611"], "datum": "NGVD29"},
+    "Stg_3ANW": {"dbkeys": ["LA369"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
+    "Stg_2A17": {"dbkeys": ["16531"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
+    "Stg_3A3": {"dbkeys": ["16532"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
+    "Stg_3A4": {"dbkeys": ["16537"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
+    "Stg_3A28": {"dbkeys": ["16538"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"}
 }
 
 
