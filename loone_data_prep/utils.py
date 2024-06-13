@@ -218,6 +218,7 @@ def get_dbkeys(
 
         station_ids <- c({station_ids_str})
         dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}", stat = "{stat}", recorder="{recorder}", freq = "{freq}", detail.level = "{detail_level}")
+        print(dbkeys)
         return(dbkeys)
         """  # noqa: E501
     )
