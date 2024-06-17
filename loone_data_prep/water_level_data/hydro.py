@@ -16,6 +16,7 @@ def get(
     dbkeys: list = DEFAULT_DBKEYS,
     date_min: str = "1950-01-01",
     date_max: str = DATE_NOW,
+    datum: str = "",
     **kwargs: str | list
 ) -> None:
     # Get the type and units for the station
@@ -35,7 +36,15 @@ def get(
         library(dplyr)
         
         # Stage Data
-        {name} = get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+        if ("{datum}" == "")
+        {{
+            {name} <- get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+        }}
+        
+        if (nchar("{datum}") > 0)
+        {{
+            {name} <- get_hydro(dbkey = c({dbkeys_str}), date_min = "{date_min}", date_max = "{date_max}", raw = TRUE, datum = "{datum}")
+        }}
         
         # Give data.frame correct column names so it can be cleaned using the clean_hydro function
         colnames({name}) <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
@@ -75,6 +84,9 @@ def _reformat_water_level_file(workspace: str, name: str):
     
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
+    
+    # Drop rows that are missing all their values
+    df.dropna(how='all', inplace=True)
     
     # Write the updated data back to the file
     df.to_csv(f"{workspace}/{name}.csv")

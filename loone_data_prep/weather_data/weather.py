@@ -198,6 +198,9 @@ def _reformat_weather_file(workspace: str, station: str, data_type: str, data_un
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
     
+    # Drop rows that are missing all their values
+    df.dropna(how='all', inplace=True)
+    
     # Write the updated data back to the file
     if data_type in ['RADP', 'RADT']:
         df.to_csv(f"{workspace}/{station}_{data_type}.csv")

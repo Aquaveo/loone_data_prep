@@ -52,6 +52,9 @@ def _reformat_s65e_total_file(workspace: str):
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
     
+    # Drop rows that are missing all their values
+    df.dropna(how='all', inplace=True)
+    
     # Write the updated data back to the file
     df.to_csv(f"{workspace}/S65E_total.csv")
 
