@@ -26,89 +26,107 @@ def get(
     data_units_header = None
     
     # Get the units for the file name and column header based on the type of data
-    if data_type == "RAIN":
-        data_units_file = "Inches"
-        data_units_header = "Inches"
-    elif data_type == "ETPI":
-        data_units_file = "Inches"
-        data_units_header = "Inches"
-    elif data_type == "H2OT":
-        data_units_file = "Degrees Celsius"
-        data_units_header = "Degrees Celsius"
-    elif data_type == "RADP":
-        data_units_file = ""
-        data_units_header = "MICROMOLE/m^2/s"
-    elif data_type == "RADT":
-        data_units_file = ""
-        data_units_header = "kW/m^2"
-    elif data_type == "AIRT":
-        data_units_file = "Degrees Celsius"
-        data_units_header = "Degrees Celsius"
-    elif data_type == "WNDS":
-        data_units_file = "MPH"
-        data_units_header = "MPH"
-        
-    r(
-        f"""
-        library(dbhydroR)
-        library(dplyr)
+    data_units_file, data_units_header = _get_file_header_data_units(data_type)
+    
+    r_str = f"""
+        download_weather_data <- function()#workspace, dbkeys, date_min, date_max, data_type, data_units_file, data_units_header)
+        {{
+            library(dbhydroR)
+            library(dplyr)
 
-        dbkeys <- c({dbkeys_str})
-
-        for (i in dbkeys) {{
-            # Retrieve data for the dbkey
-            data <- get_hydro(dbkey = i, date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+            dbkeys <- c({dbkeys_str})
+            successful_stations <- list()
             
-            # Give data.frame correct column names so it can be cleaned using the clean_hydro function
-            column_names <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
-            colnames(data) <- column_names
-            
-            # Get the station
-            station <- data$station[1]
-            
-            # Add a type and units column to data so it can be cleaned using the clean_hydro function
-            data$type <- "{data_type}"
-            data$units <- "{data_units_header}"
-            
-            # Clean the data.frame
-            data <- clean_hydro(data)
-            
-            # Get the filename of the output file
-            filename <- ""
-            
-            if ("{param}" %in% c("RADP", "RADT")) 
+            for (i in dbkeys) 
             {{
-                filename <- paste(station, "{data_type}", sep = "_")
-            }}
-            else
-            {{
-                filename <- paste(station, "{data_type}", "{data_units_file}", sep = "_")
+                # Retrieve data for the dbkey
+                data <- get_hydro(dbkey = i, date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
+                
+                # Give data.frame correct column names so it can be cleaned using the clean_hydro function
+                column_names <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
+                colnames(data) <- column_names
+                
+                # Check if the data.frame has any rows
+                if (nrow(data) > 0) 
+                {{
+                    # Get the station
+                    station <- data$station[1]
+                    
+                    # Add a type and units column to data so it can be cleaned using the clean_hydro function
+                    data$type <- "{data_type}"
+                    data$units <- "{data_units_header}"
+                    
+                    # Clean the data.frame
+                    data <- clean_hydro(data)
+                    
+                    # Get the filename of the output file
+                    filename <- ""
+                    
+                    if ("{param}" %in% c("RADP", "RADT")) 
+                    {{
+                        filename <- paste(station, "{data_type}", sep = "_")
+                    }}
+                    else
+                    {{
+                        filename <- paste(station, "{data_type}", "{data_units_file}", sep = "_")
+                    }}
+                    
+                    filename <- paste0(filename, ".csv")
+                    filename <- paste0("{workspace}/", filename)
+
+                    # Save data to a CSV file
+                    write.csv(data, file = filename)
+
+                    # Print a message indicating the file has been saved
+                    cat("CSV file", filename, "has been saved.\n")
+
+                    # Append the station to the list of successful stations
+                    successful_stations <- c(successful_stations, station)
+                }}
+                else
+                {{
+                    # No data given back, It's possible that the dbkey has reached its end date.
+                    print(paste("Empty data.frame returned for dbkey", i, "It's possible that the dbkey has reached its end date. Skipping to the next dbkey."))
+                }}
+
+                # Add a delay between requests
+                Sys.sleep(2) # Wait for 2 seconds before the next iteration
             }}
             
-            filename <- paste0(filename, ".csv")
-            filename <- paste0("{workspace}/", filename)
-
-            # Save data to a CSV file
-            write.csv(data, file = filename)
-
-            # Print a message indicating the file has been saved
-            cat("CSV file", filename, "has been saved.\n")
-
-            # Add a delay between requests
-            Sys.sleep(2) # Wait for 2 seconds before the next iteration
+            # Return the station and dbkey to the python code
+            return(successful_stations)
         }}
         """  # noqa: E501
-    )
-
+    
+    # Download the weather data
+    r(r_str)
+    result = r.download_weather_data()
+    
+    # Get the stations of the dbkeys who's data were successfully downloaded
+    stations = []
+    for value in result:
+        stations.append(value[0])
+    
     # Format files to expected layout
-    for station in ["L001", "L005", "L006", "LZ40"]:
-        _reformat_weather_file(workspace, station, data_type, data_units_file, data_units_header)
-        
-        # Print a message indicating the file has been saved
-        print(f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted.")
+    for station in stations:
+        if station in ["L001", "L005", "L006", "LZ40"]:
+            _reformat_weather_file(workspace, station, data_type, data_units_file, data_units_header)
+            
+            # Print a message indicating the file has been saved
+            print(f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted.")
 
+
+def merge_data(workspace: str, data_type: str):
+    """
+    Merge the data files for the different stations to create either the LAKE_RAINFALL_DATA.csv or LOONE_AVERAGE_ETPI_DATA.csv file.
+    
+    Args:
+        workspace (str): The path to the workspace directory.
+        data_type (str): The type of data. Either 'RAIN' for LAKE_RAINFALL_DATA.csv or 'ETPI' for LOONE_AVERAGE_ETPI_DATA.csv.
+    """
+    
     # Merge the data files for the different stations (LAKE_RAINFALL_DATA.csv)
-    if param == "RAIN":
+    if data_type == "RAIN":
         r(
             f"""
             L001_RAIN_Inches <- read.csv("{workspace}/L001_RAIN_Inches.csv", colClasses = c("NULL", "character", "numeric"))
@@ -135,7 +153,7 @@ def get(
         )
 
     # Merge the data files for the different stations (LOONE_AVERAGE_ETPI_DATA.csv)
-    if param == "ETPI":
+    if data_type == "ETPI":
         r(
             f"""
             L001_ETPI_Inches <- read.csv("{workspace}/L001_ETPI_Inches.csv", colClasses = c("NULL", "character", "numeric"))
@@ -206,6 +224,45 @@ def _reformat_weather_file(workspace: str, station: str, data_type: str, data_un
         df.to_csv(f"{workspace}/{station}_{data_type}.csv")
     else:
         df.to_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
+
+
+def _get_file_header_data_units(data_type: str) -> tuple[str, str]:
+    """
+    Retrieves the units of measurement for a given environmental data type to be used in file names and column headers.
+
+    This function maps a specified environmental data type to its corresponding units of measurement. 
+    These units are used for naming files and for the column headers within those files. 
+
+    Args:
+        data_type (str): The type of environmental data for which units are being requested. Supported types include "RAIN", "ETPI", "H2OT", "RADP", "RADT", "AIRT", and "WNDS".
+
+    Returns:
+        tuple[str, str]: A tuple containing two strings. The first string represents the unit of measurement for the file name, and the second string represents the unit of measurement for the column header in the data file.
+    """
+    # Get the units for the file name and column header based on the type of data
+    if data_type == "RAIN":
+        data_units_file = "Inches"
+        data_units_header = "Inches"
+    elif data_type == "ETPI":
+        data_units_file = "Inches"
+        data_units_header = "Inches"
+    elif data_type == "H2OT":
+        data_units_file = "Degrees Celsius"
+        data_units_header = "Degrees Celsius"
+    elif data_type == "RADP":
+        data_units_file = ""
+        data_units_header = "MICROMOLE/m^2/s"
+    elif data_type == "RADT":
+        data_units_file = ""
+        data_units_header = "kW/m^2"
+    elif data_type == "AIRT":
+        data_units_file = "Degrees Celsius"
+        data_units_header = "Degrees Celsius"
+    elif data_type == "WNDS":
+        data_units_file = "MPH"
+        data_units_header = "MPH"
+        
+    return data_units_file, data_units_header
 
 
 if __name__ == "__main__":

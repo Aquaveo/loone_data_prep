@@ -663,6 +663,75 @@ def nutrient_prediction(
         out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
 
 
+def find_last_date_in_csv(workspace: str, file_name: str) -> str:
+    """
+    Gets the most recent date from the last line of a .csv file.
+    Assumes the file is formatted as a .csv file, encoded in UTF-8, 
+    and the rows in the file are sorted by date in ascending order.
+
+    Args:
+        workspace (str): The directory where the file is located.
+        file_name (str): The name of the file.
+
+    Returns:
+        str: The most recent date as a string in YYYY-MM-DD format, or None if the file does not exist or the date cannot be found.
+    """
+    # Helper Functions
+    def is_valid_date(date_string):
+        try:
+            datetime.datetime.strptime(date_string, '%Y-%m-%d')
+            return True
+        except ValueError:
+            return False
+    
+    # Check that file exists
+    file_path = os.path.join(workspace, file_name)
+    if not os.path.exists(file_path):
+        return None
+    
+    # Attempt to extract the date of the last line in the file
+    try:
+        with open(file_path, 'rb') as file:
+            # Go to the end of the file
+            file.seek(-2, os.SEEK_END)
+            
+            # Loop backwards until you find the first newline character
+            while file.read(1) != b'\n':
+                file.seek(-2, os.SEEK_CUR)
+                
+            # Read the last line
+            last_line = file.readline().decode()
+            
+            # Extract the date from the last line
+            date = None
+            
+            for value in last_line.split(','):
+                if is_valid_date(value):
+                    date = value
+                    break
+            
+            # Return date
+            return date
+    except OSError as e:
+        print(f"Error reading file {file_name}: {e}")
+        return None
+
+
+def dbhydro_data_is_latest(date_latest: str):
+    """
+    Checks whether the given date is the most recent date possible to get data from dbhydro.
+    Can be used to check whether dbhydro data is up-to-date.
+    
+    Args:
+        date_latest (str): The date of the most recent data of the dbhydro data you have
+    
+    Returns:
+        bool: True if the date_latest is the most recent date possible to get data from dbhydro, False otherwise
+    """
+    date_latest_object = datetime.datetime.strptime(date_latest, "%Y-%m-%d").date()
+    return date_latest_object == (datetime.datetime.now().date() - datetime.timedelta(days=1))
+
+
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
         get_dbkeys(sys.argv[2].strip("[]").replace(" ", "").split(","), *sys.argv[3:])

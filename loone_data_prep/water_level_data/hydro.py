@@ -49,6 +49,14 @@ def get(
         # Give data.frame correct column names so it can be cleaned using the clean_hydro function
         colnames({name}) <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
         
+        # Check if the data.frame has any rows
+        if (nrow({name}) == 0) 
+        {{
+            # No data given back, It's possible that the dbkey has reached its end date.
+            print(paste("Empty data.frame returned for dbkeys", "{dbkeys}", "It's possible that the dbkey has reached its end date. Skipping to the next dbkey."))
+            return(list(success = FALSE, dbkey = "{dbkeys}"))
+        }}
+        
         # Get the station
         station <- {name}$station[1]
         

@@ -70,6 +70,50 @@ def get(
     )
 
 
+def _calculate_days_column(workspace: str, file_name: str, date_min: str):
+    """
+    Calculates the values that should be in the "days" column of the water quality data CSV file
+    based on the given date_min and writes the updated data frame back to the CSV file.
+    
+    Args:
+        workspace (str): The path to the workspace directory.
+        file_name (str): The name of the water quality data CSV file.
+        date_min (str): The minimum date that the "days" column values should be calculated from. Should be in format "YYYY-MM-DD".
+    """
+    r(
+        f"""
+        # Import necessary libraries
+        library(lubridate)
+        
+        # Read the CSV file
+        df <- read.csv("{workspace}/{file_name}", check.names = FALSE)
+        
+        # Drop the "X" column that R adds when reading CSV files
+        df <- df[,-1]
+        
+        # Get date_min as an object with the correct timezone
+        date_min_object <- as.POSIXct("{date_min}", tz = "UTC")
+        date_min_tz <- format(with_tz(date_min_object, tzone = "America/New_York"), "%Z")
+        date_min_object <- as.POSIXct("{date_min}", tz = date_min_tz)
+        
+        # Calculate each value in the days column based on the date_min
+        for(i in 1:nrow(df)) 
+        {{
+            # Get the current row's date as an object with the correct timezone
+            date <- as.POSIXct(df$date[i], tz = "UTC")
+            date_tz <- format(with_tz(date, tzone = "America/New_York"), "%Z")
+            date <- as.POSIXct(df$date[i], tz = date_tz)
+            
+            # Calculate the number of days from the minimum date to the row's date plus the number of days in date_min
+            df$days[i] <- as.integer(difftime(date, date_min_object, units = "days")) + as.integer(format(date_min_object, "%d"))
+        }}
+        
+        # Write the updated data frame back to the CSV file
+        write.csv(df, file = "{workspace}/{file_name}", row.names = FALSE)
+        """ # noqa: E501
+      )
+
+
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]
     if len(sys.argv) >= 4:
