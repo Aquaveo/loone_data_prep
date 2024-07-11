@@ -383,7 +383,6 @@ def main(input_dir: str, output_dir: str) -> None:
     LOWS['LZ40WS'] = LZ40WS['LZ40_WNDS_MPH']
     LOWS['LO_Avg_WS_MPH'] = LOWS.mean(axis=1, numeric_only=True)
     LOWS.to_csv(f'{output_dir}/LOWS.csv', index=False)
-    LOWS.to_csv(f'{input_dir}/LOWS.csv', index=False)  # Also needed in temporary directory by utils.py's wind_induced_waves()
 
     # RFVol acft
     # Create File (RF_Volume)
@@ -897,7 +896,6 @@ def main(input_dir: str, output_dir: str) -> None:
     # Write Data into csv files
     # write Avg Stage (ft, m) Storage (acft, m3) SA (acres) to csv
     LO_Stg_Sto_SA_df.to_csv(f'{output_dir}/Average_LO_Storage_3MLag.csv', index=False)
-    LO_Stg_Sto_SA_df.to_csv(f'{input_dir}/Average_LO_Storage_3MLag.csv', index=False)   # Also needed in temporary directory by utils.py's wind_induced_waves()
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f'{output_dir}/S65_TP_3MLag.csv', index=False)
     # TP External Loads 3 Months Lag (mg)

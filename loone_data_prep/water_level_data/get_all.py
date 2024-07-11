@@ -1,10 +1,14 @@
 import sys
 import os
 import requests
+import uuid
+from datetime import datetime
 from loone_data_prep.water_level_data import hydro
 from loone_data_prep.flow_data.get_forecast_flows import get_stations_latitude_longitude
+from loone_data_prep.utils import find_last_date_in_csv, dbhydro_data_is_latest
 import pandas as pd
 
+DATE_NOW = datetime.now().date().strftime("%Y-%m-%d")
 
 D = {
     "LO_Stage": {"dbkeys": ["16022", "12509", "12519", "16265", "15611"], "datum": "NGVD29"},
@@ -19,9 +23,69 @@ D = {
 
 def main(workspace: str, d: dict = D) -> dict:
     missing_files = []
+    failed_downloads = []   # List of file names that the script failed to get the latest data for (but the files still exist)
+    
+    # Get the date of the latest data in LO_Stage_2.csv
+    date_latest_lo_stage_2 = find_last_date_in_csv(workspace, "LO_Stage_2.csv")
+    
     for name, params in d.items():
-        print(f"Getting {name}.")
-        hydro.get(workspace, name, **params)
+        # Get the date of the latest data in the csv file
+        date_latest = find_last_date_in_csv(workspace, f"{name}.csv")
+        
+        # File with data for this dbkey does NOT already exist (or possibly some other error occurred)
+        if date_latest is None:
+            print(f"Getting all water level data for {name}.")
+            hydro.get(workspace, name, **params)
+        else:
+            # Check whether the latest data is already up to date.
+            if dbhydro_data_is_latest(date_latest):
+                # Notify that the data is already up to date
+                print(f'Downloading of new water level data skipped for {name}. Data is already up to date.')
+                continue
+            
+            # Temporarily rename current data file so it isn't over written
+            original_file_name = f"{name}.csv"
+            original_file_name_temp = f"{name}_{uuid.uuid4()}.csv"
+            os.rename(os.path.join(workspace, original_file_name), os.path.join(workspace, original_file_name_temp))
+            
+            try:
+                # Download only the new data
+                print(f'Downloading new water level data for {name} starting from date {date_latest}')
+                hydro.get(workspace, name, dbkeys=params['dbkeys'], date_min=date_latest, date_max=DATE_NOW, datum=params['datum'])
+                
+                # Read in the original data and the newly downloaded data
+                df_original = pd.read_csv(os.path.join(workspace, original_file_name_temp), index_col=0)
+                df_new = pd.read_csv(os.path.join(workspace, original_file_name), index_col=0)
+                
+                # For get_hydro() calls with multiple dbkeys, remove the row corresponding to the latest date from the downloaded data.
+                # When get_hydro() is given multiple keys its returned data starts from the date given instead of the day after like it
+                # does when given a single key.
+                if len(params['dbkeys']) > 1:
+                    df_new = df_new[df_new['date'] != date_latest]
+                
+                # Merge the new data with the original data
+                df_merged = pd.concat([df_original, df_new], ignore_index=True)
+                
+                # Write out the merged data
+                df_merged.to_csv(os.path.join(workspace, original_file_name))
+                
+                # Remove the original renamed data file
+                os.remove(os.path.join(workspace, original_file_name_temp))
+            except Exception as e:
+                # Notify of the error
+                print(f"Error occurred while downloading new water level data: {e}")
+                
+                # Remove the newly downloaded data file if it exists
+                if os.path.exists(os.path.join(workspace, original_file_name)):
+                    os.remove(os.path.join(workspace, original_file_name))
+                
+                # Rename the original renamed file back to its original name
+                if os.path.exists(os.path.join(workspace, original_file_name_temp)):
+                    os.rename(os.path.join(workspace, original_file_name_temp), os.path.join(workspace, original_file_name))
+                
+                # Add the file name to the list of failed downloads
+                failed_downloads.append(original_file_name)
+            
         if os.path.exists(os.path.join(workspace, f"{name}.csv")):
             print(f"{name} downloaded successfully.")
         else:
@@ -44,6 +108,11 @@ def main(workspace: str, d: dict = D) -> dict:
         
         # Output Progress
         print("Converting NAVD88 to NGVD29 for 'L OKEE's new dbkey...\n")
+        
+        # Use only the data that is not already in the LO_Stage.csv file
+        if date_latest_lo_stage_2 is not None:
+            date_start = datetime.strptime(date_latest_lo_stage_2, "%Y-%m-%d") + pd.DateOffset(days=1)
+            df_lo_stage_2 = df_lo_stage_2.loc[date_start:]
         
         # Convert the stage values from NAVD88 to NGVD29
         lo_stage_2_dates = df_lo_stage_2.index.tolist()
@@ -80,23 +149,19 @@ def main(workspace: str, d: dict = D) -> dict:
             
             # Save the updated LO_Stage.csv file
             df_lo_stage.to_csv(os.path.join(workspace, "LO_Stage.csv"))
-        
-        # Delete the LO_Stage_2.csv file
-        os.remove(os.path.join(workspace, "LO_Stage_2.csv"))
     else:
         # Conversion failed due to missing files
         convert_failure = True
         print("Error: Missing LO_Stage.csv or LO_Stage_2.csv file, cannot convert and merge.")
-        
-        # Delete the LO_Stage_2.csv file if it exists
-        if os.path.exists(os.path.join(workspace, "LO_Stage_2.csv")):
-            os.remove(os.path.join(workspace, "LO_Stage_2.csv"))
             
     if missing_files or convert_failure:
         error_string = ""
         
         if missing_files:
             error_string += f"The following files could not be downloaded: {missing_files}"
+        
+        if failed_downloads:
+            error_string += f"\nFailed to download the latest data for the following files: {failed_downloads}"
         
         if convert_failure:
             error_string += "\nFailed to convert NAVD88 to NGVD29 for 'L OKEE' station."

@@ -36,6 +36,14 @@ def get(
         # Give data.frame correct column names so it can be cleaned using the clean_hydro function
         colnames(data) <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
         
+        # Check if the data.frame has any rows
+        if (nrow(data) == 0) 
+        {{
+            # No data given back, It's possible that the dbkey has reached its end date.
+            print(paste("Empty data.frame returned for dbkey", "{dbkey}", "It's possible that the dbkey has reached its end date. Skipping to the next dbkey."))
+            return(list(success = FALSE, dbkey = "{dbkey}"))
+        }}
+        
         # Add a type and units column to data so it can be cleaned using the clean_hydro function
         data$type <- "FLOW"
         data$units <- "cfs"
@@ -68,7 +76,7 @@ def get(
         Sys.sleep(1)  # Wait for 1 second before the next iteration
         
         # Return the station and dbkey to the python code
-        list(station = station, dbkey = "{dbkey}")
+        list(success = TRUE, station = station, dbkey = "{dbkey}")
     }}
     """
 
@@ -76,6 +84,14 @@ def get(
     
     # Call the R function to download the flow data
     result = r.download_flow_data(workspace, dbkey, date_min, date_max)
+    
+    # Check for failure
+    success = result.rx2("success")[0]
+
+    if not success:
+        return
+    
+    # Get the station name for _reformat_flow_file()
     station = result.rx2("station")[0]
     
     # Reformat the flow data file to the expected layout
