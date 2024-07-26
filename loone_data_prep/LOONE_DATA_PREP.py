@@ -580,6 +580,18 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_OP_data_Inter['Mean_OP'] = LO_OP_data_Inter.mean(axis=1, numeric_only=True)
     LO_OP_data_Inter = DF_Date_Range(LO_OP_data_Inter, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
     LO_OP_data_Inter.to_csv(f'{output_dir}/LO_OP.csv', index=False)
+    
+    # Create File (N_OP) (L001, L005, L008)
+    n_op = LO_OP_data_Inter[['date', 'Data_L001_OP_Inter', 'Data_L005_OP_Inter', 'Data_L008_OP_Inter']]
+    n_op['OP'] = n_op.mean(axis=1, numeric_only=True) * 1000 # mg/L to mg/m3
+    n_op.drop(['Data_L001_OP_Inter', 'Data_L005_OP_Inter', 'Data_L008_OP_Inter'], axis=1, inplace=True)
+    n_op.to_csv(f'{output_dir}/N_OP.csv', index=False)
+    
+    # Create File (S_OP) (L004, L006, L007, L008, and LZ40)
+    s_op = LO_OP_data_Inter[['date', 'Data_L004_OP_Inter', 'Data_L006_OP_Inter', 'Data_L007_OP_Inter', 'Data_L008_OP_Inter', 'Data_LZ40_OP_Inter']]
+    s_op['OP'] = s_op.mean(axis=1, numeric_only=True) * 1000 # mg/L to mg/m3
+    s_op.drop(['Data_L004_OP_Inter', 'Data_L006_OP_Inter', 'Data_L007_OP_Inter', 'Data_L008_OP_Inter', 'Data_LZ40_OP_Inter'], axis=1, inplace=True)
+    s_op.to_csv(f'{output_dir}/S_OP.csv', index=False)
 
     # Interpolated NH4 Observations in Lake
     # Create File (LO_Avg_NH4)
