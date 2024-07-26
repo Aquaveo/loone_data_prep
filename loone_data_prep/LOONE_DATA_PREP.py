@@ -674,6 +674,22 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_DIN['NO'] = LO_NO_Clean_Inter['Mean_NO'].values
     LO_DIN['DIN_mg/m3'] = LO_DIN[['NH4', 'NO']].sum(axis=1)*1000
     LO_DIN.to_csv(f'{output_dir}/LO_DIN.csv', index=False)
+    
+    # Create File (N_DIN) (L001, L005, L008)
+    n_din = pd.DataFrame(date_DIN, columns=['date'])
+    n_din.set_index('date', inplace=True)
+    n_din['NH4'] = LO_NH4_Clean_Inter[['date', 'Data_L001_NH4_Inter', 'Data_L005_NH4_Inter', 'Data_L008_NH4_Inter']].mean(axis=1, numeric_only=True)
+    n_din['NO'] = LO_NO_Clean_Inter[['date', 'Data_L001_NO_Inter', 'Data_L005_NO_Inter', 'Data_L008_NO_Inter']].mean(axis=1, numeric_only=True)*1000    # mg/L to mg/m3
+    n_din['DIN'] = n_din[['NH4', 'NO']].sum(axis=1)*1000    # mg/L to mg/m3
+    n_din.to_csv(f'{output_dir}/N_DIN.csv')
+    
+    # Create File (S_DIN) (L004, L006, L007, L008, LZ40)
+    s_din = pd.DataFrame(date_DIN, columns=['date'])
+    s_din.set_index('date', inplace=True)
+    s_din['NH4'] = LO_NH4_Clean_Inter[['date', 'Data_L004_NH4_Inter', 'Data_L006_NH4_Inter', 'Data_L007_NH4_Inter', 'Data_L008_NH4_Inter', 'Data_LZ40_NH4_Inter']].mean(axis=1, numeric_only=True)
+    s_din['NO'] = LO_NO_Clean_Inter[['date', 'Data_L004_NO_Inter', 'Data_L006_NO_Inter', 'Data_L007_NO_Inter', 'Data_L008_NO_Inter', 'Data_LZ40_NO_Inter']].mean(axis=1, numeric_only=True)*1000    # mg/L to mg/m3
+    s_din['DIN'] = s_din[['NH4', 'NO']].sum(axis=1)*1000    # mg/L to mg/m3
+    s_din.to_csv(f'{output_dir}/S_DIN.csv')
 
     # Interpolated DO Observations in Lake
     # Create File (LO_Avg_DO)
