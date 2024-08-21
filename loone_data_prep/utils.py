@@ -663,6 +663,47 @@ def nutrient_prediction(
         out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
 
 
+def photo_period(workspace: str, phi: float = 26.982052, doy: np.ndarray = np.arange(1, 365), verbose: bool = False):
+    """Generate PhotoPeriod.csv file for the given latitude and days of the year.
+    
+    Args:
+        workspace (str): A path to the directory where the file will be generated.
+        phi (float, optional): Latitude of the location. Defaults to 26.982052.
+        doy (np.ndarray, optional): An array holding the days of the year that you want the photo period for. Defaults to np.arange(1,365).
+        verbose (bool, optional): Print results of each computation. Defaults to False.
+    """
+    phi = np.radians(phi) # Convert to radians
+    light_intensity = 2.206 * 10**-3
+
+    C = np.sin(np.radians(23.44)) # sin of the obliquity of 23.44 degrees.
+    B = -4.76 - 1.03 * np.log(light_intensity) # Eq. [5]. Angle of the sun below the horizon. Civil twilight is -4.76 degrees.
+
+    # Calculations
+    alpha = np.radians(90 + B) # Eq. [6]. Value at sunrise and sunset.
+    M = 0.9856*doy - 3.251 # Eq. [4].
+    lmd = M + 1.916*np.sin(np.radians(M)) + 0.020*np.sin(np.radians(2*M)) + 282.565 # Eq. [3]. Lambda
+    delta = np.arcsin(C*np.sin(np.radians(lmd))) # Eq. [2].
+
+    # Defining sec(x) = 1/cos(x)
+    P = 2/15 * np.degrees( np.arccos( np.cos(alpha) * (1/np.cos(phi)) * (1/np.cos(delta)) - np.tan(phi) * np.tan(delta) ) ) # Eq. [1].
+
+    # Print results in order for each computation to match example in paper
+    if verbose:
+        print('Input latitude =', np.degrees(phi))
+        print('[Eq 5] B =', B)
+        print('[Eq 6] alpha =', np.degrees(alpha))
+        print('[Eq 4] M =', M[0])
+        print('[Eq 3] Lambda =', lmd[0])
+        print('[Eq 2] delta=', np.degrees(delta[0]))
+        print('[Eq 1] Daylength =', P[0])
+    
+    photo_period_df = pd.DataFrame()
+    photo_period_df['Day'] = doy
+    photo_period_df['PhotoPeriod'] = P
+    
+    photo_period_df.to_csv(os.path.join(workspace, 'PhotoPeriod.csv'))
+
+
 def find_last_date_in_csv(workspace: str, file_name: str) -> str:
     """
     Gets the most recent date from the last line of a .csv file.
