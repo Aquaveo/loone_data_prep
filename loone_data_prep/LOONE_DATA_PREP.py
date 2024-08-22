@@ -580,6 +580,18 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_OP_data_Inter['Mean_OP'] = LO_OP_data_Inter.mean(axis=1, numeric_only=True)
     LO_OP_data_Inter = DF_Date_Range(LO_OP_data_Inter, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
     LO_OP_data_Inter.to_csv(f'{output_dir}/LO_OP.csv', index=False)
+    
+    # Create File (N_OP) (L001, L005, L008)
+    n_op = LO_OP_data_Inter[['date', 'Data_L001_OP_Inter', 'Data_L005_OP_Inter', 'Data_L008_OP_Inter']]
+    n_op['OP'] = n_op.mean(axis=1, numeric_only=True) * 1000 # mg/L to mg/m3
+    n_op.drop(['Data_L001_OP_Inter', 'Data_L005_OP_Inter', 'Data_L008_OP_Inter'], axis=1, inplace=True)
+    n_op.to_csv(f'{output_dir}/N_OP.csv', index=False)
+    
+    # Create File (S_OP) (L004, L006, L007, L008, and LZ40)
+    s_op = LO_OP_data_Inter[['date', 'Data_L004_OP_Inter', 'Data_L006_OP_Inter', 'Data_L007_OP_Inter', 'Data_L008_OP_Inter', 'Data_LZ40_OP_Inter']]
+    s_op['OP'] = s_op.mean(axis=1, numeric_only=True) * 1000 # mg/L to mg/m3
+    s_op.drop(['Data_L004_OP_Inter', 'Data_L006_OP_Inter', 'Data_L007_OP_Inter', 'Data_L008_OP_Inter', 'Data_LZ40_OP_Inter'], axis=1, inplace=True)
+    s_op.to_csv(f'{output_dir}/S_OP.csv', index=False)
 
     # Interpolated NH4 Observations in Lake
     # Create File (LO_Avg_NH4)
@@ -662,6 +674,22 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_DIN['NO'] = LO_NO_Clean_Inter['Mean_NO'].values
     LO_DIN['DIN_mg/m3'] = LO_DIN[['NH4', 'NO']].sum(axis=1)*1000
     LO_DIN.to_csv(f'{output_dir}/LO_DIN.csv', index=False)
+    
+    # Create File (N_DIN) (L001, L005, L008)
+    n_din = pd.DataFrame(date_DIN, columns=['date'])
+    n_din.set_index('date', inplace=True)
+    n_din['NH4'] = LO_NH4_Clean_Inter[['date', 'Data_L001_NH4_Inter', 'Data_L005_NH4_Inter', 'Data_L008_NH4_Inter']].mean(axis=1, numeric_only=True)
+    n_din['NO'] = LO_NO_Clean_Inter[['date', 'Data_L001_NO_Inter', 'Data_L005_NO_Inter', 'Data_L008_NO_Inter']].mean(axis=1, numeric_only=True)*1000    # mg/L to mg/m3
+    n_din['DIN'] = n_din[['NH4', 'NO']].sum(axis=1)*1000    # mg/L to mg/m3
+    n_din.to_csv(f'{output_dir}/N_DIN.csv')
+    
+    # Create File (S_DIN) (L004, L006, L007, L008, LZ40)
+    s_din = pd.DataFrame(date_DIN, columns=['date'])
+    s_din.set_index('date', inplace=True)
+    s_din['NH4'] = LO_NH4_Clean_Inter[['date', 'Data_L004_NH4_Inter', 'Data_L006_NH4_Inter', 'Data_L007_NH4_Inter', 'Data_L008_NH4_Inter', 'Data_LZ40_NH4_Inter']].mean(axis=1, numeric_only=True)
+    s_din['NO'] = LO_NO_Clean_Inter[['date', 'Data_L004_NO_Inter', 'Data_L006_NO_Inter', 'Data_L007_NO_Inter', 'Data_L008_NO_Inter', 'Data_LZ40_NO_Inter']].mean(axis=1, numeric_only=True)*1000    # mg/L to mg/m3
+    s_din['DIN'] = s_din[['NH4', 'NO']].sum(axis=1)*1000    # mg/L to mg/m3
+    s_din.to_csv(f'{output_dir}/S_DIN.csv')
 
     # Interpolated DO Observations in Lake
     # Create File (LO_Avg_DO)
@@ -820,6 +848,93 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_Chla_Merge.index = pd.to_datetime(LO_Chla_Merge.index, unit='ns')
     LO_Chla_Merge_Monthly_Inter = LO_Chla_Merge.resample('M').mean()
     LO_Chla_Merge_Monthly_Inter.to_csv(f'{output_dir}/LO_Chla_Merge_Monthly_Inter.csv')
+
+    # Create files (LO_Chla_Obs.csv, N_Merged_Chla.csv, and S_Merged_Chla.csv)
+    L001_Chla = pd.read_csv(f'{input_dir}/water_quality_L001_CHLOROPHYLL-A, CORRECTED.csv')
+    L001_Chla.drop(columns=['days'], inplace=True)
+    L004_Chla = pd.read_csv(f'{input_dir}/water_quality_L004_CHLOROPHYLL-A, CORRECTED.csv')
+    L004_Chla.drop(columns=['days'], inplace=True)
+    L005_Chla = pd.read_csv(f'{input_dir}/water_quality_L005_CHLOROPHYLL-A, CORRECTED.csv')
+    L005_Chla.drop(columns=['days'], inplace=True)
+    L006_Chla = pd.read_csv(f'{input_dir}/water_quality_L006_CHLOROPHYLL-A, CORRECTED.csv')
+    L006_Chla.drop(columns=['days'], inplace=True)
+    L007_Chla = pd.read_csv(f'{input_dir}/water_quality_L007_CHLOROPHYLL-A, CORRECTED.csv')
+    L007_Chla.drop(columns=['days'], inplace=True)
+    L008_Chla = pd.read_csv(f'{input_dir}/water_quality_L008_CHLOROPHYLL-A, CORRECTED.csv')
+    L008_Chla.drop(columns=['days'], inplace=True)
+    LZ40_Chla = pd.read_csv(f'{input_dir}/water_quality_LZ40_CHLOROPHYLL-A, CORRECTED.csv')
+    LZ40_Chla.drop(columns=['days'], inplace=True)
+    L001_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L001_CHLOROPHYLL-A(LC).csv')
+    L001_Chla_LC.drop(columns=['days'], inplace=True)
+    L004_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L004_CHLOROPHYLL-A(LC).csv')
+    L004_Chla_LC.drop(columns=['days'], inplace=True)
+    L005_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L005_CHLOROPHYLL-A(LC).csv')
+    L005_Chla_LC.drop(columns=['days'], inplace=True)
+    L006_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L006_CHLOROPHYLL-A(LC).csv')
+    L006_Chla_LC.drop(columns=['days'], inplace=True)
+    L007_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L007_CHLOROPHYLL-A(LC).csv')
+    L007_Chla_LC.drop(columns=['days'], inplace=True)
+    L008_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_L008_CHLOROPHYLL-A(LC).csv')
+    L008_Chla_LC.drop(columns=['days'], inplace=True)
+    LZ40_Chla_LC = pd.read_csv(f'{input_dir}/water_quality_LZ40_CHLOROPHYLL-A(LC).csv')
+    LZ40_Chla_LC.drop(columns=['days'], inplace=True)
+    
+    LO_Chla = pd.merge(L001_Chla, L004_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = pd.merge(LO_Chla, L005_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = pd.merge(LO_Chla, L006_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = pd.merge(LO_Chla, L007_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = pd.merge(LO_Chla, L008_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = pd.merge(LO_Chla, LZ40_Chla, how='left', on='date')
+    LO_Chla = LO_Chla.loc[:, ~LO_Chla.columns.str.startswith('Unnamed')]
+    LO_Chla = LO_Chla.set_index('date')
+    LO_Chla['Mean_Chla'] = LO_Chla.mean(axis=1)
+    LO_Chla = LO_Chla.reset_index()
+    LO_Chla_N_cols = ['L001_CHLOROPHYLL-A, CORRECTED_ug/L', 'L005_CHLOROPHYLL-A, CORRECTED_ug/L', 'L008_CHLOROPHYLL-A, CORRECTED_ug/L']
+    LO_Chla['Chla_North'] = LO_Chla[LO_Chla_N_cols].mean(axis=1)
+    LO_Chla_S_cols = ['L004_CHLOROPHYLL-A, CORRECTED_ug/L', 'L006_CHLOROPHYLL-A, CORRECTED_ug/L', 'L007_CHLOROPHYLL-A, CORRECTED_ug/L','L008_CHLOROPHYLL-A, CORRECTED_ug/L','LZ40_CHLOROPHYLL-A, CORRECTED_ug/L']
+    LO_Chla['Chla_South'] = LO_Chla[LO_Chla_S_cols].mean(axis=1)
+
+    LO_Chla_LC = pd.merge(L001_Chla_LC, L004_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = pd.merge(LO_Chla_LC, L005_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = pd.merge(LO_Chla_LC, L006_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = pd.merge(LO_Chla_LC, L007_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = pd.merge(LO_Chla_LC, L008_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = pd.merge(LO_Chla_LC, LZ40_Chla_LC, how='left', on='date')
+    LO_Chla_LC = LO_Chla_LC.loc[:, ~LO_Chla_LC.columns.str.startswith('Unnamed')]
+    LO_Chla_LC = LO_Chla_LC.set_index('date')
+    LO_Chla_LC['Mean_Chla'] = LO_Chla_LC.mean(axis=1)
+    LO_Chla_LC = LO_Chla_LC.reset_index()
+    LO_Chla_LC_N_cols = ['L001_CHLOROPHYLL-A(LC)_ug/L', 'L005_CHLOROPHYLL-A(LC)_ug/L', 'L008_CHLOROPHYLL-A(LC)_ug/L']
+    LO_Chla_LC['Chla_North'] = LO_Chla_LC[LO_Chla_LC_N_cols].mean(axis=1)
+    LO_Chla_LC_S_cols = ['L004_CHLOROPHYLL-A(LC)_ug/L', 'L006_CHLOROPHYLL-A(LC)_ug/L', 'L007_CHLOROPHYLL-A(LC)_ug/L','L008_CHLOROPHYLL-A(LC)_ug/L','LZ40_CHLOROPHYLL-A(LC)_ug/L']
+    LO_Chla_LC['Chla_South'] = LO_Chla_LC[LO_Chla_LC_S_cols].mean(axis=1)
+
+    LO_Chla = DF_Date_Range(LO_Chla, 2008, 1, 1, 2010, 10, 19)
+    LO_Chla_df = pd.DataFrame(LO_Chla['date'], columns=['date'])
+    LO_Chla_df['Chla'] = LO_Chla['Mean_Chla']
+    LO_Chla_df['Chla_N'] = LO_Chla['Chla_North']
+    LO_Chla_df['Chla_S'] = LO_Chla['Chla_South']
+
+    LO_Chla_LC = DF_Date_Range(LO_Chla_LC, 2010, 10, 20, 2023, 6, 30)
+    LO_Chla_LC_df = pd.DataFrame(LO_Chla_LC['date'], columns=['date'])
+    LO_Chla_LC_df['Chla'] = LO_Chla_LC['Mean_Chla']
+    LO_Chla_LC_df['Chla_N'] = LO_Chla_LC['Chla_North']
+    LO_Chla_LC_df['Chla_S'] = LO_Chla_LC['Chla_South']
+
+    LO_Chla_Merge = pd.concat([LO_Chla_df, LO_Chla_LC_df]).reset_index(drop=True)
+    LO_Chla_Merge.to_csv(f'{output_dir}/LO_Chla_Obs.csv')
+    LO_Chla_Merge[['date', 'Chla_N']].rename(columns={'Chla_N': 'Chla'}).to_csv(f'{output_dir}/N_Merged_Chla.csv', index=False)
+    LO_Chla_Merge[['date', 'Chla_S']].rename(columns={'Chla_S': 'Chla'}).to_csv(f'{output_dir}/S_Merged_Chla.csv', index=False)
 
     # Create Files S65E_Avg_Chla
     S65E_Chla_Inter = pd.read_csv(f'{input_dir}/water_quality_S65E_CHLOROPHYLL-A, CORRECTED_Interpolated.csv')
