@@ -663,45 +663,89 @@ def nutrient_prediction(
         out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
 
 
-def photo_period(workspace: str, phi: float = 26.982052, doy: np.ndarray = np.arange(1, 365), verbose: bool = False):
-    """Generate PhotoPeriod.csv file for the given latitude and days of the year.
+def photoperiod(workspace: str, year_start: int = 2008, year_end: int = 2023, phi: float = 26.982052):
+    """Generate PhotoPeriod.csv file for the given latitude and years.
     
     Args:
         workspace (str): A path to the directory where the file will be generated.
+        year_start (int, optional): The starting year (inclusive). Defaults to 2008.
+        year_end (int, optional): The ending year (inclusive). Defaults to 2023.
         phi (float, optional): Latitude of the location. Defaults to 26.982052.
-        doy (np.ndarray, optional): An array holding the days of the year that you want the photo period for. Defaults to np.arange(1,365).
-        verbose (bool, optional): Print results of each computation. Defaults to False.
     """
-    phi = np.radians(phi) # Convert to radians
-    light_intensity = 2.206 * 10**-3
-
-    C = np.sin(np.radians(23.44)) # sin of the obliquity of 23.44 degrees.
-    B = -4.76 - 1.03 * np.log(light_intensity) # Eq. [5]. Angle of the sun below the horizon. Civil twilight is -4.76 degrees.
-
-    # Calculations
-    alpha = np.radians(90 + B) # Eq. [6]. Value at sunrise and sunset.
-    M = 0.9856*doy - 3.251 # Eq. [4].
-    lmd = M + 1.916*np.sin(np.radians(M)) + 0.020*np.sin(np.radians(2*M)) + 282.565 # Eq. [3]. Lambda
-    delta = np.arcsin(C*np.sin(np.radians(lmd))) # Eq. [2].
-
-    # Defining sec(x) = 1/cos(x)
-    P = 2/15 * np.degrees( np.arccos( np.cos(alpha) * (1/np.cos(phi)) * (1/np.cos(delta)) - np.tan(phi) * np.tan(delta) ) ) # Eq. [1].
-
-    # Print results in order for each computation to match example in paper
-    if verbose:
-        print('Input latitude =', np.degrees(phi))
-        print('[Eq 5] B =', B)
-        print('[Eq 6] alpha =', np.degrees(alpha))
-        print('[Eq 4] M =', M[0])
-        print('[Eq 3] Lambda =', lmd[0])
-        print('[Eq 2] delta=', np.degrees(delta[0]))
-        print('[Eq 1] Daylength =', P[0])
+    # Helper Functions
+    def is_leap_year(year: int) -> bool:
+        """Get if a year is a leap year
+        
+        Args:
+            year (int): The year to check
+            
+        Returns:
+            bool: True if the year is a leap year, False otherwise
+        """
+        return (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0)
     
-    photo_period_df = pd.DataFrame()
-    photo_period_df['Day'] = doy
-    photo_period_df['PhotoPeriod'] = P
+    def calculate_photoperiod(phi: float, doy: np.ndarray) -> np.ndarray:
+        """Calculate photoperiod for a given latitude and given days of the year.
+        
+        Args:
+            phi (float): Latitude of the location.
+            doy (np.ndarray): An array holding the days of the year that you want the photo period for.
+            
+        Returns:
+            np.ndarray: An array of photoperiods for the given latitude and days of the year.
+        """
+        phi = np.radians(phi)  # Convert latitude to radians
+        light_intensity = 2.206 * 10**-3
+
+        C = np.sin(np.radians(23.44))  # Obliquity of 23.44 degrees
+        B = -4.76 - 1.03 * np.log(light_intensity)  # Angle of the sun below the horizon
+
+        # Calculations
+        alpha = np.radians(90 + B)  # Value at sunrise and sunset
+        M = 0.9856*doy - 3.251  # Mean anomaly
+        lmd = M + 1.916*np.sin(np.radians(M)) + 0.020*np.sin(np.radians(2*M)) + 282.565  # Lambda
+        delta = np.arcsin(C*np.sin(np.radians(lmd)))  # Declination
+
+        # Calculate photoperiod
+        P = 2/15 * np.degrees(np.arccos(np.cos(alpha) * (1/np.cos(phi)) * (1/np.cos(delta)) - np.tan(phi) * np.tan(delta)))  # Photoperiod in hours
+
+        return P
     
-    photo_period_df.to_csv(os.path.join(workspace, 'PhotoPeriod.csv'))
+    # Range of years to calculate photoperiod for
+    years = range(year_start, year_end + 1)
+    
+    # DataFrame to store photoperiod for each year
+    PhotoPeriod = pd.DataFrame()
+    
+    # Calculate photoperiod for each day of the year for each year
+    for year in years:
+        if is_leap_year(year):
+            doy = np.arange(1, 367)  # 366 days for leap years
+        else:
+            doy = np.arange(1, 366)  # 365 days for non-leap years
+        
+        P = calculate_photoperiod(phi, doy)
+        
+        # Create DataFrame for current year and append to main DataFrame
+        year_df = pd.DataFrame()
+        year_df['Year'] = year
+        year_df['Day'] = doy
+        year_df['Data'] = P
+        
+        PhotoPeriod = pd.concat([PhotoPeriod, year_df])
+    
+    # Reset index for the concatenated DataFrame
+    PhotoPeriod.reset_index(drop=True, inplace=True)
+    
+    # Add date column
+    date = pd.date_range(start='1/1/%d'%(years[0]), end='12/31/%d'%(years[-1]),freq='D')
+    PhotoPeriod['Date'] = date
+    
+    # calculate fraction of sunny hours to 24 hours
+    PhotoPeriod['fd'] = PhotoPeriod['Data']/24
+    
+    # Save the DataFrame to CSV
+    PhotoPeriod.to_csv(os.path.join(workspace, 'PhotoPeriod.csv'), index=False)
 
 
 def find_last_date_in_csv(workspace: str, file_name: str) -> str:
