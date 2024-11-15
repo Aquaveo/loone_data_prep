@@ -11,7 +11,10 @@ from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
 from rpy2.robjects import r
-from rpy2.robjects.vectors import StrVector as rpy2StrVector, DataFrame as rpy2DataFrame
+from rpy2.robjects.vectors import (
+    StrVector as rpy2StrVector,
+    DataFrame as rpy2DataFrame,
+)
 from rpy2.rinterface_lib.embedded import RRuntimeError
 
 
@@ -44,7 +47,15 @@ INTERP_DICT = {
     },
     "PHOSPHATE, ORTHO AS P": {
         "units": "mg/L",
-        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_ids": [
+            "L001",
+            "L004",
+            "L005",
+            "L006",
+            "L007",
+            "L008",
+            "LZ40",
+        ],
     },
     "NITRATE+NITRITE-N": {
         "units": "mg/L",
@@ -146,9 +157,26 @@ INTERP_DICT = {
             "LZ40",
         ],
     },
-    "DISSOLVED OXYGEN": {"units": "mg/L", "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "RADP": {"units": "MICROMOLE/m^2/s", "station_ids": ["L001", "L005", "L006", "LZ40"]},
-    "RADT": {"units": "kW/m^2", "station_ids": ["L001", "L005", "L006", "LZ40"]},
+    "DISSOLVED OXYGEN": {
+        "units": "mg/L",
+        "station_ids": [
+            "L001",
+            "L004",
+            "L005",
+            "L006",
+            "L007",
+            "L008",
+            "LZ40",
+        ],
+    },
+    "RADP": {
+        "units": "MICROMOLE/m^2/s",
+        "station_ids": ["L001", "L005", "L006", "LZ40"],
+    },
+    "RADT": {
+        "units": "kW/m^2",
+        "station_ids": ["L001", "L005", "L006", "LZ40"],
+    },
 }
 DEFAULT_PREDICTION_STATIONS_IDS = [
     "S65E_S",
@@ -263,14 +291,18 @@ def data_interpolations(
         Data_In = Data_In.set_index(["date"])
         Data_In.index = pd.to_datetime(Data_In.index, unit="ns")
         Data_df = Data_In.resample("D").mean()
-        Data_df = Data_df.dropna(subset=["%s_%s_%s" % (station, parameter, units)])
+        Data_df = Data_df.dropna(
+            subset=["%s_%s_%s" % (station, parameter, units)]
+        )
         Data_df = Data_df.reset_index()
         Data_df["Yr_M"] = pd.to_datetime(Data_df["date"]).dt.to_period("M")
         start_date = Data_df["date"].iloc[0]
         end_date = Data_df["date"].iloc[-1]
         date_rng = pd.date_range(start=start_date, end=end_date, freq="M")
         Monthly_df = pd.DataFrame(date_rng, columns=["date"])
-        Monthly_df["Yr_M"] = pd.to_datetime(Monthly_df["date"]).dt.to_period("M")
+        Monthly_df["Yr_M"] = pd.to_datetime(Monthly_df["date"]).dt.to_period(
+            "M"
+        )
         New_date = []
         New_data = []
         Days = []
@@ -282,13 +314,27 @@ def data_interpolations(
             if i in Data_df.index:
                 if type(Data_df.loc[i]["date"]) == pd.Timestamp:
                     New_date.append(Data_df.loc[i]["date"])
-                    New_data.append(Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)])
+                    New_data.append(
+                        Data_df.loc[i][
+                            "%s_%s_%s" % (station, parameter, units)
+                        ]
+                    )
                 else:
                     for j in range(len(Data_df.loc[i]["date"])):
                         New_date.append(Data_df.loc[i]["date"][j])
-                        New_data.append(Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)][j])
+                        New_data.append(
+                            Data_df.loc[i][
+                                "%s_%s_%s" % (station, parameter, units)
+                            ][j]
+                        )
             elif i not in Data_df.index:
-                New_date.append(datetime.datetime(Monthly_df.loc[i]["date"].year, Monthly_df.loc[i]["date"].month, 1))
+                New_date.append(
+                    datetime.datetime(
+                        Monthly_df.loc[i]["date"].year,
+                        Monthly_df.loc[i]["date"].month,
+                        1,
+                    )
+                )
                 New_data.append(np.NaN)
 
         New_date = pd.to_datetime(New_date, format="%Y-%m-%d")
@@ -302,7 +348,9 @@ def data_interpolations(
                 Days_cum.append(
                     Days_cum[i - 1]
                     + Days[i]
-                    + monthrange(New_date[i - 1].year, New_date[i - 1].month)[1]
+                    + monthrange(New_date[i - 1].year, New_date[i - 1].month)[
+                        1
+                    ]
                     - Days[i - 1]
                 )
         Final_df = pd.DataFrame()
@@ -316,7 +364,9 @@ def data_interpolations(
         Final_df["date"] = pd.to_datetime(Final_df["date"], format="%Y-%m-%d")
         start_date = Final_df["date"].iloc[0]
         end_date = Final_df["date"].iloc[-1]
-        date_rng_TSS_1 = pd.date_range(start=start_date, end=end_date, freq="D")
+        date_rng_TSS_1 = pd.date_range(
+            start=start_date, end=end_date, freq="D"
+        )
         # Create a data frame with a date column
         Data_df = pd.DataFrame(date_rng_TSS_1, columns=["date"])
         Data_len = len(Data_df.index)
@@ -328,7 +378,9 @@ def data_interpolations(
         for i in range(1, Data_len):
             Cum_days[i] = Cum_days[i - 1] + 1
             # Data_daily[i] = interpolate.interp1d(Final_df['Days'], Final_df['TSS'] , kind = 'linear')(Cum_days[i])
-            Data_daily[i] = np.interp(Cum_days[i], Final_df["Days_cum"], Final_df["Data"])
+            Data_daily[i] = np.interp(
+                Cum_days[i], Final_df["Days_cum"], Final_df["Data"]
+            )
         Data_df["Data"] = Data_daily
         Data_df.to_csv(f"{workspace}/{name}_Interpolated.csv", index=False)
 
@@ -341,11 +393,17 @@ def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
         d (dict, optional): Dict with parameter key, units, and station IDs. Defaults to INTERP_DICT.
     """
     for param, values in d.items():
-        print(f"Interpolating parameter: {param} for station IDs: {values['station_ids']}.")
-        data_interpolations(workspace, param, values["units"], values["station_ids"])
+        print(
+            f"Interpolating parameter: {param} for station IDs: {values['station_ids']}."
+        )
+        data_interpolations(
+            workspace, param, values["units"], values["station_ids"]
+        )
 
 
-def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = "nu.csv"):
+def kinematic_viscosity(
+    workspace: str, in_file_name: str, out_file_name: str = "nu.csv"
+):
     # Read Mean H2O_T in LO
     LO_Temp = pd.read_csv(os.path.join(workspace, in_file_name))
     LO_T = LO_Temp["Water_T"]
@@ -354,13 +412,23 @@ def kinematic_viscosity(workspace: str, in_file_name: str, out_file_name: str = 
 
     class nu_Func:
         def nu(T):
-            nu20 = 1.0034 / 1e6  # m2/s (kinematic viscosity of water at T = 20 C)
+            nu20 = (
+                1.0034 / 1e6
+            )  # m2/s (kinematic viscosity of water at T = 20 C)
 
             def func(x):
                 # return[log(x[0]/nu20)-((20-T)/(T+96))*(1.2364-1.37E-3*(20-T)+5.7E-6*(20-T)**2)]
                 return [
                     (x[0] / nu20)
-                    - 10 ** (((20 - T) / (T + 96)) * (1.2364 - 1.37e-3 * (20 - T) + 5.7e-6 * (20 - T) ** 2))
+                    - 10
+                    ** (
+                        ((20 - T) / (T + 96))
+                        * (
+                            1.2364
+                            - 1.37e-3 * (20 - T)
+                            + 5.7e-6 * (20 - T) ** 2
+                        )
+                    )
                 ]
 
             sol = fsolve(func, [9.70238995692062e-07])
@@ -407,7 +475,11 @@ def wind_induced_waves(
                 (
                     0.283
                     * np.tanh(0.53 * (g * d / WS**2) ** 0.75)
-                    * np.tanh(0.00565 * (g * F / WS**2) ** 0.5 / np.tanh(0.53 * (g * d / WS**2) ** (3 / 8)))
+                    * np.tanh(
+                        0.00565
+                        * (g * F / WS**2) ** 0.5
+                        / np.tanh(0.53 * (g * d / WS**2) ** (3 / 8))
+                    )
                 )
                 * WS**2
                 / g
@@ -419,7 +491,11 @@ def wind_induced_waves(
                 (
                     7.54
                     * np.tanh(0.833 * (g * d / WS**2) ** (3 / 8))
-                    * np.tanh(0.0379 * (g * F / WS**2) ** 0.5 / np.tanh(0.833 * (g * d / WS**2) ** (3 / 8)))
+                    * np.tanh(
+                        0.0379
+                        * (g * F / WS**2) ** 0.5
+                        / np.tanh(0.833 * (g * d / WS**2) ** (3 / 8))
+                    )
                 )
                 * WS
                 / g
@@ -428,7 +504,10 @@ def wind_induced_waves(
 
         def L(g, d, T):
             def func(x):
-                return [(g * T**2 / 2 * np.pi) * np.tanh(2 * np.pi * d / x[0]) - x[0]]
+                return [
+                    (g * T**2 / 2 * np.pi) * np.tanh(2 * np.pi * d / x[0])
+                    - x[0]
+                ]
 
             sol = fsolve(func, [1])
             L = sol[0]
@@ -443,12 +522,18 @@ def wind_induced_waves(
         W_T[i] = Wind_Func.T(g, LO_Wd[i], F, LO_WS["WS_mps"].iloc[i])
         W_L[i] = Wind_Func.L(g, LO_Wd[i], W_T[i])
         W_ShearStress[i] = (
-            W_H[i] * (ru * (nu * (2 * np.pi / W_T[i]) ** 3) ** 0.5) / (2 * np.sinh(2 * np.pi * LO_Wd[i] / W_L[i]))
+            W_H[i]
+            * (ru * (nu * (2 * np.pi / W_T[i]) ** 3) ** 0.5)
+            / (2 * np.sinh(2 * np.pi * LO_Wd[i] / W_L[i]))
         )
 
     Wind_ShearStress = pd.DataFrame(LO_WS["date"], columns=["date"])
-    Wind_ShearStress["ShearStress"] = W_ShearStress * 10  # Convert N/m2 to Dyne/cm2
-    Wind_ShearStress.to_csv(os.path.join(output_dir, wind_shear_stress_out), index=False)
+    Wind_ShearStress["ShearStress"] = (
+        W_ShearStress * 10
+    )  # Convert N/m2 to Dyne/cm2
+    Wind_ShearStress.to_csv(
+        os.path.join(output_dir, wind_shear_stress_out), index=False
+    )
 
     # # Monthly
     # Wind_ShearStress['Date'] = pd.to_datetime(Wind_ShearStress['Date'])
@@ -484,8 +569,12 @@ def wind_induced_waves(
         Current_Stress[i] = Current_bottom_shear_stress(ru, Wind_Stress[i])
 
     Current_ShearStress_df = pd.DataFrame(LO_WS["date"], columns=["date"])
-    Current_ShearStress_df["Current_Stress"] = Current_Stress * 10  # Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df["Wind_Stress"] = Wind_Stress * 10  # Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df["Current_Stress"] = (
+        Current_Stress * 10
+    )  # Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df["Wind_Stress"] = (
+        Wind_Stress * 10
+    )  # Convert N/m2 to Dyne/cm2
     Current_ShearStress_df["Wind_Speed_m/s"] = LO_WS["WS_mps"]
 
     def Current_bottom_shear_stress_2(u, k, nu, ks, z, ru):
@@ -500,7 +589,10 @@ def wind_induced_waves(
         sol2 = fsolve(func2, [1])
 
         def func3(u_str3):
-            return [u_str3[0] - u * k * np.exp(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks))]
+            return [
+                u_str3[0]
+                - u * k * np.exp(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks))
+            ]
 
         sol3 = fsolve(func3, [1])
         if sol1[0] * ks / nu <= 5:
@@ -514,7 +606,9 @@ def wind_induced_waves(
 
     def Current_bottom_shear_stress_3(u, k, nu, ks, z, ru):
         def func1(u_str1):
-            return [u_str1[0] - u * k * (1 / np.log(z / (0.11 * nu / u_str1[0])))]
+            return [
+                u_str1[0] - u * k * (1 / np.log(z / (0.11 * nu / u_str1[0])))
+            ]
 
         sol1 = fsolve(func1, [1])
 
@@ -524,7 +618,12 @@ def wind_induced_waves(
         sol2 = fsolve(func2, [1])
 
         def func3(u_str3):
-            return [u_str3[0] - u * k * (1 / np.log(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks)))]
+            return [
+                u_str3[0]
+                - u
+                * k
+                * (1 / np.log(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks)))
+            ]
 
         sol3 = fsolve(func3, [1])
         if sol1[0] * ks / nu <= 5:
@@ -541,22 +640,34 @@ def wind_induced_waves(
     ks = 5.27e-4  # m
     current_stress_3 = np.zeros(n, dtype=object)
     for i in range(n):
-        current_stress_3[i] = Current_bottom_shear_stress_3(0.05, 0.41, nu, ks, LO_Wd[i], ru)
-    Current_ShearStress_df["Current_Stress_3"] = current_stress_3 * 10  # Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df.to_csv(os.path.join(output_dir, current_shear_stress_out), index=False)
+        current_stress_3[i] = Current_bottom_shear_stress_3(
+            0.05, 0.41, nu, ks, LO_Wd[i], ru
+        )
+    Current_ShearStress_df["Current_Stress_3"] = (
+        current_stress_3 * 10
+    )  # Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df.to_csv(
+        os.path.join(output_dir, current_shear_stress_out), index=False
+    )
 
 
-def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
+def stg2sto(
+    stg_sto_data_path: str, v: pd.Series, i: int
+) -> interpolate.interp1d:
     stgsto_data = pd.read_csv(stg_sto_data_path)
     # NOTE: We Can use cubic interpolation instead of linear
     x = stgsto_data["Stage"]
     y = stgsto_data["Storage"]
     if i == 0:
         # return storage given stage
-        return interpolate.interp1d(x, y, fill_value="extrapolate", kind="linear")(v)
+        return interpolate.interp1d(
+            x, y, fill_value="extrapolate", kind="linear"
+        )(v)
     else:
         # return stage given storage
-        return interpolate.interp1d(y, x, fill_value="extrapolate", kind="linear")(v)
+        return interpolate.interp1d(
+            y, x, fill_value="extrapolate", kind="linear"
+        )(v)
 
 
 def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
@@ -569,10 +680,14 @@ def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
     y = stgar_data["Surf_Area"]
     if i == 0:
         # return surface area given stage
-        return interpolate.interp1d(x, y, fill_value="extrapolate", kind="linear")(v)
+        return interpolate.interp1d(
+            x, y, fill_value="extrapolate", kind="linear"
+        )(v)
     else:
         # return stage given surface area
-        return interpolate.interp1d(y, x, fill_value="extrapolate", kind="linear")(v)
+        return interpolate.interp1d(
+            y, x, fill_value="extrapolate", kind="linear"
+        )(v)
 
 
 @retry(Exception, tries=3, delay=15, backoff=2)
@@ -580,20 +695,27 @@ def get_pi(workspace: str) -> None:
     # Weekly data is downloaded from:
     # https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/pdi-0804.csv
     # State:Florida Division:4.South Central
-    df = pd.read_csv("https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/pdi-0804.csv")
+    df = pd.read_csv(
+        "https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/pdi-0804.csv"
+    )
     df.to_csv(os.path.join(workspace, "PI.csv"))
 
 
 def nutrient_prediction(
-    input_dir: str, output_dir: str, station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS, constants: dict = DEFAULT_EXPFUNC_CONSTANTS
+    input_dir: str,
+    output_dir: str,
+    station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS,
+    constants: dict = DEFAULT_EXPFUNC_CONSTANTS,
 ) -> None:
     for station in station_ids:
         print(f"Predicting nutrient loads for station: {station}.")
         # Construct paths for flow file
-        flow_file_path = ''
+        flow_file_path = ""
         flow_file_path_exists = True
         try:
-            flow_file_path = glob(os.path.join(input_dir, f"{station}*_FLOW_cmd_geoglows.csv"))[0]
+            flow_file_path = glob(
+                os.path.join(input_dir, f"{station}*_FLOW_cmd_geoglows.csv")
+            )[0]
         except Exception as e:
             flow_file_path_exists = False
 
@@ -603,7 +725,9 @@ def nutrient_prediction(
             flow = pd.read_csv(flow_file_path)
         else:
             # If it doesn't exist, skip to the next iteration of the loop
-            print(f'Skipping nutrient prediction for station: {station}. Flow file does not exist.')
+            print(
+                f"Skipping nutrient prediction for station: {station}. Flow file does not exist."
+            )
             continue
 
         # Create structures to hold resulting data
@@ -615,6 +739,7 @@ def nutrient_prediction(
             if "ensemble" not in column_name:
                 continue
             import warnings
+
             warnings.filterwarnings("error")
 
             try:
@@ -623,16 +748,22 @@ def nutrient_prediction(
 
                 # Calculate the logarithm of the flow data
 
-                Q_Log = np.log(flow_column + 1e-8)  # Add a small number to prevent log(0) errors
+                Q_Log = np.log(
+                    flow_column + 1e-8
+                )  # Add a small number to prevent log(0) errors
 
                 # Calculate the predicted TP loads using the logarithm of the flow data
-                TP_Loads_Predicted_Log = constants[station]["a"] * Q_Log ** constants[station]["b"]
+                TP_Loads_Predicted_Log = (
+                    constants[station]["a"] * Q_Log ** constants[station]["b"]
+                )
 
                 # Calculate the predicted TP loads using the exponential of the predicted TP loads logarithm
                 predicted_column = np.exp(TP_Loads_Predicted_Log)
 
                 # Store prediction data in a pandas DataFrame (So we can concat all ensemble data into one dataframe)
-                predicted_column = pd.DataFrame(predicted_column.tolist(), index=flow["date"].copy())
+                predicted_column = pd.DataFrame(
+                    predicted_column.tolist(), index=flow["date"].copy()
+                )
                 predicted_column.columns = [column_name]
 
                 prediction_columns.append(predicted_column)
@@ -642,72 +773,99 @@ def nutrient_prediction(
 
         # Concat individual ensemble columns together into one pandas DataFrame
         out_dataframe = pd.concat(objs=prediction_columns, axis="columns")
-        
-        column_mean = out_dataframe.mean(axis='columns')
-        column_percentile_25 = out_dataframe.quantile(q=0.25, axis='columns')
-        column_percentile_75 = out_dataframe.quantile(q=0.75, axis='columns')
-        column_median = out_dataframe.median(axis='columns')
-        column_std = out_dataframe.std(axis='columns')
-        
-        out_dataframe['mean'] = column_mean
-        out_dataframe['percentile_25'] = column_percentile_25
-        out_dataframe['percentile_75'] = column_percentile_75
-        out_dataframe['median'] = column_median
-        out_dataframe['standard_deviation'] = column_std
+
+        column_mean = out_dataframe.mean(axis="columns")
+        column_percentile_25 = out_dataframe.quantile(q=0.25, axis="columns")
+        column_percentile_75 = out_dataframe.quantile(q=0.75, axis="columns")
+        column_median = out_dataframe.median(axis="columns")
+        column_std = out_dataframe.std(axis="columns")
+
+        out_dataframe["mean"] = column_mean
+        out_dataframe["percentile_25"] = column_percentile_25
+        out_dataframe["percentile_75"] = column_percentile_75
+        out_dataframe["median"] = column_median
+        out_dataframe["standard_deviation"] = column_std
 
         # Save the predicted TP loads to a CSV file
-        out_dataframe.to_csv(os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv"))
-        
+        out_dataframe.to_csv(
+            os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv")
+        )
+
         # Save the predicted TP loads to a CSV file (in input_dir)
         # Output is needed in input_dir by GEOGLOWS_LOONE_DATA_PREP.py and in output_dir for graph visualization in the app
-        out_dataframe.to_csv(os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv"))
+        out_dataframe.to_csv(
+            os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv")
+        )
 
 
-def photo_period(workspace: str, phi: float = 26.982052, doy: np.ndarray = np.arange(1, 365), verbose: bool = False):
+def photo_period(
+    workspace: str,
+    phi: float = 26.982052,
+    doy: np.ndarray = np.arange(1, 365),
+    verbose: bool = False,
+):
     """Generate PhotoPeriod.csv file for the given latitude and days of the year.
-    
+
     Args:
         workspace (str): A path to the directory where the file will be generated.
         phi (float, optional): Latitude of the location. Defaults to 26.982052.
         doy (np.ndarray, optional): An array holding the days of the year that you want the photo period for. Defaults to np.arange(1,365).
         verbose (bool, optional): Print results of each computation. Defaults to False.
     """
-    phi = np.radians(phi) # Convert to radians
+    phi = np.radians(phi)  # Convert to radians
     light_intensity = 2.206 * 10**-3
 
-    C = np.sin(np.radians(23.44)) # sin of the obliquity of 23.44 degrees.
-    B = -4.76 - 1.03 * np.log(light_intensity) # Eq. [5]. Angle of the sun below the horizon. Civil twilight is -4.76 degrees.
+    C = np.sin(np.radians(23.44))  # sin of the obliquity of 23.44 degrees.
+    B = -4.76 - 1.03 * np.log(
+        light_intensity
+    )  # Eq. [5]. Angle of the sun below the horizon. Civil twilight is -4.76 degrees.
 
     # Calculations
-    alpha = np.radians(90 + B) # Eq. [6]. Value at sunrise and sunset.
-    M = 0.9856*doy - 3.251 # Eq. [4].
-    lmd = M + 1.916*np.sin(np.radians(M)) + 0.020*np.sin(np.radians(2*M)) + 282.565 # Eq. [3]. Lambda
-    delta = np.arcsin(C*np.sin(np.radians(lmd))) # Eq. [2].
+    alpha = np.radians(90 + B)  # Eq. [6]. Value at sunrise and sunset.
+    M = 0.9856 * doy - 3.251  # Eq. [4].
+    lmd = (
+        M
+        + 1.916 * np.sin(np.radians(M))
+        + 0.020 * np.sin(np.radians(2 * M))
+        + 282.565
+    )  # Eq. [3]. Lambda
+    delta = np.arcsin(C * np.sin(np.radians(lmd)))  # Eq. [2].
 
     # Defining sec(x) = 1/cos(x)
-    P = 2/15 * np.degrees( np.arccos( np.cos(alpha) * (1/np.cos(phi)) * (1/np.cos(delta)) - np.tan(phi) * np.tan(delta) ) ) # Eq. [1].
+    P = (
+        2
+        / 15
+        * np.degrees(
+            np.arccos(
+                np.cos(alpha) * (1 / np.cos(phi)) * (1 / np.cos(delta))
+                - np.tan(phi) * np.tan(delta)
+            )
+        )
+    )  # Eq. [1].
 
     # Print results in order for each computation to match example in paper
     if verbose:
-        print('Input latitude =', np.degrees(phi))
-        print('[Eq 5] B =', B)
-        print('[Eq 6] alpha =', np.degrees(alpha))
-        print('[Eq 4] M =', M[0])
-        print('[Eq 3] Lambda =', lmd[0])
-        print('[Eq 2] delta=', np.degrees(delta[0]))
-        print('[Eq 1] Daylength =', P[0])
-    
+        print("Input latitude =", np.degrees(phi))
+        print("[Eq 5] B =", B)
+        print("[Eq 6] alpha =", np.degrees(alpha))
+        print("[Eq 4] M =", M[0])
+        print("[Eq 3] Lambda =", lmd[0])
+        print("[Eq 2] delta=", np.degrees(delta[0]))
+        print("[Eq 1] Daylength =", P[0])
+
     photo_period_df = pd.DataFrame()
-    photo_period_df['Day'] = doy
-    photo_period_df['PhotoPeriod'] = P
-    
-    photo_period_df.to_csv(os.path.join(workspace, 'PhotoPeriod.csv'))
+    photo_period_df["Day"] = doy
+    photo_period_df["Data"] = P
+
+    photo_period_df.to_csv(
+        os.path.join(workspace, "PhotoPeriod.csv"), index=False
+    )
 
 
 def find_last_date_in_csv(workspace: str, file_name: str) -> str:
     """
     Gets the most recent date from the last line of a .csv file.
-    Assumes the file is formatted as a .csv file, encoded in UTF-8, 
+    Assumes the file is formatted as a .csv file, encoded in UTF-8,
     and the rows in the file are sorted by date in ascending order.
 
     Args:
@@ -717,40 +875,41 @@ def find_last_date_in_csv(workspace: str, file_name: str) -> str:
     Returns:
         str: The most recent date as a string in YYYY-MM-DD format, or None if the file does not exist or the date cannot be found.
     """
+
     # Helper Functions
     def is_valid_date(date_string):
         try:
-            datetime.datetime.strptime(date_string, '%Y-%m-%d')
+            datetime.datetime.strptime(date_string, "%Y-%m-%d")
             return True
         except ValueError:
             return False
-    
+
     # Check that file exists
     file_path = os.path.join(workspace, file_name)
     if not os.path.exists(file_path):
         return None
-    
+
     # Attempt to extract the date of the last line in the file
     try:
-        with open(file_path, 'rb') as file:
+        with open(file_path, "rb") as file:
             # Go to the end of the file
             file.seek(-2, os.SEEK_END)
-            
+
             # Loop backwards until you find the first newline character
-            while file.read(1) != b'\n':
+            while file.read(1) != b"\n":
                 file.seek(-2, os.SEEK_CUR)
-                
+
             # Read the last line
             last_line = file.readline().decode()
-            
+
             # Extract the date from the last line
             date = None
-            
-            for value in last_line.split(','):
+
+            for value in last_line.split(","):
                 if is_valid_date(value):
                     date = value
                     break
-            
+
             # Return date
             return date
     except OSError as e:
@@ -762,20 +921,26 @@ def dbhydro_data_is_latest(date_latest: str):
     """
     Checks whether the given date is the most recent date possible to get data from dbhydro.
     Can be used to check whether dbhydro data is up-to-date.
-    
+
     Args:
         date_latest (str): The date of the most recent data of the dbhydro data you have
-    
+
     Returns:
         bool: True if the date_latest is the most recent date possible to get data from dbhydro, False otherwise
     """
-    date_latest_object = datetime.datetime.strptime(date_latest, "%Y-%m-%d").date()
-    return date_latest_object == (datetime.datetime.now().date() - datetime.timedelta(days=1))
+    date_latest_object = datetime.datetime.strptime(
+        date_latest, "%Y-%m-%d"
+    ).date()
+    return date_latest_object == (
+        datetime.datetime.now().date() - datetime.timedelta(days=1)
+    )
 
 
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
-        get_dbkeys(sys.argv[2].strip("[]").replace(" ", "").split(","), *sys.argv[3:])
+        get_dbkeys(
+            sys.argv[2].strip("[]").replace(" ", "").split(","), *sys.argv[3:]
+        )
     elif sys.argv[1] == "data_interp":
         interp_args = [x for x in sys.argv[2:]]
         interp_args[0] = interp_args[0].rstrip("/")
@@ -787,7 +952,9 @@ if __name__ == "__main__":
     elif sys.argv[1] == "kinematic_viscosity":
         kinematic_viscosity(sys.argv[2].rstrip("/"), *sys.argv[3:])
     elif sys.argv[1] == "wind_induced_waves":
-        wind_induced_waves(sys.argv[2].rstrip("/"), sys.argv[3].rstrip("/"), *sys.argv[4:])
+        wind_induced_waves(
+            sys.argv[2].rstrip("/"), sys.argv[3].rstrip("/"), *sys.argv[4:]
+        )
     elif sys.argv[1] == "get_pi":
         get_pi(sys.argv[2].rstrip("/"))
     elif sys.argv[1] == "nutrient_prediction":

@@ -45,10 +45,11 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     LO_Stage = pd.read_csv(f"{input_dir}/LO_Stage.csv")
     # Create Column (EOD Stg(ft, NGVD)) in File (SFWMM_Daily_Outputs)
     LO_Stage = DF_Date_Range(LO_Stage, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
+    LO_Stage.index = LO_Stage["date"]
     # Calculate average
     if "Average_Stage" not in LO_Stage.columns:
         LO_Stage = LO_Stage.loc[:, ~LO_Stage.columns.str.contains("^Unnamed")]
-        LO_Stage["Average_Stage"] = LO_Stage.mean(axis=1)
+        LO_Stage["Average_Stage"] = LO_Stage.drop(columns=['date']).mean(axis=1)
         LO_Stage.to_csv(f"{input_dir}/LO_Stage.csv", index=False)
     LO_Storage = stg2sto(f"{input_dir}/StgSto_data.csv", LO_Stage["Average_Stage"], 0)
     LO_SA = stg2ar(f"{input_dir}/Stgar_data.csv", LO_Stage["Average_Stage"], 0)
