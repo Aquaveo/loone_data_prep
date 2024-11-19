@@ -26,9 +26,9 @@ D2_D = 30
 St_Yr = 2008
 St_M = 1
 St_D = 1
-En_Yr = 2023
-En_M = 3
-En_D = 31
+En_Yr = 2024
+En_M = 9
+En_D = 30
 
 st_year = START_DATE.strftime("%Y")
 st_month = START_DATE.strftime("%m")
@@ -577,7 +577,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
     geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
     # Inflows (cmd)
-    LO_Inflows_BK.to_csv(f"{output_dir}/LO_Inflows_BK.csv", index=False)
+    LO_Inflows_BK.to_csv(f"{output_dir}/LO_Inflows_BK_forecast.csv", index=False)
     # Outflows (cmd)
     Outflows_consd.to_csv(f"{output_dir}/Outflows_consd.csv", index=False)
     # NetFlows (cmd)
