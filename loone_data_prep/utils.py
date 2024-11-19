@@ -800,6 +800,7 @@ def nutrient_prediction(
 
 def photo_period(
     workspace: str,
+    file_name: str = "PhotoPeriod",
     phi: float = 26.982052,
     doy: np.ndarray = np.arange(1, 365),
     verbose: bool = False,
@@ -808,6 +809,7 @@ def photo_period(
 
     Args:
         workspace (str): A path to the directory where the file will be generated.
+        file_name (str): The name of the file to be generated.
         phi (float, optional): Latitude of the location. Defaults to 26.982052.
         doy (np.ndarray, optional): An array holding the days of the year that you want the photo period for. Defaults to np.arange(1,365).
         verbose (bool, optional): Print results of each computation. Defaults to False.
@@ -858,7 +860,7 @@ def photo_period(
     photo_period_df["Data"] = P
 
     photo_period_df.to_csv(
-        os.path.join(workspace, "PhotoPeriod.csv"), index=False
+        os.path.join(workspace, f"{file_name}.csv"), index=False
     )
 
 
@@ -934,6 +936,45 @@ def dbhydro_data_is_latest(date_latest: str):
     return date_latest_object == (
         datetime.datetime.now().date() - datetime.timedelta(days=1)
     )
+
+
+def get_synthetic_data(date_start: str, df: pd.DataFrame):
+    """
+    Gets 15 days of synthetic NO and Chla data matching forecast start date.
+    
+    Args:
+        date_start (str): The date to start the forecast
+        df (pd.DataFrame): The dataset containing NO or Chla data
+    
+    Returns:
+        pd.DataFrame, pd.DataFrame: The updated NO or Chla dataset
+    """
+    date_end = date_start + datetime.timedelta(days=15)
+
+    df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    # Extract the month and day from the 'date' column
+    df['month_day'] = df['date'].dt.strftime('%m-%d')
+    
+    # Extract the month and day from date_start and date_end
+    start_month_day = date_start.strftime('%m-%d')
+    end_month_day = date_end.strftime('%m-%d')
+    
+    # Filter the DataFrame to include only rows between date_start and date_end for all previous years
+    mask = (df['month_day'] >= start_month_day) & (df['month_day'] <= end_month_day)
+    filtered_data = df.loc[mask]
+    
+    # Group by the month and day, then calculate the average for each group
+    average_values = filtered_data.groupby('month_day')['Data'].mean()
+    
+    average_values_df = pd.DataFrame({
+        'date': pd.date_range(start=date_start, end=date_end),
+        'Data': average_values.values
+    })
+    
+    df = pd.concat([df, average_values_df], ignore_index=True)
+    df.drop(columns=['month_day'], inplace=True)
+        
+    return df
 
 
 if __name__ == "__main__":
