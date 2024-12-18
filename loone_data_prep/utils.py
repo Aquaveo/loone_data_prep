@@ -193,7 +193,7 @@ DEFAULT_PREDICTION_STATIONS_IDS = [
     "S135_P",
     "S135_C",
 ]
-DEFAULT_EXPFUNC_CONSTANTS = {
+DEFAULT_EXPFUNC_PHOSPHATE_CONSTANTS = {
     "S65E_S": {"a": 2.00040151533473, "b": 0.837387838314323},
     "S71_S": {"a": 2.55809777403484, "b": 0.765894033054918},
     "S72_S": {"a": 2.85270576092534, "b": 0.724935760736887},
@@ -208,7 +208,21 @@ DEFAULT_EXPFUNC_CONSTANTS = {
     "S135_P": {"a": 2.50975664040355, "b": 0.760702496334553},
     "S135_C": {"a": 2.43076251736749, "b": 0.759494593788417},
 }
-
+DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
+    "FISHP": {"a": 3.45714698709252, "b": 0.592252136022012},
+    "S4_P": {"a": 1.2337557014752, "b": 1.04595934798695},
+    "S65E_S": {"a": 4.71575889172016, "b": 0.505549283553318},
+    "S71_S": {"a": 3.97701995028333, "b": 0.606281118481932},
+    "S72_S": {"a": 2.36651051985955, "b": 0.774589654354149},
+    "S84_S": {"a": 2.69855941365441, "b": 0.697201188144741},
+    "S127_C": {"a": 2.22368957908813, "b": 0.758610540522343},
+    "S127_P": {"a": 2.19477310222979, "b": 0.786485799309641},
+    "S133_P": {"a": 1.79092549100026, "b": 0.882497515298829},
+    "S154_C": {"a": 2.88850639994145, "b": 0.665252221554856},
+    "S191_S": {"a": 3.99798269355392, "b": 0.586177156114969},
+    "S135_C": {"a": 6.44418674308781, "b": 0.322821841402605},
+    "S135_P": {"a": 3.09890183766129, "b": 0.657896838486496},
+}
 
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get_dbkeys(
@@ -705,8 +719,18 @@ def nutrient_prediction(
     input_dir: str,
     output_dir: str,
     station_ids: dict = DEFAULT_PREDICTION_STATIONS_IDS,
-    constants: dict = DEFAULT_EXPFUNC_CONSTANTS,
+    constants: dict = DEFAULT_EXPFUNC_PHOSPHATE_CONSTANTS,
+    nutrient: str = "PHOSPHATE",
 ) -> None:
+    """Predict nutrient loads for the given station IDs.
+    
+    Args:
+        input_dir (str): Path to the directory where the input files are located.
+        output_dir (str): Path to the directory where the output files will be saved.
+        station_ids (list, optional): List with station IDs to do predictions for. Defaults to DEFAULT_PREDICTION_STATIONS_IDS.
+        constants (dict, optional): Dictionary with constants for the exponential function. Defaults to DEFAULT_EXPFUNC_PHOSPHATE_CONSTANTS.
+        nutrient (str, optional): Nutrient to predict. Defaults to "PHOSPHATE". Options are "PHOSPHATE" or "NITROGEN".
+    """
     for station in station_ids:
         print(f"Predicting nutrient loads for station: {station}.")
         # Construct paths for flow file
@@ -788,13 +812,13 @@ def nutrient_prediction(
 
         # Save the predicted TP loads to a CSV file
         out_dataframe.to_csv(
-            os.path.join(output_dir, f"{station}_PHOSPHATE_predicted.csv")
+            os.path.join(output_dir, f"{station}_{nutrient}_predicted.csv")
         )
 
         # Save the predicted TP loads to a CSV file (in input_dir)
         # Output is needed in input_dir by GEOGLOWS_LOONE_DATA_PREP.py and in output_dir for graph visualization in the app
         out_dataframe.to_csv(
-            os.path.join(input_dir, f"{station}_PHOSPHATE_predicted.csv")
+            os.path.join(input_dir, f"{station}_{nutrient}_predicted.csv")
         )
 
 
