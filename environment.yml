@@ -1,0 +1,12 @@
+name: loone
+
+channels:
+  - conda-forge
+
+dependencies:
+  - rpy2
+  - retry
+  - numpy==1.26.4
+  - pandas
+  - scipy
+  - geoglows==0.27.1
