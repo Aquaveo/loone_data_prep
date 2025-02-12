@@ -25,9 +25,7 @@ def get_bias_corrected_data(
         usecols=["date", f"{station_id}_FLOW_cmd"],
     )
     # Convert the index to datetime and localize it to UTC
-    observed_data.index = pd.to_datetime(observed_data.index).tz_localize(
-        "UTC"
-    )
+    observed_data.index = pd.to_datetime(observed_data.index).tz_localize("UTC")
     # Transform the data by dividing it by the number of seconds in a day
     observed_data = observed_data.transform(lambda x: x / SECONDS_IN_DAY)
     # Rename the value column to "Streamflow (m3/s)"
@@ -51,9 +49,7 @@ def get_bias_corrected_data(
 
         # Check if the historical simulation data is already cached
         if os.path.exists(
-            os.path.join(
-                geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
-            )
+            os.path.join(geoglows_cache_path, f"{reach_id}_historic_simulation.csv")
         ):
             historical_data = pd.read_csv(
                 os.path.join(
@@ -65,9 +61,7 @@ def get_bias_corrected_data(
         else:
             historical_data = geoglows.streamflow.historic_simulation(reach_id)
             historical_data.to_csv(
-                os.path.join(
-                    geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
-                )
+                os.path.join(geoglows_cache_path, f"{reach_id}_historic_simulation.csv")
             )
 
     # Correct the forecast bias in the station ensembles
@@ -75,9 +69,7 @@ def get_bias_corrected_data(
         station_ensembles, historical_data, prepared_od
     )
     # Correct the forecast bias in the station stats
-    station_stats = bias_correct_forecast(
-        station_stats, historical_data, prepared_od
-    )
+    station_stats = bias_correct_forecast(station_stats, historical_data, prepared_od)
 
     # Return the bias-corrected station ensembles and station stats
     return station_ensembles, station_stats
@@ -100,9 +92,9 @@ def prep_observed_data(observed_data: pd.DataFrame) -> pd.DataFrame:
     fill_val = daily_10yr_avg.reset_index(level=[0, 1], drop=True).sort_index()
 
     # Fill NaN in 'Streamflow (m3/s)' with corresponding values from fill_val
-    observed_data["Streamflow (m3/s)"] = observed_data[
-        "Streamflow (m3/s)"
-    ].fillna(fill_val)
+    observed_data["Streamflow (m3/s)"] = observed_data["Streamflow (m3/s)"].fillna(
+        fill_val
+    )
 
     # Return the modified observed_data DataFrame
     return observed_data
@@ -132,9 +124,7 @@ def bias_correct_historical(
         monthly_simulated = simulated_data[
             simulated_data.index.month == int(month)
         ].dropna()
-        to_prob = _flow_and_probability_mapper(
-            monthly_simulated, to_probability=True
-        )
+        to_prob = _flow_and_probability_mapper(monthly_simulated, to_probability=True)
         # filter the observations to current month
         monthly_observed = observed_data[
             observed_data.index.month == int(month)
@@ -209,9 +199,7 @@ def _flow_and_probability_mapper(
     extrapolate: bool = False,
 ) -> interpolate.interp1d:
     if not to_flow and not to_probability:
-        raise ValueError(
-            "You need to specify either to_probability or to_flow as True"
-        )
+        raise ValueError("You need to specify either to_probability or to_flow as True")
 
     # get maximum value to bound histogram
     max_val = math.ceil(np.max(monthly_data.max()))
@@ -262,18 +250,14 @@ def _flow_and_probability_mapper(
     # interpolated function to convert simulated streamflow to prob
     if to_probability:
         if extrapolate:
-            func = interpolate.interp1d(
-                bin_edges, cdf, fill_value="extrapolate"
-            )
+            func = interpolate.interp1d(bin_edges, cdf, fill_value="extrapolate")
         else:
             func = interpolate.interp1d(bin_edges, cdf)
         return lambda x: np.clip(func(x), 0, 1)
     # interpolated function to convert simulated prob to observed streamflow
     elif to_flow:
         if extrapolate:
-            return interpolate.interp1d(
-                cdf, bin_edges, fill_value="extrapolate"
-            )
+            return interpolate.interp1d(cdf, bin_edges, fill_value="extrapolate")
         return interpolate.interp1d(cdf, bin_edges)
 
 

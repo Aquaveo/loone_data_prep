@@ -16,9 +16,9 @@ def get(
     station_ids: list = DEFAULT_STATION_IDS,
     date_min: str = "1950-01-01",
     date_max: str = DATE_NOW,
-    **kwargs: str | list
+    **kwargs: str | list,
 ) -> None:
-    station_ids_str = "\"" + "\", \"".join(station_ids) + "\""
+    station_ids_str = '"' + '", "'.join(station_ids) + '"'
     r(
         f"""
         # Load the required libraries
@@ -74,7 +74,7 @@ def _calculate_days_column(workspace: str, file_name: str, date_min: str):
     """
     Calculates the values that should be in the "days" column of the water quality data CSV file
     based on the given date_min and writes the updated data frame back to the CSV file.
-    
+
     Args:
         workspace (str): The path to the workspace directory.
         file_name (str): The name of the water quality data CSV file.
@@ -110,14 +110,14 @@ def _calculate_days_column(workspace: str, file_name: str, date_min: str):
         
         # Write the updated data frame back to the CSV file
         write.csv(df, file = "{workspace}/{file_name}", row.names = FALSE)
-        """ # noqa: E501
-      )
+        """  # noqa: E501
+    )
 
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]
     if len(sys.argv) >= 4:
-        station_ids = sys.argv[3].strip("[]").replace(" ", "").split(',')
+        station_ids = sys.argv[3].strip("[]").replace(" ", "").split(",")
         args.append(station_ids)
     if len(sys.argv) >= 5:
         date_min = sys.argv[4]

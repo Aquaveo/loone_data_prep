@@ -39,7 +39,9 @@ end_month = END_DATE.strftime("%m")
 end_day = END_DATE.strftime("%d")
 
 
-def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , historical_files_src: str) -> None:
+def main(
+    input_dir: str, output_dir: str, ensemble_number: str
+) -> None:  # , historical_files_src: str) -> None:
     # To create File (Average_LO_Storage)
     # Read LO Average Stage (ft)
     LO_Stage = pd.read_csv(f"{input_dir}/LO_Stage.csv")
@@ -49,15 +51,19 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Calculate average
     if "Average_Stage" not in LO_Stage.columns:
         LO_Stage = LO_Stage.loc[:, ~LO_Stage.columns.str.contains("^Unnamed")]
-        LO_Stage["Average_Stage"] = LO_Stage.drop(columns=['date']).mean(axis=1)
+        LO_Stage["Average_Stage"] = LO_Stage.drop(columns=["date"]).mean(axis=1)
         LO_Stage.to_csv(f"{input_dir}/LO_Stage.csv", index=False)
     LO_Storage = stg2sto(f"{input_dir}/StgSto_data.csv", LO_Stage["Average_Stage"], 0)
     LO_SA = stg2ar(f"{input_dir}/Stgar_data.csv", LO_Stage["Average_Stage"], 0)
     LO_Stg_Sto_SA_df = pd.DataFrame(LO_Stage["date"], columns=["date"])
     LO_Stg_Sto_SA_df["Stage_ft"] = LO_Stage["Average_Stage"]
-    LO_Stg_Sto_SA_df["Stage_m"] = LO_Stg_Sto_SA_df["Stage_ft"].values * 0.3048  # ft to m
+    LO_Stg_Sto_SA_df["Stage_m"] = (
+        LO_Stg_Sto_SA_df["Stage_ft"].values * 0.3048
+    )  # ft to m
     LO_Stg_Sto_SA_df["Storage_acft"] = LO_Storage
-    LO_Stg_Sto_SA_df["Storage_cmd"] = LO_Stg_Sto_SA_df["Storage_acft"] * 1233.48  # acft to m3/d
+    LO_Stg_Sto_SA_df["Storage_cmd"] = (
+        LO_Stg_Sto_SA_df["Storage_acft"] * 1233.48
+    )  # acft to m3/d
     LO_Stg_Sto_SA_df["SA_acres"] = LO_SA  # acres
 
     # Using geoglows data for S65_total, only data from S65E_S (none from S65EX1_S)
@@ -93,16 +99,28 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S65_total_TP = pd.read_csv(f"{input_dir}/S65E_S_PHOSPHATE_predicted.csv")[
         ["date", f"ensemble_{ensemble_number}_m^3/d"]
     ]
-    S71_TP = pd.read_csv(f"{input_dir}/S71_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
+    S71_TP = pd.read_csv(f"{input_dir}/S71_S_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
     # S72_TP = pd.read_csv(f'{input_dir}/S72_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    S84_TP = pd.read_csv(f"{input_dir}/S84_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
+    S84_TP = pd.read_csv(f"{input_dir}/S84_S_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
     # S127_TP = pd.read_csv(f'{input_dir}/S127_C_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
+    S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
+    S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
+    S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
     # S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
     # S308_TP = pd.read_csv(f'{input_dir}/water_quality_S308C_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', 'Data']]
-    FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
+    FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}_m^3/d"]
+    ]
     # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
     # S4_TP = pd.read_csv(f'{input_dir}/S4_P_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
 
@@ -151,8 +169,14 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "INDUST_Q": INDUST,
     }
     # Identify date range
-    date = pd.date_range(start=f"{st_month}/{st_day}/{st_year}", end=f"{end_month}/{end_day}/{end_year}", freq="D")
-    historical_date = pd.date_range(start=f"{M3_M}/{M3_D}/{M3_Yr}", end=f"{En_M}/{En_D}/{En_Yr}", freq="D")
+    date = pd.date_range(
+        start=f"{st_month}/{st_day}/{st_year}",
+        end=f"{end_month}/{end_day}/{end_year}",
+        freq="D",
+    )
+    historical_date = pd.date_range(
+        start=f"{M3_M}/{M3_D}/{M3_Yr}", end=f"{En_M}/{En_D}/{En_Yr}", freq="D"
+    )
 
     # Create Flow Dataframe
     # Flow_df = pd.read_csv(f'{output_dir}/Flow_df_3MLag.csv')
@@ -168,13 +192,19 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     geoglows_flow_df = pd.DataFrame(date, columns=["date"])
 
     for i in range(len(Q_names)):
-        x = DF_Date_Range(Q_list[Q_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
+        x = DF_Date_Range(
+            Q_list[Q_names[i]], st_year, st_month, st_day, end_year, end_month, end_day
+        )
         for column_name in x.columns:
             if ensemble_number in column_name:
                 geoglows_flow_df[Q_names[i]] = x[column_name]
 
-    _create_flow_inflow_cqpq(geoglows_flow_df, ensemble_number, "S129_C_Q", "S129_P_Q", "S129_In")
-    _create_flow_inflow_cqpq(geoglows_flow_df, ensemble_number, "S135_C_Q", "S135_P_Q", "S135_In")
+    _create_flow_inflow_cqpq(
+        geoglows_flow_df, ensemble_number, "S129_C_Q", "S129_P_Q", "S129_In"
+    )
+    _create_flow_inflow_cqpq(
+        geoglows_flow_df, ensemble_number, "S135_C_Q", "S135_P_Q", "S135_In"
+    )
 
     _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S308_Q", "S308_In")
     _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S77_Q", "S77_In")
@@ -212,9 +242,18 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     ].sum(
         axis=1
     )  # , 'S4_P_Q']].sum(axis=1)
-    geoglows_flow_df["Netflows"] = geoglows_flow_df["Inflows"] - geoglows_flow_df["INDUST_Out"]
+    geoglows_flow_df["Netflows"] = (
+        geoglows_flow_df["Inflows"] - geoglows_flow_df["INDUST_Out"]
+    )
     # flow_filter_cols = ["S308_Out", "S77_Out", 'S351_Out', 'S352_Out', 'S354_Out', 'INDUST_Out', 'L8_Out']
-    flow_filter_cols = ["S308_Out", "S77_Out", "S351_Out", "S352_Out", "S354_Out", "INDUST_Out"]
+    flow_filter_cols = [
+        "S308_Out",
+        "S77_Out",
+        "S351_Out",
+        "S352_Out",
+        "S354_Out",
+        "INDUST_Out",
+    ]
 
     geoglows_flow_df["Outflows"] = geoglows_flow_df[flow_filter_cols].sum(axis=1)
     TP_names = [
@@ -240,14 +279,24 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Create TP Concentrations Dataframe
     TP_Loads_In = pd.DataFrame(date, columns=["date"])
     for i in range(len(TP_names)):
-        y = DF_Date_Range(TP_list[TP_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
+        y = DF_Date_Range(
+            TP_list[TP_names[i]],
+            st_year,
+            st_month,
+            st_day,
+            end_year,
+            end_month,
+            end_day,
+        )
         TP_Loads_In[TP_names[i]] = y[f"ensemble_{ensemble_number}_m^3/d"]
 
     # Calculate the total External Loads to Lake Okeechobee
     TP_Loads_In["External_P_Ld_mg"] = TP_Loads_In.sum(axis=1, numeric_only=True)
 
     # Create File (LO_External_Loadings_3MLag)
-    TP_Loads_In_3MLag = DF_Date_Range(TP_Loads_In, st_year, st_month, st_day, end_year, end_month, end_day)
+    TP_Loads_In_3MLag = DF_Date_Range(
+        TP_Loads_In, st_year, st_month, st_day, end_year, end_month, end_day
+    )
     TP_Loads_In_3MLag_df = pd.DataFrame(TP_Loads_In_3MLag["date"], columns=["date"])
     TP_Loads_In_3MLag_df["TP_Loads_In_mg"] = TP_Loads_In_3MLag["External_P_Ld_mg"]
     TP_Loads_In_3MLag_df["Atm_Loading_mg"] = [95890410.96] * len(TP_Loads_In_3MLag_df)
@@ -272,7 +321,9 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Create File (TotalQWCA_Obs)
     # This is also Column (RegWCA) in File (SFWMM_Daily_Outputs)
     TotalQWCA = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    TotalQWCA["S351_Out"] = geoglows_flow_df["S351_Out"] * (35.3147 / 86400)  # cmd to cfs
+    TotalQWCA["S351_Out"] = geoglows_flow_df["S351_Out"] * (
+        35.3147 / 86400
+    )  # cmd to cfs
     TotalQWCA["S354_Out"] = geoglows_flow_df["S354_Out"] * (35.3147 / 86400)
     TotalQWCA["RegWCA_cfs"] = TotalQWCA.sum(axis=1, numeric_only=True)  # cfs
     TotalQWCA["RegWCA_acft"] = TotalQWCA["RegWCA_cfs"] * 1.9835  # acft
@@ -573,15 +624,20 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag.csv", index=False)
     # TP External Loads 3 Months Lag (mg)
-    TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False)
+    TP_Loads_In_3MLag_df.to_csv(
+        f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False
+    )
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
-    geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
+    geoglows_flow_df.to_csv(
+        f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv",
+        index=False,
+    )
     # Inflows (cmd)
     LO_Inflows_BK.to_csv(f"{output_dir}/LO_Inflows_BK_forecast.csv", index=False)
     # Outflows (cmd)
     Outflows_consd.to_csv(f"{output_dir}/Outflows_consd.csv", index=False)
     # NetFlows (cmd)
-    #Netflows.to_csv(f"{output_dir}/Netflows_acft.csv", index=False)
+    # Netflows.to_csv(f"{output_dir}/Netflows_acft.csv", index=False)
     # # Total flows to WCAs (acft)
     TotalQWCA.to_csv(f"{output_dir}/TotalQWCA_Obs.csv", index=False)
     # INDUST Outflows (cmd)
@@ -589,7 +645,11 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
 
 
 def _create_flow_inflow_cqpq(
-    df: pd.DataFrame, ensemble_number: str, column_cq: str, column_pq: str, column_sum_name: str
+    df: pd.DataFrame,
+    ensemble_number: str,
+    column_cq: str,
+    column_pq: str,
+    column_sum_name: str,
 ):
     """Creates the inflow columns for the given column_cq column. For flows with (*_C_Q, *_P_Q). Handles ensembles.
 
@@ -609,7 +669,9 @@ def _create_flow_inflow_cqpq(
     df[column_sum_name_e] = df[[column_cq_e, column_pq_e]].sum(axis=1)
 
 
-def _create_flow_inflow_q(df: pd.DataFrame, ensemble_number: str, column_q: str, column_in: str):
+def _create_flow_inflow_q(
+    df: pd.DataFrame, ensemble_number: str, column_q: str, column_in: str
+):
     """Creates the inflow columns for the given column_q column. For flows with (*_Q). Handles ensembles.
 
     Args:
@@ -625,7 +687,9 @@ def _create_flow_inflow_q(df: pd.DataFrame, ensemble_number: str, column_q: str,
     df[column_in_e] = df[column_in_e].fillna(0)
 
 
-def _create_flow_outflow_q(df: pd.DataFrame, ensemble_number: str, column_q: str, column_out: str):
+def _create_flow_outflow_q(
+    df: pd.DataFrame, ensemble_number: str, column_q: str, column_out: str
+):
     """Creates the outflow columns for the given column_q column. For flows with (*_Q). Handles ensembles.
 
     Args:
@@ -642,4 +706,6 @@ def _create_flow_outflow_q(df: pd.DataFrame, ensemble_number: str, column_q: str
 
 
 if __name__ == "__main__":
-    main(sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/"), sys.argv[3])  # , sys.argv[4])
+    main(
+        sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/"), sys.argv[3]
+    )  # , sys.argv[4])

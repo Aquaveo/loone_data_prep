@@ -13,10 +13,7 @@ DATE_NOW = datetime.now().strftime("%Y-%m-%d")
 
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
-    workspace: str,
-    dbkey: str,
-    date_min: str = "1990-01-01",
-    date_max: str = DATE_NOW
+    workspace: str, dbkey: str, date_min: str = "1990-01-01", date_max: str = DATE_NOW
 ) -> None:
     r_str = f"""
     download_flow_data <- function(workspace, dbkey, date_min, date_max) 
@@ -81,70 +78,73 @@ def get(
     """
 
     r(r_str)
-    
+
     # Call the R function to download the flow data
     result = r.download_flow_data(workspace, dbkey, date_min, date_max)
-    
+
     # Check for failure
     success = result.rx2("success")[0]
 
     if not success:
         return
-    
+
     # Get the station name for _reformat_flow_file()
     station = result.rx2("station")[0]
-    
+
     # Reformat the flow data file to the expected layout
     _reformat_flow_file(workspace, station, dbkey)
-    
+
     # Check if the station name contains a space
     if " " in station:
         # Replace space with underscore in the station name
         station_previous = station
         station = station.replace(" ", "_")
-        
+
         # Rename the file
-        os.rename(f"{workspace}/{station_previous}_FLOW_{dbkey}_cmd.csv", f"{workspace}/{station}_FLOW_{dbkey}_cmd.csv")
+        os.rename(
+            f"{workspace}/{station_previous}_FLOW_{dbkey}_cmd.csv",
+            f"{workspace}/{station}_FLOW_{dbkey}_cmd.csv",
+        )
 
     # column values are converted to cmd in R. This snippet makes sure column names are updated accordingly.
-    file = glob(f'{workspace}/*FLOW*{dbkey}_cmd.csv')[0]
+    file = glob(f"{workspace}/*FLOW*{dbkey}_cmd.csv")[0]
     df = pd.read_csv(file, index_col=False)
     df.columns = df.columns.astype(str).str.replace("_cfs", "_cmd")
     df.to_csv(file, index=False)
 
 
-def _reformat_flow_file(workspace:str, station: str, dbkey: str):
-    '''
+def _reformat_flow_file(workspace: str, station: str, dbkey: str):
+    """
     Reformat the flow data file to the expected layout.
     Converts the format of the dates in the file to 'YYYY-MM-DD' then sorts the data by date.
     Reads and writes to a .CSV file.
-    
+
     Args:
         workspace (str): The path to the workspace directory.
         station (str): The station name.
         dbkey (str): The dbkey for the station.
-        
+
     Returns:
         None
-    '''
+    """
     # Read in the data
     df = pd.read_csv(f"{workspace}/{station}_FLOW_{dbkey}_cmd.csv")
-    
+
     # Grab only the columns we need
-    df = df[['date', f'{station}_FLOW_cfs']]
-    
+    df = df[["date", f"{station}_FLOW_cfs"]]
+
     # Convert date column to datetime
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
-    
+    df["date"] = pd.to_datetime(df["date"], format="%d-%b-%Y")
+
     # Sort the data by date
-    df.sort_values('date', inplace=True)
-    
+    df.sort_values("date", inplace=True)
+
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
-    
+
     # Drop rows that are missing values for both the date and value columns
-    df = df.drop(df[(df['date'].isna()) & (df[f'{station}_FLOW_cfs'].isna())].index)
-    
+    df = df.drop(df[(df["date"].isna()) & (df[f"{station}_FLOW_cfs"].isna())].index)
+
     # Write the updated data back to the file
     df.to_csv(f"{workspace}/{station}_FLOW_{dbkey}_cmd.csv")
 

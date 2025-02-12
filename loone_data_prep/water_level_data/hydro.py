@@ -17,17 +17,17 @@ def get(
     date_min: str = "1950-01-01",
     date_max: str = DATE_NOW,
     datum: str = "",
-    **kwargs: str | list
+    **kwargs: str | list,
 ) -> None:
     # Get the type and units for the station
     data_type = "STG"
     units = "ft NGVD29"
-    
+
     if name in ["Stg_3A3", "Stg_2A17", "Stg_3A4", "Stg_3A28"]:
         data_type = "GAGHT"
         units = "feet"
-    
-    dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
+
+    dbkeys_str = '"' + '", "'.join(dbkeys) + '"'
     r(
         f"""
         # Load the required libraries
@@ -74,35 +74,37 @@ def get(
         write.csv({name},file ='{workspace}/{name}.csv')
         """
     )
-    
+
     _reformat_water_level_file(workspace, name)
+
 
 def _reformat_water_level_file(workspace: str, name: str):
     # Read in the data
     df = pd.read_csv(f"{workspace}/{name}.csv")
-    
+
     # Drop the "Unnamed: 0" column
-    df.drop(columns=['Unnamed: 0'], inplace=True)
-    
+    df.drop(columns=["Unnamed: 0"], inplace=True)
+
     # Convert date column to datetime
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
-    
+    df["date"] = pd.to_datetime(df["date"], format="%d-%b-%Y")
+
     # Sort the data by date
-    df.sort_values('date', inplace=True)
-    
+    df.sort_values("date", inplace=True)
+
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
-    
+
     # Drop rows that are missing all their values
-    df.dropna(how='all', inplace=True)
-    
+    df.dropna(how="all", inplace=True)
+
     # Write the updated data back to the file
     df.to_csv(f"{workspace}/{name}.csv")
+
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]
     if len(sys.argv) >= 4:
-        dbkeys = sys.argv[3].strip("[]").replace(" ", "").split(',')
+        dbkeys = sys.argv[3].strip("[]").replace(" ", "").split(",")
         args.append(dbkeys)
     if len(sys.argv) >= 5:
         date_min = sys.argv[4]

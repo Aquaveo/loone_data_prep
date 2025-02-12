@@ -17,17 +17,17 @@ def get(
     dbkeys: list = DEFAULT_DBKEYS,
     date_min: str = "2000-01-01",
     date_max: str = DATE_NOW,
-    **kwargs: str | list
+    **kwargs: str | list,
 ) -> None:
-    dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
+    dbkeys_str = '"' + '", "'.join(dbkeys) + '"'
 
     data_type = param
     data_units_file = None
     data_units_header = None
-    
+
     # Get the units for the file name and column header based on the type of data
     data_units_file, data_units_header = _get_file_header_data_units(data_type)
-    
+
     r_str = f"""
         download_weather_data <- function()#workspace, dbkeys, date_min, date_max, data_type, data_units_file, data_units_header)
         {{
@@ -97,34 +97,38 @@ def get(
             return(successful_stations)
         }}
         """  # noqa: E501
-    
+
     # Download the weather data
     r(r_str)
     result = r.download_weather_data()
-    
+
     # Get the stations of the dbkeys who's data were successfully downloaded
     stations = []
     for value in result:
         stations.append(value[0])
-    
+
     # Format files to expected layout
     for station in stations:
         if station in ["L001", "L005", "L006", "LZ40"]:
-            _reformat_weather_file(workspace, station, data_type, data_units_file, data_units_header)
-            
+            _reformat_weather_file(
+                workspace, station, data_type, data_units_file, data_units_header
+            )
+
             # Print a message indicating the file has been saved
-            print(f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted.")
+            print(
+                f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted."
+            )
 
 
 def merge_data(workspace: str, data_type: str):
     """
     Merge the data files for the different stations to create either the LAKE_RAINFALL_DATA.csv or LOONE_AVERAGE_ETPI_DATA.csv file.
-    
+
     Args:
         workspace (str): The path to the workspace directory.
         data_type (str): The type of data. Either 'RAIN' for LAKE_RAINFALL_DATA.csv or 'ETPI' for LOONE_AVERAGE_ETPI_DATA.csv.
     """
-    
+
     # Merge the data files for the different stations (LAKE_RAINFALL_DATA.csv)
     if data_type == "RAIN":
         r(
@@ -181,46 +185,52 @@ def merge_data(workspace: str, data_type: str):
         )
 
 
-def _reformat_weather_file(workspace: str, station: str, data_type: str, data_units_file: str, data_units_header: str) -> None:
-    '''
+def _reformat_weather_file(
+    workspace: str,
+    station: str,
+    data_type: str,
+    data_units_file: str,
+    data_units_header: str,
+) -> None:
+    """
     Reformats the dbhydro weather file to the layout expected by the rest of the LOONE scripts.
     This function reads in and writes out a .csv file.
-    
+
     Args:
         workspace (str): The path to the workspace directory.
         station (str): The station name. Ex: L001, L005, L006, LZ40.
         data_type (str): The type of data. Ex: RAIN, ETPI, H2OT, RADP, RADT, AIRT, WNDS.
         data_units_file (str): The units for the file name. Ex: Inches, Degrees Celsius, etc.
         data_units_header (str): The units for the column header. Ex: Inches, Degrees Celsius, etc. Can differ from data_units_file when data_type is either RADP or RADT.
-        
+
     Returns:
         None
-    '''
+    """
     # Read in the data
     df = None
-    if data_type in ['RADP', 'RADT']:
+    if data_type in ["RADP", "RADT"]:
         df = pd.read_csv(f"{workspace}/{station}_{data_type}.csv")
     else:
         df = pd.read_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
-    
+
     # Remove unneeded column columns
-    df.drop(f' _{data_type}_{data_units_header}', axis=1, inplace=True)
-    df.drop('Unnamed: 0', axis=1, inplace=True)
-    
+    df.drop(f" _{data_type}_{data_units_header}", axis=1, inplace=True)
+    df.drop("Unnamed: 0", axis=1, inplace=True)
+
     # Convert date column to datetime
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
-    
+    df["date"] = pd.to_datetime(df["date"], format="%d-%b-%Y")
+
     # Sort the data by date
-    df.sort_values('date', inplace=True)
-    
+    df.sort_values("date", inplace=True)
+
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
-    
+
     # Drop rows that are missing all their values
-    df.dropna(how='all', inplace=True)
-    
+    df.dropna(how="all", inplace=True)
+
     # Write the updated data back to the file
-    if data_type in ['RADP', 'RADT']:
+    if data_type in ["RADP", "RADT"]:
         df.to_csv(f"{workspace}/{station}_{data_type}.csv")
     else:
         df.to_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
@@ -230,8 +240,8 @@ def _get_file_header_data_units(data_type: str) -> tuple[str, str]:
     """
     Retrieves the units of measurement for a given environmental data type to be used in file names and column headers.
 
-    This function maps a specified environmental data type to its corresponding units of measurement. 
-    These units are used for naming files and for the column headers within those files. 
+    This function maps a specified environmental data type to its corresponding units of measurement.
+    These units are used for naming files and for the column headers within those files.
 
     Args:
         data_type (str): The type of environmental data for which units are being requested. Supported types include "RAIN", "ETPI", "H2OT", "RADP", "RADT", "AIRT", and "WNDS".
@@ -261,14 +271,14 @@ def _get_file_header_data_units(data_type: str) -> tuple[str, str]:
     elif data_type == "WNDS":
         data_units_file = "MPH"
         data_units_header = "MPH"
-        
+
     return data_units_file, data_units_header
 
 
 if __name__ == "__main__":
     args = [sys.argv[1].rstrip("/"), sys.argv[2]]
     if len(sys.argv) >= 4:
-        dbkeys = sys.argv[3].strip("[]").replace(" ", "").split(',')
+        dbkeys = sys.argv[3].strip("[]").replace(" ", "").split(",")
         args.append(dbkeys)
     if len(sys.argv) >= 5:
         date_min = sys.argv[4]

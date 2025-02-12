@@ -34,55 +34,62 @@ DBKEYS = {
     "15638": "S135 PMP_P",
 }
 
+
 def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
     """
-    Retrieve the inflows data used by LOONE. 
-    
+    Retrieve the inflows data used by LOONE.
+
     Args:
         workspace (str): Path to workspace where data will be downloaded.
         dbkeys (dict): Dictionary of dbkeys and corresponding station names.
-        
+
     Returns:
         dict: Success or error message
     """
-    
+
     # Retrieve inflow data
     for dbkey, station in dbkeys.copy().items():
         file_name = f"{station}_FLOW_cmd.csv"
         date_latest = find_last_date_in_csv(workspace, file_name)
-        
+
         # File with data for this dbkey does NOT already exist (or possibly some other error occurred)
         if date_latest is None:
             # Download all the data
-            print(f'Downloading all inflow data for {station}')
+            print(f"Downloading all inflow data for {station}")
             hydro.get(workspace, dbkey)
         else:
             # Check whether the latest data is already up to date.
             if dbhydro_data_is_latest(date_latest):
                 # Notify that the data is already up to date
-                print(f'Downloading of new inflow data skipped for Station {station} (dbkey: {dbkey}). Data is already up to date.')
-                
+                print(
+                    f"Downloading of new inflow data skipped for Station {station} (dbkey: {dbkey}). Data is already up to date."
+                )
+
                 # Remove dbkey from dbkeys so we know it didn't fail
                 del dbkeys[dbkey]
                 continue
-            
+
             # Download only the new data
-            print(f'Downloading new inflow data for {station} starting from date {date_latest}')
+            print(
+                f"Downloading new inflow data for {station} starting from date {date_latest}"
+            )
             hydro.get(workspace, dbkey, date_latest)
-            
+
             # Make sure both our original data and newly downloaded data exist
             df_original_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
             df_new_path = os.path.join(workspace, f"{station}_FLOW_{dbkey}_cmd.csv")
-            
+
             if os.path.exists(df_original_path) and os.path.exists(df_new_path):
                 # Merge the new data with the old data
                 df_original = pd.read_csv(df_original_path, index_col=0)
                 df_new = pd.read_csv(df_new_path, index_col=0)
                 df_merged = pd.concat([df_original, df_new], ignore_index=True)
-                
+
                 # Write the merged data to the new file
-                df_merged.to_csv(os.path.join(workspace, f"{station}_FLOW_{dbkey}_cmd.csv"))
-                
+                df_merged.to_csv(
+                    os.path.join(workspace, f"{station}_FLOW_{dbkey}_cmd.csv")
+                )
+
                 # Remove the old file
                 os.remove(os.path.join(workspace, f"{station}_FLOW_cmd.csv"))
 
@@ -90,39 +97,57 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
     date_latest = find_last_date_in_csv(workspace, "S65E_total.csv")
 
     if date_latest is None:
-        print('Downloading all S65E_total data')
+        print("Downloading all S65E_total data")
         S65E_total.get(workspace, date_max=datetime.now().strftime("%Y-%m-%d"))
     else:
         # Check whether the latest data is already up to date.
         if dbhydro_data_is_latest(date_latest):
             # Notify that the data is already up to date
-            print(f'Downloading of new inflow data skipped for S65E_total. Data is already up to date.')
+            print(
+                f"Downloading of new inflow data skipped for S65E_total. Data is already up to date."
+            )
         else:
             # Temporarily rename current data file so it isn't over written
-            original_file_name = F"S65E_total_old_{uuid.uuid4()}.csv"
-            os.rename(os.path.join(workspace, "S65E_total.csv"), os.path.join(workspace, original_file_name))
-            
+            original_file_name = f"S65E_total_old_{uuid.uuid4()}.csv"
+            os.rename(
+                os.path.join(workspace, "S65E_total.csv"),
+                os.path.join(workspace, original_file_name),
+            )
+
             try:
                 # Download only the new data
-                print(f'Downloading new S65E_total data starting from date {date_latest}')
-                S65E_total.get(workspace, date_min=date_latest, date_max=datetime.now().strftime("%Y-%m-%d"))
-                
+                print(
+                    f"Downloading new S65E_total data starting from date {date_latest}"
+                )
+                S65E_total.get(
+                    workspace,
+                    date_min=date_latest,
+                    date_max=datetime.now().strftime("%Y-%m-%d"),
+                )
+
                 # Merge the new data with the original data
-                df_original = pd.read_csv(os.path.join(workspace, original_file_name), index_col=0)
-                df_new = pd.read_csv(os.path.join(workspace, "S65E_total.csv"), index_col=0)
+                df_original = pd.read_csv(
+                    os.path.join(workspace, original_file_name), index_col=0
+                )
+                df_new = pd.read_csv(
+                    os.path.join(workspace, "S65E_total.csv"), index_col=0
+                )
                 df_merged = pd.concat([df_original, df_new], ignore_index=True)
-                
+
                 # Write out the merged data
                 df_merged.to_csv(os.path.join(workspace, original_file_name))
-                
+
                 # Remove the newly downloaded data file
                 os.remove(os.path.join(workspace, "S65E_total.csv"))
             except Exception as e:
                 print(f"Error occurred while downloading new S65E_total data: {e}")
             finally:
                 # Rename the original updated file back to its original name
-                os.rename(os.path.join(workspace, original_file_name), os.path.join(workspace, "S65E_total.csv"))
-                
+                os.rename(
+                    os.path.join(workspace, original_file_name),
+                    os.path.join(workspace, "S65E_total.csv"),
+                )
+
     # Check if all files were downloaded
     files = glob(f"{workspace}/*FLOW*_cmd.csv")
 
@@ -136,19 +161,19 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
 
             # Remove dbkey from dbkeys so we know it successfully downloaded
             del dbkeys[file_dbkey]
-    
+
     # Check for failed downloads
     if len(dbkeys) > 0 or not os.path.exists(f"{workspace}/S65E_total.csv"):
         error_message = ""
-        
+
         # dbkeys
         if len(dbkeys) > 0:
             error_message += f"The data from the following dbkeys could not be downloaded: {list(dbkeys.keys())}\n"
-        
+
         # S65E_total.csv
         if not os.path.exists(f"{workspace}/S65E_total.csv"):
             error_message += "S65E_total.csv file could not be downloaded.\n"
-        
+
         return {"error": error_message}
 
     return {"success": "Completed inflow flow data download."}

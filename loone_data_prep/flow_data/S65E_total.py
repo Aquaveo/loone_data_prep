@@ -6,11 +6,7 @@ import pandas as pd
 
 
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
-def get(
-    workspace, 
-    date_min: str = "1972-01-01", 
-    date_max: str = "2023-06-30"
-) -> None:
+def get(workspace, date_min: str = "1972-01-01", date_max: str = "2023-06-30") -> None:
     r(
         f"""
         # Load the required libraries
@@ -59,30 +55,32 @@ def get(
         write.csv(result, file = '{workspace}/S65E_total.csv')
         """
     )
-    
+
     _reformat_s65e_total_file(workspace)
+
 
 def _reformat_s65e_total_file(workspace: str):
     # Read in the data
     df = pd.read_csv(f"{workspace}/S65E_total.csv")
-    
+
     # Drop unused columns
-    df.drop('Unnamed: 0', axis=1, inplace=True)
-    
+    df.drop("Unnamed: 0", axis=1, inplace=True)
+
     # Convert date column to datetime
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
-    
+    df["date"] = pd.to_datetime(df["date"], format="%d-%b-%Y")
+
     # Sort the data by date
-    df.sort_values('date', inplace=True)
-    
+    df.sort_values("date", inplace=True)
+
     # Renumber the index
     df.reset_index(drop=True, inplace=True)
-    
+
     # Drop rows that are missing all their values
-    df.dropna(how='all', inplace=True)
-    
+    df.dropna(how="all", inplace=True)
+
     # Write the updated data back to the file
     df.to_csv(f"{workspace}/S65E_total.csv")
+
 
 if __name__ == "__main__":
     workspace = sys.argv[1].rstrip("/")

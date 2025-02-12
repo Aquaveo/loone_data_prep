@@ -224,6 +224,7 @@ DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
     "S135_P": {"a": 3.09890183766129, "b": 0.657896838486496},
 }
 
+
 @retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
 def get_dbkeys(
     station_ids: list,
@@ -305,18 +306,14 @@ def data_interpolations(
         Data_In = Data_In.set_index(["date"])
         Data_In.index = pd.to_datetime(Data_In.index, unit="ns")
         Data_df = Data_In.resample("D").mean()
-        Data_df = Data_df.dropna(
-            subset=["%s_%s_%s" % (station, parameter, units)]
-        )
+        Data_df = Data_df.dropna(subset=["%s_%s_%s" % (station, parameter, units)])
         Data_df = Data_df.reset_index()
         Data_df["Yr_M"] = pd.to_datetime(Data_df["date"]).dt.to_period("M")
         start_date = Data_df["date"].iloc[0]
         end_date = Data_df["date"].iloc[-1]
         date_rng = pd.date_range(start=start_date, end=end_date, freq="M")
         Monthly_df = pd.DataFrame(date_rng, columns=["date"])
-        Monthly_df["Yr_M"] = pd.to_datetime(Monthly_df["date"]).dt.to_period(
-            "M"
-        )
+        Monthly_df["Yr_M"] = pd.to_datetime(Monthly_df["date"]).dt.to_period("M")
         New_date = []
         New_data = []
         Days = []
@@ -329,17 +326,13 @@ def data_interpolations(
                 if type(Data_df.loc[i]["date"]) == pd.Timestamp:
                     New_date.append(Data_df.loc[i]["date"])
                     New_data.append(
-                        Data_df.loc[i][
-                            "%s_%s_%s" % (station, parameter, units)
-                        ]
+                        Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)]
                     )
                 else:
                     for j in range(len(Data_df.loc[i]["date"])):
                         New_date.append(Data_df.loc[i]["date"][j])
                         New_data.append(
-                            Data_df.loc[i][
-                                "%s_%s_%s" % (station, parameter, units)
-                            ][j]
+                            Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)][j]
                         )
             elif i not in Data_df.index:
                 New_date.append(
@@ -362,9 +355,7 @@ def data_interpolations(
                 Days_cum.append(
                     Days_cum[i - 1]
                     + Days[i]
-                    + monthrange(New_date[i - 1].year, New_date[i - 1].month)[
-                        1
-                    ]
+                    + monthrange(New_date[i - 1].year, New_date[i - 1].month)[1]
                     - Days[i - 1]
                 )
         Final_df = pd.DataFrame()
@@ -378,9 +369,7 @@ def data_interpolations(
         Final_df["date"] = pd.to_datetime(Final_df["date"], format="%Y-%m-%d")
         start_date = Final_df["date"].iloc[0]
         end_date = Final_df["date"].iloc[-1]
-        date_rng_TSS_1 = pd.date_range(
-            start=start_date, end=end_date, freq="D"
-        )
+        date_rng_TSS_1 = pd.date_range(start=start_date, end=end_date, freq="D")
         # Create a data frame with a date column
         Data_df = pd.DataFrame(date_rng_TSS_1, columns=["date"])
         Data_len = len(Data_df.index)
@@ -410,9 +399,7 @@ def interpolate_all(workspace: str, d: dict = INTERP_DICT) -> None:
         print(
             f"Interpolating parameter: {param} for station IDs: {values['station_ids']}."
         )
-        data_interpolations(
-            workspace, param, values["units"], values["station_ids"]
-        )
+        data_interpolations(workspace, param, values["units"], values["station_ids"])
 
 
 def kinematic_viscosity(
@@ -426,9 +413,7 @@ def kinematic_viscosity(
 
     class nu_Func:
         def nu(T):
-            nu20 = (
-                1.0034 / 1e6
-            )  # m2/s (kinematic viscosity of water at T = 20 C)
+            nu20 = 1.0034 / 1e6  # m2/s (kinematic viscosity of water at T = 20 C)
 
             def func(x):
                 # return[log(x[0]/nu20)-((20-T)/(T+96))*(1.2364-1.37E-3*(20-T)+5.7E-6*(20-T)**2)]
@@ -437,11 +422,7 @@ def kinematic_viscosity(
                     - 10
                     ** (
                         ((20 - T) / (T + 96))
-                        * (
-                            1.2364
-                            - 1.37e-3 * (20 - T)
-                            + 5.7e-6 * (20 - T) ** 2
-                        )
+                        * (1.2364 - 1.37e-3 * (20 - T) + 5.7e-6 * (20 - T) ** 2)
                     )
                 ]
 
@@ -518,10 +499,7 @@ def wind_induced_waves(
 
         def L(g, d, T):
             def func(x):
-                return [
-                    (g * T**2 / 2 * np.pi) * np.tanh(2 * np.pi * d / x[0])
-                    - x[0]
-                ]
+                return [(g * T**2 / 2 * np.pi) * np.tanh(2 * np.pi * d / x[0]) - x[0]]
 
             sol = fsolve(func, [1])
             L = sol[0]
@@ -542,9 +520,7 @@ def wind_induced_waves(
         )
 
     Wind_ShearStress = pd.DataFrame(LO_WS["date"], columns=["date"])
-    Wind_ShearStress["ShearStress"] = (
-        W_ShearStress * 10
-    )  # Convert N/m2 to Dyne/cm2
+    Wind_ShearStress["ShearStress"] = W_ShearStress * 10  # Convert N/m2 to Dyne/cm2
     Wind_ShearStress.to_csv(
         os.path.join(output_dir, wind_shear_stress_out), index=False
     )
@@ -586,9 +562,7 @@ def wind_induced_waves(
     Current_ShearStress_df["Current_Stress"] = (
         Current_Stress * 10
     )  # Convert N/m2 to Dyne/cm2
-    Current_ShearStress_df["Wind_Stress"] = (
-        Wind_Stress * 10
-    )  # Convert N/m2 to Dyne/cm2
+    Current_ShearStress_df["Wind_Stress"] = Wind_Stress * 10  # Convert N/m2 to Dyne/cm2
     Current_ShearStress_df["Wind_Speed_m/s"] = LO_WS["WS_mps"]
 
     def Current_bottom_shear_stress_2(u, k, nu, ks, z, ru):
@@ -604,8 +578,7 @@ def wind_induced_waves(
 
         def func3(u_str3):
             return [
-                u_str3[0]
-                - u * k * np.exp(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks))
+                u_str3[0] - u * k * np.exp(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks))
             ]
 
         sol3 = fsolve(func3, [1])
@@ -620,9 +593,7 @@ def wind_induced_waves(
 
     def Current_bottom_shear_stress_3(u, k, nu, ks, z, ru):
         def func1(u_str1):
-            return [
-                u_str1[0] - u * k * (1 / np.log(z / (0.11 * nu / u_str1[0])))
-            ]
+            return [u_str1[0] - u * k * (1 / np.log(z / (0.11 * nu / u_str1[0])))]
 
         sol1 = fsolve(func1, [1])
 
@@ -634,9 +605,7 @@ def wind_induced_waves(
         def func3(u_str3):
             return [
                 u_str3[0]
-                - u
-                * k
-                * (1 / np.log(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks)))
+                - u * k * (1 / np.log(z / ((0.11 * nu / u_str3[0]) + 0.0333 * ks)))
             ]
 
         sol3 = fsolve(func3, [1])
@@ -665,23 +634,17 @@ def wind_induced_waves(
     )
 
 
-def stg2sto(
-    stg_sto_data_path: str, v: pd.Series, i: int
-) -> interpolate.interp1d:
+def stg2sto(stg_sto_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
     stgsto_data = pd.read_csv(stg_sto_data_path)
     # NOTE: We Can use cubic interpolation instead of linear
     x = stgsto_data["Stage"]
     y = stgsto_data["Storage"]
     if i == 0:
         # return storage given stage
-        return interpolate.interp1d(
-            x, y, fill_value="extrapolate", kind="linear"
-        )(v)
+        return interpolate.interp1d(x, y, fill_value="extrapolate", kind="linear")(v)
     else:
         # return stage given storage
-        return interpolate.interp1d(
-            y, x, fill_value="extrapolate", kind="linear"
-        )(v)
+        return interpolate.interp1d(y, x, fill_value="extrapolate", kind="linear")(v)
 
 
 def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
@@ -694,14 +657,10 @@ def stg2ar(stgar_data_path: str, v: pd.Series, i: int) -> interpolate.interp1d:
     y = stgar_data["Surf_Area"]
     if i == 0:
         # return surface area given stage
-        return interpolate.interp1d(
-            x, y, fill_value="extrapolate", kind="linear"
-        )(v)
+        return interpolate.interp1d(x, y, fill_value="extrapolate", kind="linear")(v)
     else:
         # return stage given surface area
-        return interpolate.interp1d(
-            y, x, fill_value="extrapolate", kind="linear"
-        )(v)
+        return interpolate.interp1d(y, x, fill_value="extrapolate", kind="linear")(v)
 
 
 @retry(Exception, tries=3, delay=15, backoff=2)
@@ -723,7 +682,7 @@ def nutrient_prediction(
     nutrient: str = "PHOSPHATE",
 ) -> None:
     """Predict nutrient loads for the given station IDs.
-    
+
     Args:
         input_dir (str): Path to the directory where the input files are located.
         output_dir (str): Path to the directory where the output files will be saved.
@@ -850,10 +809,7 @@ def photo_period(
     alpha = np.radians(90 + B)  # Eq. [6]. Value at sunrise and sunset.
     M = 0.9856 * doy - 3.251  # Eq. [4].
     lmd = (
-        M
-        + 1.916 * np.sin(np.radians(M))
-        + 0.020 * np.sin(np.radians(2 * M))
-        + 282.565
+        M + 1.916 * np.sin(np.radians(M)) + 0.020 * np.sin(np.radians(2 * M)) + 282.565
     )  # Eq. [3]. Lambda
     delta = np.arcsin(C * np.sin(np.radians(lmd)))  # Eq. [2].
 
@@ -883,9 +839,7 @@ def photo_period(
     photo_period_df["Day"] = doy
     photo_period_df["Data"] = P
 
-    photo_period_df.to_csv(
-        os.path.join(workspace, f"{file_name}.csv"), index=False
-    )
+    photo_period_df.to_csv(os.path.join(workspace, f"{file_name}.csv"), index=False)
 
 
 def find_last_date_in_csv(workspace: str, file_name: str) -> str:
@@ -954,9 +908,7 @@ def dbhydro_data_is_latest(date_latest: str):
     Returns:
         bool: True if the date_latest is the most recent date possible to get data from dbhydro, False otherwise
     """
-    date_latest_object = datetime.datetime.strptime(
-        date_latest, "%Y-%m-%d"
-    ).date()
+    date_latest_object = datetime.datetime.strptime(date_latest, "%Y-%m-%d").date()
     return date_latest_object == (
         datetime.datetime.now().date() - datetime.timedelta(days=1)
     )
@@ -965,47 +917,47 @@ def dbhydro_data_is_latest(date_latest: str):
 def get_synthetic_data(date_start: str, df: pd.DataFrame):
     """
     Gets 15 days of synthetic NO and Chla data matching forecast start date.
-    
+
     Args:
         date_start (str): The date to start the forecast
         df (pd.DataFrame): The dataset containing NO or Chla data
-    
+
     Returns:
         pd.DataFrame, pd.DataFrame: The updated NO or Chla dataset
     """
     date_end = date_start + datetime.timedelta(days=15)
 
-    df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    df["date"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
     # Extract the month and day from the 'date' column
-    df['month_day'] = df['date'].dt.strftime('%m-%d')
-    
+    df["month_day"] = df["date"].dt.strftime("%m-%d")
+
     # Extract the month and day from date_start and date_end
-    start_month_day = date_start.strftime('%m-%d')
-    end_month_day = date_end.strftime('%m-%d')
-    
+    start_month_day = date_start.strftime("%m-%d")
+    end_month_day = date_end.strftime("%m-%d")
+
     # Filter the DataFrame to include only rows between date_start and date_end for all previous years
-    mask = (df['month_day'] >= start_month_day) & (df['month_day'] <= end_month_day)
+    mask = (df["month_day"] >= start_month_day) & (df["month_day"] <= end_month_day)
     filtered_data = df.loc[mask]
-    
+
     # Group by the month and day, then calculate the average for each group
-    average_values = filtered_data.groupby('month_day')['Data'].mean()
-    
-    average_values_df = pd.DataFrame({
-        'date': pd.date_range(start=date_start, end=date_end),
-        'Data': average_values.values
-    })
-    
+    average_values = filtered_data.groupby("month_day")["Data"].mean()
+
+    average_values_df = pd.DataFrame(
+        {
+            "date": pd.date_range(start=date_start, end=date_end),
+            "Data": average_values.values,
+        }
+    )
+
     df = pd.concat([df, average_values_df], ignore_index=True)
-    df.drop(columns=['month_day'], inplace=True)
-        
+    df.drop(columns=["month_day"], inplace=True)
+
     return df
 
 
 if __name__ == "__main__":
     if sys.argv[1] == "get_dbkeys":
-        get_dbkeys(
-            sys.argv[2].strip("[]").replace(" ", "").split(","), *sys.argv[3:]
-        )
+        get_dbkeys(sys.argv[2].strip("[]").replace(" ", "").split(","), *sys.argv[3:])
     elif sys.argv[1] == "data_interp":
         interp_args = [x for x in sys.argv[2:]]
         interp_args[0] = interp_args[0].rstrip("/")

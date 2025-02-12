@@ -326,28 +326,18 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
 
     # Convert values in each column from m^3/h to m^3/d
     column_max = column_max.transform(lambda x: x * HOURS_IN_DAY)
-    column_75percentile = column_75percentile.transform(
-        lambda x: x * HOURS_IN_DAY
-    )
+    column_75percentile = column_75percentile.transform(lambda x: x * HOURS_IN_DAY)
     column_average = column_average.transform(lambda x: x * HOURS_IN_DAY)
-    column_25percentile = column_25percentile.transform(
-        lambda x: x * HOURS_IN_DAY
-    )
+    column_25percentile = column_25percentile.transform(lambda x: x * HOURS_IN_DAY)
     column_min = column_min.transform(lambda x: x * HOURS_IN_DAY)
 
     # Append modified columns into one pandas DataFrame
     dataframe_result = pd.DataFrame()
     dataframe_result.index = dataframe.groupby([dataframe.index]).mean().index
     dataframe_result["flow_max_m^3/d"] = column_max["flow_max_m^3/s"].tolist()
-    dataframe_result["flow_75%_m^3/d"] = column_75percentile[
-        "flow_75%_m^3/s"
-    ].tolist()
-    dataframe_result["flow_avg_m^3/d"] = column_average[
-        "flow_avg_m^3/s"
-    ].tolist()
-    dataframe_result["flow_25%_m^3/d"] = column_25percentile[
-        "flow_25%_m^3/s"
-    ].tolist()
+    dataframe_result["flow_75%_m^3/d"] = column_75percentile["flow_75%_m^3/s"].tolist()
+    dataframe_result["flow_avg_m^3/d"] = column_average["flow_avg_m^3/s"].tolist()
+    dataframe_result["flow_25%_m^3/d"] = column_25percentile["flow_25%_m^3/s"].tolist()
     dataframe_result["flow_min_m^3/d"] = column_min["flow_min_m^3/s"].tolist()
 
     # Format datetimes to just dates
@@ -380,7 +370,7 @@ def main(
             Default is False.
         observed_data_dir (str): The path to the observed flow data directory
             (only needed if bias_corrected is True).
-        cache_path (str): The path to the cache directory for geoglows data. 
+        cache_path (str): The path to the cache directory for geoglows data.
             Should hold a directory named geoglows_cache that holds the cached files. Use None to not use a cache.
     """
     # Local Variables
@@ -414,9 +404,7 @@ def main(
     # Get the flow data for each station
     for station_id in reach_ids.keys():
         reach_id = reach_ids[station_id]
-        station_ensembles = get_flow_forecast_ensembles(
-            reach_id, forecast_date
-        )
+        station_ensembles = get_flow_forecast_ensembles(reach_id, forecast_date)
         station_stats = get_flow_forecast_stats(reach_id, forecast_date)
 
         if bias_corrected:
