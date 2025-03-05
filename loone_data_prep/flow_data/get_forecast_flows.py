@@ -75,6 +75,12 @@ REACH_IDS = {
     "S40_S": 13082797,
     "S49_S": 13082696,
 }
+INFLOW_IDS = [
+    750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
+    750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
+    750068005, 750063868, 750069782, 750072741
+]
+
 
 SECONDS_IN_HOUR = 3600
 SECONDS_IN_DAY = 86400
@@ -140,7 +146,7 @@ def get_reach_id(latitude: float, longitude: float):
     Returns:
         (int): The reach id of the given latitude/longitude
     """
-    reach_data = geoglows.streamflow.latlon_to_reach(latitude, longitude)
+    reach_data = geoglows.streams.latlon_to_reach(latitude, longitude)
 
     if "error" in reach_data:
         raise Exception(reach_data["error"])
@@ -159,8 +165,8 @@ def get_flow_forecast_ensembles(reach_id: str, forecast_date: str):
     Returns:
         (pandas.core.frame.DataFrame): The 52 ensemble flow forecasts.
     """
-    return geoglows.streamflow.forecast_ensembles(
-        reach_id=reach_id, forecast_date=forecast_date, endpoint=GEOGLOWS_ENDPOINT
+    return geoglows.data.forecast_ensembles(
+        river_id=reach_id, date=forecast_date
     )
 
 
@@ -176,8 +182,8 @@ def get_flow_forecast_stats(reach_id: str, forecast_date: str):
     Returns:
         (pandas.core.frame.DataFrame): The forecast stats
     """
-    return geoglows.streamflow.forecast_stats(
-        reach_id=reach_id, forecast_date=forecast_date, endpoint=GEOGLOWS_ENDPOINT
+    return geoglows.data.forecast_stats(
+        river_id=reach_id, date=forecast_date
     )
 
 
@@ -202,7 +208,7 @@ def ensembles_to_csv(
             data.
     """
     # Get the path to the file that will be written
-    file_name = f"{station_id}_FLOW_cmd_geoglows.csv"
+    file_name = f"{reach_id}_INFLOW_cmd_geoglows.csv"
     file_path = os.path.join(workspace, file_name)
 
     # Format DataFrames for LOONE
@@ -412,27 +418,32 @@ def main(
                 )
 
     # Get the flow data for each station
-    for station_id in reach_ids.keys():
-        reach_id = reach_ids[station_id]
+    for reach_id in REACH_IDS.values():
         station_ensembles = get_flow_forecast_ensembles(
             reach_id, forecast_date
         )
         station_stats = get_flow_forecast_stats(reach_id, forecast_date)
+    #for station_id in reach_ids.keys():
+    #    reach_id = reach_ids[station_id]
+    #    station_ensembles = get_flow_forecast_ensembles(
+    #        reach_id, forecast_date
+    #    )
+    #    station_stats = get_flow_forecast_stats(reach_id, forecast_date)
 
-        if bias_corrected:
-            observed_data_list = glob.glob(
-                os.path.join(observed_data_dir, f"{station_id}*FLOW_cmd.csv")
-            )
-            if observed_data_list:
-                observed_data_path = observed_data_list[0]
-                station_ensembles, station_stats = get_bias_corrected_data(
-                    station_id,
-                    reach_id,
-                    observed_data_path,
-                    station_ensembles,
-                    station_stats,
-                    cache_path,
-                )
+    #    if bias_corrected:
+    #        observed_data_list = glob.glob(
+    #            os.path.join(observed_data_dir, f"{station_id}*FLOW_cmd.csv")
+    #        )
+    #        if observed_data_list:
+    #            observed_data_path = observed_data_list[0]
+    #            station_ensembles, station_stats = get_bias_corrected_data(
+    #                station_id,
+    #                reach_id,
+    #                observed_data_path,
+    #                station_ensembles,
+    #                station_stats,
+    #                cache_path,
+    #            )
 
         ensembles_to_csv(
             workspace,
@@ -443,9 +454,12 @@ def main(
 
 
 if __name__ == "__main__":
-    workspace = sys.argv[1].rstrip("/")
-    bias_corrected = sys.argv[2].lower() in ["true", "yes", "y", "1"]
-    observed_data_path = sys.argv[3]
+    #workspace = sys.argv[1].rstrip("/")
+    #bias_corrected = sys.argv[2].lower() in ["true", "yes", "y", "1"]
+    #observed_data_path = sys.argv[3]
+    workspace = "/home/rhuber/development/RunLOONE/fixed_data_12_February_2025"
+    bias_corrected = False
+    observed_data_path = "check"
     main(
         workspace,
         bias_corrected=bias_corrected,
