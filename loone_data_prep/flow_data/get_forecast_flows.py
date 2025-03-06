@@ -189,7 +189,7 @@ def get_flow_forecast_stats(reach_id: str, forecast_date: str):
 
 def ensembles_to_csv(
     workspace: str,
-    station_id: str,
+    reach_id: str,
     ensembles: pd.core.frame.DataFrame,
     stats: pd.core.frame.DataFrame,
 ):
@@ -306,28 +306,28 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     dataframe.clip(0, inplace=True)
 
     # Max Column (Max)
-    column_max = dataframe[["flow_max_m^3/s"]].copy()
+    column_max = dataframe[["flow_max"]].copy()
     column_max = column_max.groupby([column_max.index]).max()
 
     # 75th Percentile Column (Average)
-    column_75percentile = dataframe[["flow_75%_m^3/s"]].copy()
+    column_75percentile = dataframe[["flow_75p"]].copy()
     column_75percentile = column_75percentile.groupby(
         [column_75percentile.index]
     ).mean()
 
     # Average Column (Weighted Average)
-    column_average = dataframe[["flow_avg_m^3/s"]].copy()
+    column_average = dataframe[["flow_avg"]].copy()
     column_average.transform(lambda x: x / 8)
     column_average = column_average.groupby([column_average.index]).sum()
 
     # 25th Percentile Column (Average)
-    column_25percentile = dataframe[["flow_25%_m^3/s"]].copy()
+    column_25percentile = dataframe[["flow_25p"]].copy()
     column_25percentile = column_25percentile.groupby(
         [column_25percentile.index]
     ).mean()
 
     # Min Column (Min)
-    column_min = dataframe[["flow_min_m^3/s"]].copy()
+    column_min = dataframe[["flow_min"]].copy()
     column_min = column_min.groupby([column_min.index]).min()
 
     # Convert values in each column from m^3/h to m^3/d
@@ -344,17 +344,17 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     # Append modified columns into one pandas DataFrame
     dataframe_result = pd.DataFrame()
     dataframe_result.index = dataframe.groupby([dataframe.index]).mean().index
-    dataframe_result["flow_max_m^3/d"] = column_max["flow_max_m^3/s"].tolist()
+    dataframe_result["flow_max_m^3/d"] = column_max["flow_max"].tolist()
     dataframe_result["flow_75%_m^3/d"] = column_75percentile[
-        "flow_75%_m^3/s"
+        "flow_75p"
     ].tolist()
     dataframe_result["flow_avg_m^3/d"] = column_average[
-        "flow_avg_m^3/s"
+        "flow_avg"
     ].tolist()
     dataframe_result["flow_25%_m^3/d"] = column_25percentile[
-        "flow_25%_m^3/s"
+        "flow_25p"
     ].tolist()
-    dataframe_result["flow_min_m^3/d"] = column_min["flow_min_m^3/s"].tolist()
+    dataframe_result["flow_min_m^3/d"] = column_min["flow_min"].tolist()
 
     # Format datetimes to just dates
     dataframe_result.index = dataframe_result.index.strftime("%Y-%m-%d")
@@ -418,7 +418,7 @@ def main(
                 )
 
     # Get the flow data for each station
-    for reach_id in REACH_IDS.values():
+    for reach_id in INFLOW_IDS:
         station_ensembles = get_flow_forecast_ensembles(
             reach_id, forecast_date
         )
@@ -447,19 +447,16 @@ def main(
 
         ensembles_to_csv(
             workspace,
-            station_id,
+            reach_id,
             station_ensembles,
             station_stats,
         )
 
 
 if __name__ == "__main__":
-    #workspace = sys.argv[1].rstrip("/")
-    #bias_corrected = sys.argv[2].lower() in ["true", "yes", "y", "1"]
-    #observed_data_path = sys.argv[3]
-    workspace = "/home/rhuber/development/RunLOONE/fixed_data_12_February_2025"
-    bias_corrected = False
-    observed_data_path = "check"
+    workspace = sys.argv[1].rstrip("/")
+    bias_corrected = sys.argv[2].lower() in ["true", "yes", "y", "1"]
+    observed_data_path = sys.argv[3]
     main(
         workspace,
         bias_corrected=bias_corrected,
