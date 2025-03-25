@@ -1,5 +1,6 @@
 import os
 import sys
+sys.path.append('/home/rhuber/development/LOONE_FORECAST/loone_data_prep')
 import glob
 import pandas as pd
 import rpy2.robjects as ro
@@ -80,6 +81,10 @@ INFLOW_IDS = [
     750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
     750068005, 750063868, 750069782, 750072741
 ]
+OUTFLOW_IDS = [750053809, 750057949]
+MATCHED_IDS = [750052624, 750049656, 750052624, 750057357, 750052624, 
+               750038427, 750051428, 750068601, 750058536, 750038416, 
+               750050259, 750045514, 750053213, 750028935]
 
 
 SECONDS_IN_HOUR = 3600
@@ -189,6 +194,7 @@ def get_flow_forecast_stats(reach_id: str, forecast_date: str):
 
 def ensembles_to_csv(
     workspace: str,
+    flow_type: str,
     reach_id: str,
     ensembles: pd.core.frame.DataFrame,
     stats: pd.core.frame.DataFrame,
@@ -208,7 +214,7 @@ def ensembles_to_csv(
             data.
     """
     # Get the path to the file that will be written
-    file_name = f"{reach_id}_INFLOW_cmd_geoglows.csv"
+    file_name = f"{reach_id}_{flow_type}_cmd_geoglows.csv"
     file_path = os.path.join(workspace, file_name)
 
     # Format DataFrames for LOONE
@@ -240,8 +246,8 @@ def _format_ensembles_DataFrame(dataframe: pd.core.frame.DataFrame):
             DataFrame.
     """
     # Remove high resolution columns (ensemble 52)
-    if "ensemble_52_m^3/s" in dataframe.columns:
-        dataframe.drop(columns="ensemble_52_m^3/s", inplace=True)
+    if "ensemble_52" in dataframe.columns:
+        dataframe.drop(columns="ensemble_52", inplace=True)
 
     # Remove rows with null values
     dataframe.dropna(axis="index", inplace=True)
@@ -290,8 +296,8 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
             DataFrame.
     """
     # Remove high resolution columns (ensemble 52, high_res_m^3/s)
-    if "high_res_m^3/s" in dataframe.columns:
-        dataframe.drop(columns="high_res_m^3/s", inplace=True)
+    if "high_res" in dataframe.columns:
+        dataframe.drop(columns="high_res", inplace=True)
 
     # Remove rows with null values
     dataframe.dropna(axis="index", inplace=True)
@@ -447,6 +453,33 @@ def main(
 
         ensembles_to_csv(
             workspace,
+            "INFLOW",
+            reach_id,
+            station_ensembles,
+            station_stats,
+        )
+    for reach_id in OUTFLOW_IDS:
+        station_ensembles = get_flow_forecast_ensembles(
+            reach_id, forecast_date
+        )
+        station_stats = get_flow_forecast_stats(reach_id, forecast_date)
+
+        ensembles_to_csv(
+            workspace,
+            "OUTFLOW",
+            reach_id,
+            station_ensembles,
+            station_stats,
+        )
+    for reach_id in MATCHED_IDS:
+        station_ensembles = get_flow_forecast_ensembles(
+            reach_id, forecast_date
+        )
+        station_stats = get_flow_forecast_stats(reach_id, forecast_date)
+
+        ensembles_to_csv(
+            workspace,
+            "MATCHED",
             reach_id,
             station_ensembles,
             station_stats,
