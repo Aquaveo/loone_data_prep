@@ -1,7 +1,5 @@
 import os
 import sys
-sys.path.append('/home/rhuber/development/LOONE_FORECAST/loone_data_prep')
-import glob
 import pandas as pd
 import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri

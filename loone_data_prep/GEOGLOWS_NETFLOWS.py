@@ -1,8 +1,19 @@
 import sys
-from glob import glob
 import pandas as pd
 
+
 def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:
+    """Calculate GEOGLOWS netflows from inflow data files for LOONE_Q forecast mode run 
+        and save to a CSV file.
+
+    Args:
+        input_dir (str): Path to the input directory containing inflow data files
+        output_dir (str): Path to the output directory where the netflows file will be saved
+        ensemble_number (str): GEOGLOWS ensemble number to filter the inflow data columns
+    
+    Returns:
+        None
+    """
     #get all 16 inflow ids from geoglows
     INFLOW_IDS = [
         750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
@@ -32,5 +43,5 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:
     Netflows.to_csv(f"{output_dir}/Netflows_acft_geoglows.csv", index=False)
     
 if __name__ == "__main__":
-    #main(sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/"), sys.argv[3])
-    main("/home/rhuber/development/RunLOONE/fixed_data_12_February_2025", "/home/rhuber/development/RunLOONE/geoglows", 1)
+    main(sys.argv[1].rstrip("/"), sys.argv[2].rstrip("/"), sys.argv[3])
+    

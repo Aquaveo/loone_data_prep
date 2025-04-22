@@ -5,7 +5,6 @@ Created on Wed Jun 21 00:18:50 2023
 @author: osama
 """
 import sys
-sys.path.append('/home/rhuber/development/LOONE_FORECAST/loone_data_prep')
 import os
 import shutil
 from glob import glob
@@ -85,16 +84,16 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S308 = pd.read_csv(f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv")
     
     #I said that these ones shouldn't be included
-    S351_S = pd.read_csv(f"{input_dir}/S351_S_FLOW_cmd_geoglows.csv")
-    S352_S = pd.read_csv(f"{input_dir}/S352_S_FLOW_cmd_geoglows.csv")
-    S354_S = pd.read_csv(f"{input_dir}/S354_S_FLOW_cmd_geoglows.csv")
+    # S351_S = pd.read_csv(f"{input_dir}/S351_S_FLOW_cmd_geoglows.csv")
+    # S352_S = pd.read_csv(f"{input_dir}/S352_S_FLOW_cmd_geoglows.csv")
+    # S354_S = pd.read_csv(f"{input_dir}/S354_S_FLOW_cmd_geoglows.csv")
     
     FISHP = pd.read_csv(f"{input_dir}/750053213_MATCHED_cmd_geoglows.csv")
     # L8 = pd.read_csv(f'{input_dir}/L8.441_FLOW_cmd_geoglows.csv')
     
     #I said that these ones should now be included in the model
-    S2_P = pd.read_csv(f"{input_dir}/S2_P_FLOW_cmd_geoglows.csv")
-    S3_P = pd.read_csv(f"{input_dir}/S3_P_FLOW_cmd_geoglows.csv")
+    # S2_P = pd.read_csv(f"{input_dir}/S2_P_FLOW_cmd_geoglows.csv")
+    # S3_P = pd.read_csv(f"{input_dir}/S3_P_FLOW_cmd_geoglows.csv")
     # S4_P = pd.read_csv(f'{input_dir}/S4_P_FLOW_cmd.csv')
 
     S77_S = pd.read_csv(f"{input_dir}/750038416_MATCHED_cmd_geoglows.csv")
