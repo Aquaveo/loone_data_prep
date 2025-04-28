@@ -26,6 +26,9 @@ def extend_PI(PI_path, output_path):
 
     # Append the new rows to the original dataframe
     df_extended = pd.concat([df, future_df[["date", "PI"]]], ignore_index=True)
+    df_extended.drop(columns=["month_day"], inplace=True)
+    df_extended.set_index('date', inplace=True)
+    df_extended = df_extended.resample('W-FRI').mean().reset_index()
 
     # Save the updated dataframe to CSV
     df_extended.to_csv(output_path, index=False)

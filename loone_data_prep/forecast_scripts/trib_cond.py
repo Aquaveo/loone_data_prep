@@ -13,7 +13,7 @@ def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output):
     all_data = all_data[(all_data['date'] >= today) & (all_data['date'] <= future_date)]
     all_data = all_data.set_index(['date'])
     all_data.index = pd.to_datetime(all_data.index, unit='ns')
-    Net_RF_Weekly = all_data_Weekly = all_data.resample('W-FRI').sum()
+    Net_RF_Weekly =  all_data.resample('W-FRI').sum()
     # Net Inflows cfs
     Net_Inflows = pd.read_csv(net_inflows)
     Net_Inflows['date'] = pd.to_datetime(Net_Inflows['date']).dt.date
@@ -24,7 +24,7 @@ def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output):
     Net_Inflows.index = pd.to_datetime(Net_Inflows.index, unit='ns')
     Net_Inflow_Weekly = Net_Inflows.resample('W-FRI').mean()
     # S65 cfs
-    S65E = S65_total = pd.read_csv(main_tributary)
+    S65E = pd.read_csv(main_tributary)
     S65E['date'] = pd.to_datetime(S65E['date']).dt.date
     S65E = S65E[(S65E['date'] >= today) & (S65E['date'] <= future_date)]
     #We want specifically S65_Q
@@ -34,28 +34,17 @@ def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output):
     S65E.index = pd.to_datetime(S65E.index, unit='ns')  # Ensure index is datetime
     S65E_Weekly = S65E.resample('W-FRI').mean()
     # PI
-    # TODO
-    # This is prepared manually
-    # Weekly data is downloaded from https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/time-series/0804
-    # State:Florida Division:4.South Central
-    #Not sure how to get forecast for this one
     PI = pd.DataFrame(S65E_Weekly.index, columns=['date'])
     PI['date'] = pd.to_datetime(PI['date'])
     PI_data = pd.read_csv(PI)
 
     # Convert 'date' column to datetime
     PI_data['date'] = pd.to_datetime(PI_data['date'])
-    # Drop the 'month-day' column if it exists
-    if 'month_day' in PI_data.columns:
-        PI_data.drop(columns=['month_day'], inplace=True)
 
     # Set 'date' as index
     PI_data.set_index('date', inplace=True)
 
-    # Resample to weekly frequency (Fridays) and take the mean
-    PI_data_weekly = PI_data.resample('W-FRI').mean().reset_index()
-    PI = PI.merge(PI_data_weekly[['date', "PI"]], on='date', how='left')
-
+    PI = PI.merge(PI_data[['date', "PI"]], on='date', how='left')
 
 
     Trib_Cond_Wkly = pd.DataFrame(S65E_Weekly.index, columns=['date'])
