@@ -96,31 +96,31 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # S3_P = pd.read_csv(f"{input_dir}/S3_P_FLOW_cmd_geoglows.csv")
     # S4_P = pd.read_csv(f'{input_dir}/S4_P_FLOW_cmd.csv')
 
-    S77_S = pd.read_csv(f"{input_dir}/750038416_MATCHED_cmd_geoglows.csv")
+    S77_S = pd.read_csv(f"{input_dir}/750054400_MATCHED_cmd_geoglows.csv")
     
     #???
-    INDUST = pd.read_csv(f"{input_dir}/INDUST_FLOW_cmd_geoglows.csv")
+    # INDUST = pd.read_csv(f"{input_dir}/INDUST_FLOW_cmd_geoglows.csv")
 
     # Read Interpolated TP data
     # Data_Interpolation Python Script is used to interpolate TP data for all inflow stations addressed below!
-    # S65_total_TP = pd.read_csv(f"{input_dir}/S65E_S_PHOSPHATE_predicted.csv")[
-    #     ["date", f"ensemble_{ensemble_number}_m^3/d"]
-    # ]
-    # S71_TP = pd.read_csv(f"{input_dir}/S71_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # # S72_TP = pd.read_csv(f'{input_dir}/S72_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    # S84_TP = pd.read_csv(f"{input_dir}/S84_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # # S127_TP = pd.read_csv(f'{input_dir}/S127_C_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    # S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # # S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    # # S308_TP = pd.read_csv(f'{input_dir}/water_quality_S308C_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', 'Data']]
-    # FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}_m^3/d"]]
-    # # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
-    # # S4_TP = pd.read_csv(f'{input_dir}/S4_P_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S65_total_TP = pd.read_csv(f"{input_dir}/S65E_S_PHOSPHATE_predicted.csv")[
+        ["date", f"ensemble_{ensemble_number}"]
+    ]
+    S71_TP = pd.read_csv(f"{input_dir}/S71_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    # S72_TP = pd.read_csv(f'{input_dir}/S72_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S84_TP = pd.read_csv(f"{input_dir}/S84_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    # S127_TP = pd.read_csv(f'{input_dir}/S127_C_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    # S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    # S308_TP = pd.read_csv(f'{input_dir}/water_quality_S308C_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', 'Data']]
+    FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
+    # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
+    # S4_TP = pd.read_csv(f'{input_dir}/S4_P_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
 
-    # # Set date range for S65 TP
-    # S65_total_TP = DF_Date_Range(S65_total_TP, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
+    # Set date range for S65 TP
+    S65_total_TP = DF_Date_Range(S65_total_TP, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
     
 
     # Set Date Range
@@ -135,14 +135,14 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S135_P_Q",
         "S154_Q",  #'S191_Q',
         "S308_Q",
-        "S351_Q",
-        "S352_Q",
-        "S354_Q",
+        # "S351_Q",
+       # "S352_Q",
+        # "S354_Q",
         "FISHP_Q",  #'L8_Q',
-        "S2_P_Q",
-        "S3_P_Q",  #'S4_P_Q',
+        # "S2_P_Q",
+        # "S3_P_Q",  #'S4_P_Q',
         "S77_Q",
-        "INDUST_Q",
+        # "INDUST_Q",
     ]
     Q_list = {
         "S65_Q": S65_total,
@@ -155,14 +155,14 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S135_P_Q": S135_P,
         "S154_Q": S154_C,
         "S308_Q": S308,
-        "S351_Q": S351_S,
-        "S352_Q": S352_S,
-        "S354_Q": S354_S,
+        # "S351_Q": S351_S,
+        # "S352_Q": S352_S,
+        # "S354_Q": S354_S,
         "FISHP_Q": FISHP,  #'L8_Q': L8,
-        "S2_P_Q": S2_P,
-        "S3_P_Q": S3_P,
+        # "S2_P_Q": S2_P,
+        # "S3_P_Q": S3_P,
         "S77_Q": S77_S,
-        "INDUST_Q": INDUST,
+        # "INDUST_Q": INDUST,
     }
     # Identify date range
     date = pd.date_range(start=f"{st_month}/{st_day}/{st_year}", end=f"{end_month}/{end_day}/{end_year}", freq="D")
@@ -187,23 +187,23 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
             if str(ensemble_number) in column_name:
                 geoglows_flow_df[Q_names[i]] = x[column_name]
 
-    # _create_flow_inflow_cqpq(geoglows_flow_df, ensemble_number, "S129_C_Q", "S129_P_Q", "S129_In")
-    # _create_flow_inflow_cqpq(geoglows_flow_df, ensemble_number, "S135_C_Q", "S135_P_Q", "S135_In")
+    _create_flow_inflow_cqpq(geoglows_flow_df, "S129_C_Q", "S129_P_Q", "S129_In")
+    _create_flow_inflow_cqpq(geoglows_flow_df, "S135_C_Q", "S135_P_Q", "S135_In")
 
-    # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S308_Q", "S308_In")
-    # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S77_Q", "S77_In")
+    _create_flow_inflow_q(geoglows_flow_df, "S308_Q", "S308_In")
+    _create_flow_inflow_q(geoglows_flow_df, "S77_Q", "S77_In")
     # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S351_Q", "S351_In")
-    # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S352_Q", "S352_In")
+   #  _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S352_Q", "S352_In")
     # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S354_Q", "S354_In")
-    # # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, 'L8_Q', 'L8_In')
+    # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, 'L8_Q', 'L8_In')
 
-    # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "S308_Q", "S308_Out")
-    # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "S77_Q", "S77_Out")
+    _create_flow_outflow_q(geoglows_flow_df, "S308_Q", "S308_Out")
+    _create_flow_outflow_q(geoglows_flow_df, "S77_Q", "S77_Out")
     # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "INDUST_Q", "INDUST_Out")
     # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "S351_Q", "S351_Out")
     # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "S352_Q", "S352_Out")
     # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, "S354_Q", "S354_Out")
-    # # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, 'L8_Q', 'L8_Out')
+    # _create_flow_outflow_q(geoglows_flow_df, ensemble_number, 'L8_Q', 'L8_Out')
 
     # geoglows_flow_df["Inflows"] = geoglows_flow_df[
     #     [
@@ -229,21 +229,52 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # my code to get the inflows and sum them:
     
     #I took out the INDUST_Out because it seems that out model doesn't include it. Double check what INDUST_Out is
+    # INFLOW_IDS = [
+    #     750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
+    #     750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
+    #     750068005, 750063868, 750069782, 750072741
+    # ]
+    # inflow_data = {}
+    # for reach in INFLOW_IDS:
+    #     inflow_data[reach] = pd.read_csv(f"{input_dir}/{reach}_INFLOW_cmd_geoglows.csv")
+    #     _create_flow_inflow_q(geoglows_flow_df, "S308_Q", f"{reach}_INFLOW")
+    
+    # geoglows_flow_df["Netflows"] = geoglows_flow_df["Inflows"] - geoglows_flow_df["INDUST_Out"]
+    # # flow_filter_cols = ["S308_Out", "S77_Out", 'S351_Out', 'S352_Out', 'S354_Out', 'INDUST_Out', 'L8_Out']
+    # flow_filter_cols = ["S308_Out", "S77_Out"]
+
+    # geoglows_flow_df["Outflows"] = geoglows_flow_df[flow_filter_cols].sum(axis=1)
+        #get all 16 inflow ids from geoglows
     INFLOW_IDS = [
         750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
         750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
         750068005, 750063868, 750069782, 750072741
     ]
-    inflow_data = {}
-    for reach in INFLOW_IDS:
-        inflow_data[reach] = pd.read_csv(f"{input_dir}/{reach}_INFLOW_cmd_geoglows.csv")
-        _create_flow_inflow_q(geoglows_flow_df, "S308_Q", f"{reach}_INFLOW")
-    
-    geoglows_flow_df["Netflows"] = geoglows_flow_df["Inflows"] - geoglows_flow_df["INDUST_Out"]
-    # flow_filter_cols = ["S308_Out", "S77_Out", 'S351_Out', 'S352_Out', 'S354_Out', 'INDUST_Out', 'L8_Out']
-    flow_filter_cols = ["S308_Out", "S77_Out", "S351_Out", "S352_Out", "S354_Out", "INDUST_Out"]
+    OUTFLOW_IDS = [750053809, 750057949]
+    # Ensure the date column exists and is used for geoglows_flow_df
+    # geoglows_flow_df = pd.DataFrame(first_inflow_data["date"], columns=["date"])
 
-    geoglows_flow_df["Outflows"] = geoglows_flow_df[flow_filter_cols].sum(axis=1)
+    # Loop through all reach IDs to extract the relevant ensemble column
+    for reach in OUTFLOW_IDS:
+        outflow_data = pd.read_csv(f"{input_dir}/{reach}_OUTFLOW_cmd_geoglows.csv")
+    
+        for column_name in outflow_data.columns:
+            if str(ensemble_number) in column_name:
+                geoglows_flow_df[reach] = outflow_data[column_name]
+    for reach in INFLOW_IDS:
+        inflow_data = pd.read_csv(f"{input_dir}/{reach}_INFLOW_cmd_geoglows.csv")
+
+        for column_name in inflow_data.columns:
+            if str(ensemble_number) in column_name:
+                geoglows_flow_df[reach] = inflow_data[column_name]   
+    #Calculate the netflows by summing the inflows
+    geoglows_flow_df["Inflows"] = geoglows_flow_df[INFLOW_IDS].sum(axis=1)
+    geoglows_flow_df["Outflows"] = geoglows_flow_df[OUTFLOW_IDS].sum(axis=1)
+    # TODO: check if netflows are just the sum of the inflows or if they are the inflows minus the outflows
+    geoglows_flow_df["Netflows"] = geoglows_flow_df["Inflows"] # - geoglows_flow_df["Outflows"]
+    Netflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
+    Netflows["Netflows_acft"] = geoglows_flow_df["Netflows"] / 1233.48  # Convert from m^3/d to ac-ft
+    Netflows.to_csv(f"{output_dir}/Netflows_acft_geoglows_{ensemble_number}.csv", index=False)
     TP_names = [
         "S65_TP",
         "S71_TP",  #'S72_TP',
@@ -268,7 +299,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     TP_Loads_In = pd.DataFrame(date, columns=["date"])
     for i in range(len(TP_names)):
         y = DF_Date_Range(TP_list[TP_names[i]], st_year, st_month, st_day, end_year, end_month, end_day)
-        TP_Loads_In[TP_names[i]] = y[f"ensemble_{ensemble_number}_m^3/d"]
+        TP_Loads_In[TP_names[i]] = y[f"ensemble_{ensemble_number}"]
 
     # Calculate the total External Loads to Lake Okeechobee
     TP_Loads_In["External_P_Ld_mg"] = TP_Loads_In.sum(axis=1, numeric_only=True)
@@ -289,58 +320,77 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
 
     # Create File (INDUST_Outflow_20082023)
     INDUST_Outflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    INDUST_Outflows["INDUST"] = geoglows_flow_df["INDUST_Out"]
+    # INDUST_Outflows["INDUST"] = geoglows_flow_df["INDUST_Out"]
 
     # Create File (Netflows_acft)
     # This is also Column (Net Inflow) in File (SFWMM_Daily_Outputs)
-    Netflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    Netflows["Netflows_acft"] = geoglows_flow_df["Netflows"] / 1233.48  # acft
+    # Netflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
+    # Netflows["Netflows_acft"] = geoglows_flow_df["Netflows"] / 1233.48  # acft
 
     # Create File (TotalQWCA_Obs)
     # This is also Column (RegWCA) in File (SFWMM_Daily_Outputs)
     TotalQWCA = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    TotalQWCA["S351_Out"] = geoglows_flow_df["S351_Out"] * (35.3147 / 86400)  # cmd to cfs
-    TotalQWCA["S354_Out"] = geoglows_flow_df["S354_Out"] * (35.3147 / 86400)
-    TotalQWCA["RegWCA_cfs"] = TotalQWCA.sum(axis=1, numeric_only=True)  # cfs
-    TotalQWCA["RegWCA_acft"] = TotalQWCA["RegWCA_cfs"] * 1.9835  # acft
+    # We got rid of these stations 
+    # TotalQWCA["S351_Out"] = geoglows_flow_df["S351_Out"] * (35.3147 / 86400)  # cmd to cfs
+    # TotalQWCA["S354_Out"] = geoglows_flow_df["S354_Out"] * (35.3147 / 86400)
+    # TotalQWCA["RegWCA_cfs"] = TotalQWCA.sum(axis=1, numeric_only=True)  # cfs
+    # TotalQWCA["RegWCA_acft"] = TotalQWCA["RegWCA_cfs"] * 1.9835  # acft
 
-    # # Create Column (RegL8C51) in the File (SFWMM_Daily_Outputs)
-    # L8C51 = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
+    # Create Column (RegL8C51) in the File (SFWMM_Daily_Outputs)
+    L8C51 = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
     # L8C51["S352_Out"] = geoglows_flow_df["S352_Out"].values * (35.3147 / 86400)  # cmd to cfs
     # L8C51["L8_O_cfs"] = geoglows_flow_df["L8_Out"].values * (35.3147 / 86400)  # cmd to cfs
     # L8C51["L8C51_cfs"] = L8C51.sum(axis=1)  # cfs
     # L8C51.to_csv(f"{output_dir}/L8C51.csv", index=False)
 
-    # # C43 RO C44 RO
-    # # Create Files (C43RO, C43RO_Monthly, C44RO, C44RO_Monthly)
-    # # As well as Columns C43Runoff and C44Runoff in File (SFWMM_Daily_Outputs)
+    # C43 RO C44 RO
+    # Create Files (C43RO, C43RO_Monthly, C44RO, C44RO_Monthly)
+    # As well as Columns C43Runoff and C44Runoff in File (SFWMM_Daily_Outputs)
     # s79_path = glob(f'{input_dir}/S79_*FLOW*geoglows.csv')[0]
     # s80_path = glob(f'{input_dir}/S80_*FLOW*geoglows.csv')[0]
-    # S79 = pd.read_csv(s79_path)
-    # S80 = pd.read_csv(s80_path)
-    # S79['Q_cmd'] = S79[f'ensemble_{ensemble_number}_m^3/d']  # already in cmd * 0.0283168466 * 86400
-    # S80['Q_cmd'] = S80['ensemble_{ensemble_number}_m^3/d']  # already in cmd * 0.0283168466 * 86400
+    s79_path = f'{input_dir}/750050259_MATCHED_cmd_geoglows.csv'
+    s80_path = f'{input_dir}/750045514_MATCHED_cmd_geoglows.csv'
+    S79 = pd.read_csv(s79_path)
+    S80 = pd.read_csv(s80_path)
+    S79['Q_cmd'] = S79[f'ensemble_{ensemble_number}']  # already in cmd * 0.0283168466 * 86400
+    S80['Q_cmd'] = S80[f'ensemble_{ensemble_number}']  # already in cmd * 0.0283168466 * 86400
 
-    # C43RO_df = pd.DataFrame(S79['date'], columns=['date'])
-    # C44RO_df = pd.DataFrame(S79['date'], columns=['date'])
-    # C43RO = np.zeros(len(C43RO_df.index))
-    # C44RO = np.zeros(len(C44RO_df.index))
-    # for i in range(len(C44RO_df.index)):
-    #     if S79['Q_cmd'].iloc[i] - geoglows_flow_df['S77_Out'].iloc[i] + geoglows_flow_df['S77_In'].iloc[i] < 0:
-    #         C43RO[i] = 0
-    #     else:
-    #         C43RO[i] = S79['Q_cmd'].iloc[i] - geoglows_flow_df['S77_Out'].iloc[i] + geoglows_flow_df['S77_In'].iloc[i]
-    # for i in range(len(C44RO_df.index)):
-    #     if S80['Q_cmd'].iloc[i] - geoglows_flow_df['S308_Out'].iloc[i] + geoglows_flow_df['S308_In'].iloc[i] < 0:
-    #         C44RO[i] = 0
-    #     else:
-    #         C44RO[i] = S80['Q_cmd'].iloc[i] - geoglows_flow_df['S308_Out'].iloc[i] + geoglows_flow_df['S308_In'].iloc[i]
-    # C43RO_df['C43RO_cmd'] = C43RO
-    # C44RO_df['C44RO_cmd'] = C44RO
-    # C43RO_df['C43RO_cfs'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
-    # C44RO_df['C44RO_cfs'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
-    # C43RO_df.to_csv(f'{output_dir}/C43RO.csv', index=False)
-    # C44RO_df.to_csv(f'{output_dir}/C44RO.csv', index=False)
+    C43RO_df = pd.DataFrame(S79['date'], columns=['date'])
+    C44RO_df = pd.DataFrame(S79['date'], columns=['date'])
+    C43RO = np.zeros(len(C43RO_df.index))
+    C44RO = np.zeros(len(C44RO_df.index))
+    for i in range(len(C44RO_df.index)):
+        if S79['Q_cmd'].iloc[i] - geoglows_flow_df['S77_Out'].iloc[i] + geoglows_flow_df['S77_In'].iloc[i] < 0:
+            C43RO[i] = 0
+        else:
+            C43RO[i] = S79['Q_cmd'].iloc[i] - geoglows_flow_df['S77_Out'].iloc[i] + geoglows_flow_df['S77_In'].iloc[i]
+    for i in range(len(C44RO_df.index)):
+        if S80['Q_cmd'].iloc[i] - geoglows_flow_df['S308_Out'].iloc[i] + geoglows_flow_df['S308_In'].iloc[i] < 0:
+            C44RO[i] = 0
+        else:
+            C44RO[i] = S80['Q_cmd'].iloc[i] - geoglows_flow_df['S308_Out'].iloc[i] + geoglows_flow_df['S308_In'].iloc[i]
+    C43RO_df['C43RO_cmd'] = C43RO
+    C44RO_df['C44RO_cmd'] = C44RO
+    C43RO_df['C43RO'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
+    C44RO_df['C44RO'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
+    C43RO_df.to_csv(f'{output_dir}/C43RO_{ensemble_number}.csv', index=False)
+    C44RO_df.to_csv(f'{output_dir}/C44RO_{ensemble_number}.csv', index=False)
+    C43RO_df.index = pd.to_datetime(C43RO_df["date"])
+    C43RO_df = C43RO_df.drop(columns="date")
+
+    C44RO_df.index = pd.to_datetime(C44RO_df["date"])
+    C44RO_df = C44RO_df.drop(columns="date")
+
+    C43Mon = C43RO_df.resample('ME').mean()
+    C44Mon = C44RO_df.resample('ME').mean()
+
+    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly_{ensemble_number}.csv', index=False)
+    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly_{ensemble_number}.csv', index=False)
+    Basin_RO = pd.DataFrame(C44Mon.index, columns=['date'])
+    # Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835  # cfs to acft
+    Basin_RO['C44RO'] = C44Mon['C44RO'].values * 86400
+    Basin_RO['C43RO'] = C43Mon['C43RO'].values * 86400
+    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs_{ensemble_number}.csv', index=False)
 
     # # Get monthly C43RO and C44RO from historical run
     # shutil.copyfile(os.path.join(historical_files_src, "C43RO_Monthly.csv"), os.path.join(output_dir, 'C43RO_Monthly.csv'))
@@ -389,53 +439,25 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Net_RF = Net_RF.set_index(["date"])
     # Net_RF.index = pd.to_datetime(Net_RF.index, unit="ns")
     # Net_RF_Weekly = Net_RF.resample("W-FRI").sum()
-    # # Net Inflows cfs
-    # Net_Inflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    # Net_Inflows = DF_Date_Range(Net_Inflows, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # Net_Inflows["Net_Inflows"] = geoglows_flow_df["Netflows"] / (0.0283168466 * 86400)  # cmd to cfs
-    # Net_Inflows = Net_Inflows.set_index(["date"])
-    # Net_Inflows.index = pd.to_datetime(Net_Inflows.index, unit="ns")
-    # Net_Inflow_Weekly = Net_Inflows.resample("W-FRI").mean()
-    # # S65 cfs
-    # S65E = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
-    # S65E = DF_Date_Range(S65E, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # S65E["S65E"] = geoglows_flow_df["S65_Q"] / (0.0283168466 * 86400)  # cmd to cfs
-    # S65E = S65E.set_index(["date"])
-    # S65E.index = pd.to_datetime(S65E.index, unit="ns")
-    # S65E_Weekly = S65E.resample("W-FRI").mean()
-    # # PI
-    # # TODO
-    # # This is prepared manually
-    # # Weekly data is downloaded from https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/time-series/0804
-    # # State:Florida Division:4.South Central
-    # PI = pd.DataFrame(S65E_Weekly.index, columns=["date"])
-    # PI_data = pd.read_csv(f"{input_dir}/PI.csv")
-    # PI["PI"] = PI_data.iloc[:, 1]
 
-    # Trib_Cond_Wkly = pd.DataFrame(S65E_Weekly.index, columns=["date"])
-    # Trib_Cond_Wkly["NetRF"] = Net_RF_Weekly["NetRF_In"].values
-    # Trib_Cond_Wkly["NetInf"] = Net_Inflow_Weekly["Net_Inflows"].values
-    # Trib_Cond_Wkly["S65E"] = S65E_Weekly["S65E"].values
-    # Trib_Cond_Wkly["Palmer"] = PI["PI"].values
-    # Trib_Cond_Wkly.to_csv(f"{output_dir}/Trib_cond_wkly_data.csv", index=False)
-
-    # # Wind Speed
-    # # Create File (LOWS)
-    # L001WS = pd.read_csv(f"{input_dir}/L001_WNDS_MPH.csv")
-    # L005WS = pd.read_csv(f"{input_dir}/L005_WNDS_MPH.csv")
-    # L006WS = pd.read_csv(f"{input_dir}/L006_WNDS_MPH.csv")
-    # LZ40WS = pd.read_csv(f"{input_dir}/LZ40_WNDS_MPH.csv")
-    # L001WS = DF_Date_Range(L001WS, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L005WS = DF_Date_Range(L005WS, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L006WS = DF_Date_Range(L006WS, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # LZ40WS = DF_Date_Range(LZ40WS, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # LOWS = pd.DataFrame(L001WS["date"], columns=["date"])
-    # LOWS["L001WS"] = L001WS["L001_WNDS_MPH"]
-    # LOWS["L005WS"] = L005WS["L005_WNDS_MPH"]
-    # LOWS["L006WS"] = L006WS["L006_WNDS_MPH"]
-    # LOWS["LZ40WS"] = LZ40WS["LZ40_WNDS_MPH"]
-    # LOWS["LO_Avg_WS_MPH"] = LOWS.mean(axis=1)
-    # LOWS.to_csv(f"{output_dir}/LOWS.csv", index=False)
+    # Wind Speed
+    # Create File (LOWS)
+    L001WS = pd.read_csv(f"{input_dir}/L001_WNDS_MPH_predicted.csv")
+    L005WS = pd.read_csv(f"{input_dir}/L005_WNDS_MPH_predicted.csv")
+    L006WS = pd.read_csv(f"{input_dir}/L006_WNDS_MPH_predicted.csv")
+    LZ40WS = pd.read_csv(f"{input_dir}/LZ40_WNDS_MPH_predicted.csv")
+    L001WS = DF_Date_Range(L001WS, st_year, st_month, st_day, end_year, end_month, end_day)
+    L005WS = DF_Date_Range(L005WS, st_year, st_month, st_day, end_year, end_month, end_day)
+    L006WS = DF_Date_Range(L006WS, st_year, st_month, st_day, end_year, end_month, end_day)
+    LZ40WS = DF_Date_Range(LZ40WS, st_year, st_month, st_day, end_year, end_month, end_day)
+    LOWS = pd.DataFrame(L001WS["date"], columns=["date"])
+    LOWS["L001WS"] = L001WS["L001_WNDS_MPH"]
+    LOWS["L005WS"] = L005WS["L005_WNDS_MPH"]
+    LOWS["L006WS"] = L006WS["L006_WNDS_MPH"]
+    LOWS["LZ40WS"] = LZ40WS["LZ40_WNDS_MPH"]
+    LOWS = LOWS.set_index("date")
+    LOWS["LO_Avg_WS_MPH"] = LOWS.mean(axis=1)
+    LOWS.to_csv(f"{output_dir}/LOWS_predicted.csv")
 
     # # RFVol acft
     # # Create File (RF_Volume)
@@ -470,60 +492,34 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # WCA_Stg.to_csv(f"{output_dir}/WCA_Stages_Inputs.csv", index=False)
 
     # # Predict Water Temp Function of Air Temp
-    # L001_H2OT = pd.read_csv(f"{input_dir}/L001_H2OT_Degrees Celsius.csv")
-    # L001_H2OT = DF_Date_Range(L001_H2OT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L005_H2OT = pd.read_csv(f"{input_dir}/L005_H2OT_Degrees Celsius.csv")
-    # L005_H2OT = DF_Date_Range(L005_H2OT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L006_H2OT = pd.read_csv(f"{input_dir}/L006_H2OT_Degrees Celsius.csv")
-    # L006_H2OT = DF_Date_Range(L006_H2OT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # LZ40_H2OT = pd.read_csv(f"{input_dir}/LZ40_H2OT_Degrees Celsius.csv")
-    # LZ40_H2OT = DF_Date_Range(LZ40_H2OT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    # Load and filter air temperature data
+    L001_AirT = pd.read_csv(f'{input_dir}/L001_AIRT_Degrees Celsius_forecast.csv')
+    L001_AirT = DF_Date_Range(L001_AirT, st_year, st_month, st_day, end_year, end_month, end_day)
 
-    # Water_Temp_data = pd.DataFrame(L001_H2OT["date"], columns=["date"])
+    L005_AirT = pd.read_csv(f'{input_dir}/L005_AIRT_Degrees Celsius_forecast.csv')
+    L005_AirT = DF_Date_Range(L005_AirT, st_year, st_month, st_day, end_year, end_month, end_day)
 
-    # Water_Temp_data["L001_WaterT"] = L001_H2OT["L001_H2OT_Degrees Celsius"]
-    # Water_Temp_data["L005_WaterT"] = L005_H2OT["L005_H2OT_Degrees Celsius"]
-    # Water_Temp_data["L006_WaterT"] = L006_H2OT["L006_H2OT_Degrees Celsius"]
-    # Water_Temp_data["LZ40_WaterT"] = LZ40_H2OT["LZ40_H2OT_Degrees Celsius"]
+    L006_AirT = pd.read_csv(f'{input_dir}/L006_AIRT_Degrees Celsius_forecast.csv')
+    L006_AirT = DF_Date_Range(L006_AirT, st_year, st_month, st_day, end_year, end_month, end_day)
 
-    # Water_Temp_data = DF_Date_Range(Water_Temp_data, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # water_temp_filter_cols = ["L001_WaterT", "L005_WaterT", "L006_WaterT", "LZ40_WaterT"]
-    # Water_Temp_data["WaterT_Mean"] = Water_Temp_data[water_temp_filter_cols].mean(axis=1)
+    LZ40_AirT = pd.read_csv(f'{input_dir}/LZ40_AIRT_Degrees Celsius_forecast.csv')
+    LZ40_AirT = DF_Date_Range(LZ40_AirT, st_year, st_month, st_day, end_year, end_month, end_day)
 
-    # L001_AirT = pd.read_csv(f"{input_dir}/L001_AIRT_Degrees Celsius.csv")
-    # L001_AirT = DF_Date_Range(L001_AirT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L005_AirT = pd.read_csv(f"{input_dir}/L005_AIRT_Degrees Celsius.csv")
-    # L005_AirT = DF_Date_Range(L005_AirT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # L006_AirT = pd.read_csv(f"{input_dir}/L006_AIRT_Degrees Celsius.csv")
-    # L006_AirT = DF_Date_Range(L006_AirT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # LZ40_AirT = pd.read_csv(f"{input_dir}/LZ40_AIRT_Degrees Celsius.csv")
-    # LZ40_AirT = DF_Date_Range(LZ40_AirT, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    # Predict water temperatures using regression models
+    WaterT_pred_df = pd.DataFrame(L001_AirT['date'], columns=['date'])
+    WaterT_pred_df['L001_WaterT_pred'] = 1.862667 + 0.936899 * L001_AirT['L001_AIRT_Degrees Celsius'].values
+    WaterT_pred_df['L005_WaterT_pred'] = 1.330211 + 0.909713 * L005_AirT['L005_AIRT_Degrees Celsius'].values
+    WaterT_pred_df['L006_WaterT_pred'] = -0.88564 + 1.01585 * L006_AirT['L006_AIRT_Degrees Celsius'].values
+    WaterT_pred_df['LZ40_WaterT_pred'] = 0.388231 + 0.980154 * LZ40_AirT['LZ40_AIRT_Degrees Celsius'].values
 
-    # WaterT_pred_df = pd.DataFrame(L001_AirT["date"], columns=["date"])
+    # Compute average predicted water temperature
+    water_t_pred_filter_cols = ['L001_WaterT_pred', 'L005_WaterT_pred', 'L006_WaterT_pred', 'LZ40_WaterT_pred']
+    WaterT_pred_df['Water_T'] = WaterT_pred_df[water_t_pred_filter_cols].mean(axis=1)
 
-    # WaterT_pred_df["L001_WaterT_pred"] = 1.862667 + 0.936899 * L001_AirT["L001_AIRT_Degrees Celsius"].values
-    # WaterT_pred_df["L005_WaterT_pred"] = 1.330211 + 0.909713 * L005_AirT["L005_AIRT_Degrees Celsius"].values
-    # WaterT_pred_df["L006_WaterT_pred"] = -0.88564 + 1.01585 * L006_AirT["L006_AIRT_Degrees Celsius"].values
-    # WaterT_pred_df["LZ40_WaterT_pred"] = 0.388231 + 0.980154 * LZ40_AirT["LZ40_AIRT_Degrees Celsius"].values
-    # water_t_pred_filter_cols = ["L001_WaterT_pred", "L005_WaterT_pred", "L006_WaterT_pred", "LZ40_WaterT_pred"]
-    # WaterT_pred_df["WaterT_pred_Mean"] = WaterT_pred_df[water_t_pred_filter_cols].mean(axis=1)
-    # WaterT_pred_df_1 = DF_Date_Range(WaterT_pred_df, St_Yr, St_M, St_D, 2020, 8, 25)
-    # WaterT_pred_df_2 = DF_Date_Range(WaterT_pred_df, 2020, 8, 26, En_Yr, En_M, En_D)
-    # Filled_WaterT_1 = np.zeros(len(WaterT_pred_df_1.index))
-    # Filled_WaterT_2 = np.zeros(len(WaterT_pred_df_2.index))
-    # for i in range(len(Water_Temp_data.index)):
-    #     if np.isnan(Water_Temp_data["WaterT_Mean"].iloc[i]):
-    #         Filled_WaterT_1[i] = WaterT_pred_df_1["WaterT_pred_Mean"].iloc[i]
-    #     else:
-    #         Filled_WaterT_1[i] = Water_Temp_data["WaterT_Mean"].iloc[i]
+    # Export to CSV
+    WaterT_pred_df[['date', 'Water_T']].to_csv(f'{output_dir}/Filled_WaterT_predicted.csv', index=False)
 
-    # Filled_WaterT_2 = WaterT_pred_df_2["WaterT_pred_Mean"]
-    # Filled_WaterT_1df = pd.DataFrame(WaterT_pred_df_1["date"], columns=["date"])
-    # Filled_WaterT_2df = pd.DataFrame(WaterT_pred_df_2["date"], columns=["date"])
-    # Filled_WaterT_1df["Water_T"] = Filled_WaterT_1
-    # Filled_WaterT_2df["Water_T"] = Filled_WaterT_2
-    # Filled_WaterT = pd.concat([Filled_WaterT_1df, Filled_WaterT_2df]).reset_index(drop=True)
-    # Filled_WaterT.to_csv(f"{output_dir}/Filled_WaterT_20082023.csv", index=False)
+
 
     # # TP Observations in Lake
     # L001_TP = pd.read_csv(f"{input_dir}/water_quality_L001_PHOSPHATE, TOTAL AS P.csv")
@@ -596,23 +592,23 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
 
     # Write Data into csv files
     # write Avg Stage (ft, m) Storage (acft, m3) SA (acres) to csv
-    LO_Stg_Sto_SA_df.to_csv(f"{output_dir}/Average_LO_Storage_3MLag.csv", index=False)
+    LO_Stg_Sto_SA_df.to_csv(f"{output_dir}/Average_LO_Storage_3MLag_{ensemble_number}.csv", index=False)
     # Write S65 TP concentrations (mg/L)
-    S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag.csv", index=False)
+    S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag_{ensemble_number}.csv", index=False)
     # TP External Loads 3 Months Lag (mg)
     TP_Loads_In_3MLag_df.to_csv(f"{output_dir}/LO_External_Loadings_3MLag_{ensemble_number}.csv", index=False)
     # Flow dataframe including Inflows, NetFlows, and Outflows (all in m3/day)
     geoglows_flow_df.to_csv(f"{output_dir}/geoglows_flow_df_ens_{ensemble_number}_predicted.csv", index=False)
     # Inflows (cmd)
-    LO_Inflows_BK.to_csv(f"{output_dir}/LO_Inflows_BK_forecast.csv", index=False)
+    LO_Inflows_BK.to_csv(f"{output_dir}/LO_Inflows_BK_forecast_{ensemble_number}.csv", index=False)
     # Outflows (cmd)
-    Outflows_consd.to_csv(f"{output_dir}/Outflows_consd.csv", index=False)
+    Outflows_consd.to_csv(f"{output_dir}/Outflows_consd_{ensemble_number}.csv", index=False)
     # NetFlows (cmd)
     #Netflows.to_csv(f"{output_dir}/Netflows_acft.csv", index=False)
     # # Total flows to WCAs (acft)
-    TotalQWCA.to_csv(f"{output_dir}/TotalQWCA_Obs.csv", index=False)
+    # TotalQWCA.to_csv(f"{output_dir}/TotalQWCA_Obs.csv", index=False)
     # INDUST Outflows (cmd)
-    INDUST_Outflows.to_csv(f"{output_dir}/INDUST_Outflows.csv", index=False)
+    # INDUST_Outflows.to_csv(f"{output_dir}/INDUST_Outflows.csv", index=False)
 
 #Does this code need to take in the ensemble_number? I am getting rid of it for now.
 def _create_flow_inflow_cqpq(

@@ -3,7 +3,7 @@ from datetime import datetime
 from datetime import date, timedelta
 import argparse
 
-def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output):
+def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output, ensemble):
     future_date = date.today() + timedelta(days=15)
     today = date.today()
 
@@ -34,25 +34,33 @@ def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output):
     S65E.index = pd.to_datetime(S65E.index, unit='ns')  # Ensure index is datetime
     S65E_Weekly = S65E.resample('W-FRI').mean()
     # PI
-    PI = pd.DataFrame(S65E_Weekly.index, columns=['date'])
-    PI['date'] = pd.to_datetime(PI['date'])
-    PI_data = pd.read_csv(PI)
+    PI_week_data = pd.DataFrame(S65E_Weekly.index, columns=['date'])
+    PI_week_data['date'] = pd.to_datetime(PI_week_data['date'])
 
-    # Convert 'date' column to datetime
+    PI_data = pd.read_csv(PI)
     PI_data['date'] = pd.to_datetime(PI_data['date'])
 
-    # Set 'date' as index
-    PI_data.set_index('date', inplace=True)
+    PI = PI_week_data.merge(PI_data[['date', 'PI']], on='date', how='left')
 
-    PI = PI.merge(PI_data[['date', "PI"]], on='date', how='left')
+    ensemble_col = f"ensemble_{ensemble:02d}"
 
-
+    # Create the initial DataFrame with the date
     Trib_Cond_Wkly = pd.DataFrame(S65E_Weekly.index, columns=['date'])
+
+    # Calculate NetRF and NetInf
     Trib_Cond_Wkly['NetRF'] = Net_RF_Weekly['tp_corrected'].values - Net_RF_Weekly['evapotranspiration'].values
     Trib_Cond_Wkly['NetInf'] = Net_Inflow_Weekly['Net_Inflows'].values
-    S65E_Weekly = S65E_Weekly.add_suffix('_S65E')
-    Trib_Cond_Wkly = Trib_Cond_Wkly.merge(S65E_Weekly, left_on="date", right_index=True, how="left")
+
+    # Select only the desired ensemble column and rename it
+    S65E_selected = S65E_Weekly[[ensemble_col]].rename(columns={ensemble_col: "S65E"})
+
+    # Merge it into Trib_Cond_Wkly
+    Trib_Cond_Wkly = Trib_Cond_Wkly.merge(S65E_selected, left_on="date", right_index=True, how="left")
+
+    # Add the Palmer Index
     Trib_Cond_Wkly['Palmer'] = PI['PI'].values
+
+    # Export to CSV
     Trib_Cond_Wkly.to_csv(output, index=False)
     
 def main():

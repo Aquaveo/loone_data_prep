@@ -312,7 +312,7 @@ def data_interpolations(
         Data_df["Yr_M"] = pd.to_datetime(Data_df["date"]).dt.to_period("M")
         start_date = Data_df["date"].iloc[0]
         end_date = Data_df["date"].iloc[-1]
-        date_rng = pd.date_range(start=start_date, end=end_date, freq="M")
+        date_rng = pd.date_range(start=start_date, end=end_date, freq="ME")
         Monthly_df = pd.DataFrame(date_rng, columns=["date"])
         Monthly_df["Yr_M"] = pd.to_datetime(Monthly_df["date"]).dt.to_period(
             "M"
@@ -736,21 +736,30 @@ def nutrient_prediction(
         # Construct paths for flow file
         flow_file_path = ""
         flow_file_path_exists = True
-        try:
-            flow_file_path = glob(
-                os.path.join(input_dir, f"{station}*_FLOW_cmd_geoglows.csv")
-            )[0]
-        except Exception as e:
-            flow_file_path_exists = False
+        # Manually define matches for forecast case
+        station_file_map = {
+            'S65E_S': f"{input_dir}/750072741_INFLOW_cmd_geoglows.csv",
+            'S71_S': f"{input_dir}/750068601_MATCHED_cmd_geoglows.csv",
+            'FISHP': f"{input_dir}/750053213_MATCHED_cmd_geoglows.csv",
+            'S84_S': f"{input_dir}/750069782_INFLOW_cmd_geoglows.csv",
+            'S133_P': f"{input_dir}/750035446_INFLOW_cmd_geoglows.csv",
+            'S154_C': f"{input_dir}/750064453_INFLOW_cmd_geoglows.csv",
+            'S135_P': f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv",
+            'S135_C': f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv",
+        }
 
-        # Check if data file exists
-        if flow_file_path_exists and os.path.exists(flow_file_path):
-            # If it exists, read in the data
-            flow = pd.read_csv(flow_file_path)
+        if station in station_file_map:
+            flow_file_path = station_file_map[station]
+            if os.path.exists(flow_file_path):
+                flow = pd.read_csv(flow_file_path)
+            else:
+                print(
+                    f"Skipping nutrient prediction for station: {station}. Forecast file path does not exist."
+                )
+                continue
         else:
-            # If it doesn't exist, skip to the next iteration of the loop
             print(
-                f"Skipping nutrient prediction for station: {station}. Flow file does not exist."
+                f"Skipping nutrient prediction for station: {station}. No forecast match defined."
             )
             continue
 
