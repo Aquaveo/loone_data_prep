@@ -62,7 +62,7 @@ def download_weather_forecast (file_path):
         dfs.append(df)
 
         # Print extracted data
-        print(df)
+        # print(df)
 
     # Merge all variables into a single DataFrame
     final_df = dfs[0]
@@ -130,7 +130,7 @@ def download_weather_forecast (file_path):
 
     # Print final combined DataFrame
     merged_df.drop(columns=['date'], inplace=True)
-    print(merged_df)
+    # print(merged_df)
 
     merged_df.to_csv(file_path, index=False)
 
