@@ -34,7 +34,7 @@ def download_weather_forecast (file_path):
 
         # Download and load the dataset
         FH.download(f":{var_key}")
-        ds = FH.xarray(f":{var_key}")
+        ds = FH.xarray(f":{var_key}", backend_kwargs={"decode_timedelta": True})
 
         # Extract point data
         dsi = ds.herbie.pick_points(points, method="nearest")

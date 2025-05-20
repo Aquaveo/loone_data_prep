@@ -50,7 +50,7 @@ def generate_wind_forecasts(output_dir):
 
             # Download and load dataset
             FH.download(f":{var_key}")
-            ds = FH.xarray(f":{var_key}")
+            ds = FH.xarray(f":{var_key}", backend_kwargs={"decode_timedelta": True})
 
             # Extract point data
             dsi = ds.herbie.pick_points(point_df, method="nearest")
