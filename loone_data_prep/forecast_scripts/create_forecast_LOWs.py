@@ -3,9 +3,12 @@ from herbie import FastHerbie
 from datetime import datetime
 import pandas as pd
 from retry_requests import retry
+import warnings
+
 
 def generate_wind_forecasts(output_dir):
     # Ensure output directory exists
+    warnings.filterwarnings("ignore", message="Will not remove GRIB file because it previously existed.")
     os.makedirs(output_dir, exist_ok=True)
 
     # Define points of interest

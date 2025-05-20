@@ -5,6 +5,10 @@ import openmeteo_requests
 import argparse
 import requests_cache
 from retry_requests import retry
+import warnings
+
+warnings.filterwarnings("ignore", message="Will not remove GRIB file because it previously existed.")
+
 
 def download_weather_forecast (file_path):
     # Get today's date in the required format

@@ -386,43 +386,43 @@ def main(input_dir: str, output_dir: str) -> None:
 
     # RFVol acft
     # Create File (RF_Volume)
-    # RFVol = pd.DataFrame(RF_data['date'], columns=['date'])
-    # RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    # date_reference = RFVol['date'].iloc[0]
-    # date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
-    # df_insert = pd.DataFrame(data={'date': date_inserts, 'RFVol_acft': [0.0, 0.0]})
-    # RFVol = pd.concat([df_insert, RFVol])
-    # RFVol.to_csv(f'{output_dir}/RFVol.csv', index=False)
+    RFVol = pd.DataFrame(RF_data['date'], columns=['date'])
+    RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
+    date_reference = RFVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'RFVol_acft': [0.0, 0.0]})
+    RFVol = pd.concat([df_insert, RFVol])
+    RFVol.to_csv(f'{output_dir}/RFVol.csv', index=False)
 
     # ETVol acft
     # Create File (ETVol)
-    # ETVol = pd.DataFrame(ET_data['date'], columns=['date'])
-    # ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
-    # date_reference = ETVol['date'].iloc[0]
-    # date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
-    # df_insert = pd.DataFrame(data={'date': date_inserts, 'ETVol_acft': [0.0, 0.0]})
-    # ETVol = pd.concat([df_insert, ETVol])
-    # ETVol.to_csv(f'{output_dir}/ETVol.csv', index=False)
+    ETVol = pd.DataFrame(ET_data['date'], columns=['date'])
+    ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
+    date_reference = ETVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'ETVol_acft': [0.0, 0.0]})
+    ETVol = pd.concat([df_insert, ETVol])
+    ETVol.to_csv(f'{output_dir}/ETVol.csv', index=False)
 
-    # # WCA Stages
-    # # Create File (WCA_Stages_Inputs)
-    # Stg_3ANW = pd.read_csv(f'{input_dir}/Stg_3ANW.csv')
-    # Stg_3ANW = DF_Date_Range(Stg_3ANW, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # Stg_2A17 = pd.read_csv(f'{input_dir}/Stg_2A17.csv')
-    # Stg_2A17 = DF_Date_Range(Stg_2A17, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # Stg_3A3 = pd.read_csv(f'{input_dir}/Stg_3A3.csv')
-    # Stg_3A3 = DF_Date_Range(Stg_3A3, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # Stg_3A4 = pd.read_csv(f'{input_dir}/Stg_3A4.csv')
-    # Stg_3A4 = DF_Date_Range(Stg_3A4, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # Stg_3A28 = pd.read_csv(f'{input_dir}/Stg_3A28.csv')
-    # Stg_3A28 = DF_Date_Range(Stg_3A28, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    # WCA_Stg = pd.DataFrame(Stg_3A28['date'], columns=['date'])
-    # WCA_Stg['3A-NW'] = Stg_3ANW.iloc[:, -1].values
-    # WCA_Stg['2A-17'] = Stg_2A17.iloc[:, -1].values
-    # WCA_Stg['3A-3'] = Stg_3A3.iloc[:, -1].values
-    # WCA_Stg['3A-4'] = Stg_3A4.iloc[:, -1].values
-    # WCA_Stg['3A-28'] = Stg_3A28.iloc[:, -1].values
-    # WCA_Stg.to_csv(f'{output_dir}/WCA_Stages_Inputs.csv', index=False)
+    # WCA Stages
+    # Create File (WCA_Stages_Inputs)
+    Stg_3ANW = pd.read_csv(f'{input_dir}/Stg_3ANW.csv')
+    Stg_3ANW = DF_Date_Range(Stg_3ANW, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    Stg_2A17 = pd.read_csv(f'{input_dir}/Stg_2A17.csv')
+    Stg_2A17 = DF_Date_Range(Stg_2A17, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    Stg_3A3 = pd.read_csv(f'{input_dir}/Stg_3A3.csv')
+    Stg_3A3 = DF_Date_Range(Stg_3A3, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    Stg_3A4 = pd.read_csv(f'{input_dir}/Stg_3A4.csv')
+    Stg_3A4 = DF_Date_Range(Stg_3A4, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    Stg_3A28 = pd.read_csv(f'{input_dir}/Stg_3A28.csv')
+    Stg_3A28 = DF_Date_Range(Stg_3A28, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
+    WCA_Stg = pd.DataFrame(Stg_3A28['date'], columns=['date'])
+    WCA_Stg['3A-NW'] = Stg_3ANW.iloc[:, -1].values
+    WCA_Stg['2A-17'] = Stg_2A17.iloc[:, -1].values
+    WCA_Stg['3A-3'] = Stg_3A3.iloc[:, -1].values
+    WCA_Stg['3A-4'] = Stg_3A4.iloc[:, -1].values
+    WCA_Stg['3A-28'] = Stg_3A28.iloc[:, -1].values
+    WCA_Stg.to_csv(f'{output_dir}/WCA_Stages_Inputs.csv', index=False)
 
     # Predict Water Temp Function of Air Temp
     L001_H2OT = pd.read_csv(f'{input_dir}/L001_H2OT_Degrees Celsius.csv')
