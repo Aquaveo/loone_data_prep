@@ -545,7 +545,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_TP_data_Inter['Mean_TP'] = LO_TP_data_Inter.mean(axis=1, numeric_only=True)
     LO_TP_data_Inter = LO_TP_data_Inter.set_index(['date'])
     LO_TP_data_Inter.index = pd.to_datetime(LO_TP_data_Inter.index, unit='ns')
-    LO_TP_Monthly_Inter = LO_TP_data_Inter.resample('M').mean()
+    LO_TP_Monthly_Inter = LO_TP_data_Inter.resample('ME').mean()
     Max = LO_TP_Monthly_Inter.max(axis=1)
     Min = LO_TP_Monthly_Inter.min(axis=1)
     LO_TP_Monthly_Inter['Max'] = Max.values
@@ -624,7 +624,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_NH4_Clean_Inter.to_csv(f'{output_dir}/LO_NH4_Clean_daily.csv', index=False)
     LO_NH4_Clean_Inter = LO_NH4_Clean_Inter.set_index(['date'])
     LO_NH4_Clean_Inter.index = pd.to_datetime(LO_NH4_Clean_Inter.index, unit='ns')
-    LO_NH4_Monthly_Inter = LO_NH4_Clean_Inter.resample('M').mean()
+    LO_NH4_Monthly_Inter = LO_NH4_Clean_Inter.resample('ME').mean()
     LO_NH4_Monthly_Inter.to_csv(f'{output_dir}/LO_NH4_Monthly_Inter.csv')
 
     # Interpolated NO Observations in Lake

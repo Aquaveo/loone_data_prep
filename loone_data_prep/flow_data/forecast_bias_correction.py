@@ -37,47 +37,65 @@ def get_bias_corrected_data(
 
     # Prepare the observed data by filling NaN values with the 10yr average
     prepared_od = prep_observed_data(observed_data)
+    historical_data = geoglows.data.retro_daily(reach_id)
+    # Get the historical simulation data for the given reach ID - TODO: Do we for sure want to cache the historical data?
+    # I am reading the observed data that we queried earlier instead of caching it
+    # historical_data = None
 
-    # Get the historical simulation data for the given reach ID
-    historical_data = None
+    # if cache_path is None:
+    #     historical_data = geoglows.streamflow.historic_simulation(reach_id)
+    # else:
+    #     # Create the geoglows cache directory if it doesn't exist
+    #     geoglows_cache_path = os.path.join(cache_path, "geoglows_cache")
+    #     if not os.path.exists(geoglows_cache_path):
+    #         os.makedirs(geoglows_cache_path)
 
-    if cache_path is None:
-        historical_data = geoglows.streamflow.historic_simulation(reach_id)
-    else:
-        # Create the geoglows cache directory if it doesn't exist
-        geoglows_cache_path = os.path.join(cache_path, "geoglows_cache")
-        if not os.path.exists(geoglows_cache_path):
-            os.makedirs(geoglows_cache_path)
+    #     # Check if the historical simulation data is already cached
+    #     if os.path.exists(
+    #         os.path.join(
+    #             geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
+    #         )
+    #     ):
+    #         historical_data = pd.read_csv(
+    #             os.path.join(
+    #                 geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
+    #             ),
+    #             index_col=0,
+    #         )
+    #         historical_data.index = pd.to_datetime(historical_data.index)
+    #     else:
+    #         historical_data = geoglows.streamflow.historic_simulation(reach_id)
+    #         historical_data.to_csv(
+    #             os.path.join(
+    #                 geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
+    #             )
+    #         )
+    # Drop 'ensemble_52' column if it exists - not necessary but we don't need it
+    station_ensembles.drop(columns=['ensemble_52'], inplace=True, errors='ignore')
 
-        # Check if the historical simulation data is already cached
-        if os.path.exists(
-            os.path.join(
-                geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
-            )
-        ):
-            historical_data = pd.read_csv(
-                os.path.join(
-                    geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
-                ),
-                index_col=0,
-            )
-            historical_data.index = pd.to_datetime(historical_data.index)
-        else:
-            historical_data = geoglows.streamflow.historic_simulation(reach_id)
-            historical_data.to_csv(
-                os.path.join(
-                    geoglows_cache_path, f"{reach_id}_historic_simulation.csv"
-                )
-            )
+    # Drop all rows with any NaN values - again not necessary but we can drop them because we don't need it
+    station_ensembles.dropna(inplace=True)
 
     # Correct the forecast bias in the station ensembles
-    station_ensembles = bias_correct_forecast(
+    station_ensembles = geoglows.bias.correct_forecast(
         station_ensembles, historical_data, prepared_od
     )
+
     # Correct the forecast bias in the station stats
-    station_stats = bias_correct_forecast(
+    station_stats = geoglows.bias.correct_forecast(
         station_stats, historical_data, prepared_od
     )
+    #This is to clean out any infinite values that may have occurred during bias correction
+    station_ensembles = station_ensembles.replace([np.inf, -np.inf], np.nan)
+    station_ensembles = station_ensembles.interpolate(axis=0, limit_direction='both')
+
+    # Fill any remaining NaNs (e.g., at column ends)
+    station_ensembles = station_ensembles.ffill(axis=0).bfill(axis=0)
+    station_stats = station_stats.replace([np.inf, -np.inf], np.nan)
+    station_stats = station_stats.interpolate(axis=0, limit_direction='both')
+
+    # Fill any remaining NaNs (e.g., at column ends)
+    station_stats = station_stats.ffill(axis=0).bfill(axis=0)
 
     # Return the bias-corrected station ensembles and station stats
     return station_ensembles, station_stats

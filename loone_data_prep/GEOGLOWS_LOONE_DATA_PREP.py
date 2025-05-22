@@ -96,7 +96,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # S3_P = pd.read_csv(f"{input_dir}/S3_P_FLOW_cmd_geoglows.csv")
     # S4_P = pd.read_csv(f'{input_dir}/S4_P_FLOW_cmd.csv')
 
-    S77_S = pd.read_csv(f"{input_dir}/750054400_MATCHED_cmd_geoglows.csv")
+    S77_S = pd.read_csv(f"{input_dir}/750038416_MATCHED_cmd_geoglows.csv")
     
     #???
     # INDUST = pd.read_csv(f"{input_dir}/INDUST_FLOW_cmd_geoglows.csv")

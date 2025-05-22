@@ -4,6 +4,7 @@ from datetime import date, timedelta
 import argparse
 
 def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output, ensemble):
+    # TODO - check that all these unit are right
     future_date = date.today() + timedelta(days=15)
     today = date.today()
 

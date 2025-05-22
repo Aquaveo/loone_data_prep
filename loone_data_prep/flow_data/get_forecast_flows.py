@@ -43,37 +43,6 @@ STATION_IDS = [
     "S49_S",
 ]  # Added these stations. They seemed to be missing.
 
-REACH_IDS = {
-    "S191_S": 13082707,
-    "S65E_S": 13082699,
-    "S65EX1_S": 13082699,
-    "S84_S": 13082700,
-    "S154_C": 13082716,
-    "S71_S": 13082743,
-    "S72_S": 13082727,
-    "FISHP": 13082756,
-    "S308.DS": 13082736,
-    "L8.441": 13082747,
-    "S133_P": 13082709,
-    "S127_C": 13082716,
-    "S127_P": 13082716,
-    "S129_C": 13082727,
-    "S135_C": 13082725,
-    "S2_P": 13082783,
-    "S3_P": 13082809,
-    "S4_P": 13082806,
-    "S351_S": 13082804,
-    "S352_S": 13082762,
-    "S354_S": 13082809,
-    "S129 PMP_P": 13082727,
-    "S135 PMP_P": 13082725,
-    "S77_S": 13082767,
-    "INDUST": 13082806,
-    "S79_S": 13082791,
-    "S80_S": 13082718,
-    "S40_S": 13082797,
-    "S49_S": 13082696,
-}
 INFLOW_IDS = [
     750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
     750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
@@ -81,7 +50,7 @@ INFLOW_IDS = [
 ]
 OUTFLOW_IDS = [750053809, 750057949]
 MATCHED_IDS = [750052624, 750049656,  750057357,  
-               750038427, 750051428, 750068601, 750058536, 750054400, 
+               750038427, 750051428, 750068601, 750058536, 750038416, 
                750050259, 750045514, 750053213, 750028935]
 
 
@@ -393,61 +362,64 @@ def main(
         cache_path (str): The path to the cache directory for geoglows data. 
             Should hold a directory named geoglows_cache that holds the cached files. Use None to not use a cache.
     """
-    # Local Variables
-    reach_ids = {}
+    # # Local Variables
+    # reach_ids = {}
 
-    # Get the latitude/longitude for each station
-    station_locations = get_stations_latitude_longitude(station_ids)
+    # # Get the latitude/longitude for each station
+    # station_locations = get_stations_latitude_longitude(station_ids)
 
-    # Check for any download failures
-    for station_id in station_ids:
-        if station_id in REACH_IDS.keys():
-            reach_ids[station_id] = REACH_IDS[station_id]
-        elif station_id not in station_locations.keys():
-            raise Exception(
-                "Error: The longitude and latitude could not be downloaded "
-                f"for station {station_id}"
-            )
+    # # Check for any download failures
+    # for station_id in station_ids:
+    #     if station_id in REACH_IDS.keys():
+    #         reach_ids[station_id] = REACH_IDS[station_id]
+    #     elif station_id not in station_locations.keys():
+    #         raise Exception(
+    #             "Error: The longitude and latitude could not be downloaded "
+    #             f"for station {station_id}"
+    #         )
 
-    # Get station reach ids
-    if station_id not in REACH_IDS.keys():
-        for station_id in station_locations.keys():
-            location = station_locations[station_id]
-            try:
-                reach_ids[station_id] = get_reach_id(location[0], location[1])
-            except Exception as e:
-                print(
-                    "Error: Failed to get reach id for station "
-                    f"{station_id} ({str(e)})"
-                )
+    # # Get station reach ids
+    # if station_id not in REACH_IDS.keys():
+    #     for station_id in station_locations.keys():
+    #         location = station_locations[station_id]
+    #         try:
+    #             reach_ids[station_id] = get_reach_id(location[0], location[1])
+    #         except Exception as e:
+    #             print(
+    #                 "Error: Failed to get reach id for station "
+    #                 f"{station_id} ({str(e)})"
+    #             )
 
     # Get the flow data for each station
+    stations_inflow_by_comid = {
+        750072741: "S65E_S",   # TODO: Should this be S65E_total or S65E_S? - this is a station we definitely want
+        750069782: "S84_S",        # 
+        # 750053211: "S129_C",       # TODO: Should this be S129_C or S129_PMP_P? - Also right now it is all 0s
+        # 750035446: "S133_P",       # TODO: Should this be S133_P or S133_C? - Also right now it is all 0s
+        750064453: "S154_C",       # This is primarily 0s
+    }
+
+
     for reach_id in INFLOW_IDS:
         station_ensembles = get_flow_forecast_ensembles(
             reach_id, forecast_date
         )
         station_stats = get_flow_forecast_stats(reach_id, forecast_date)
-    #for station_id in reach_ids.keys():
-    #    reach_id = reach_ids[station_id]
-    #    station_ensembles = get_flow_forecast_ensembles(
-    #        reach_id, forecast_date
-    #    )
-    #    station_stats = get_flow_forecast_stats(reach_id, forecast_date)
 
-    #    if bias_corrected:
-    #        observed_data_list = glob.glob(
-    #            os.path.join(observed_data_dir, f"{station_id}*FLOW_cmd.csv")
-    #        )
-    #        if observed_data_list:
-    #            observed_data_path = observed_data_list[0]
-    #            station_ensembles, station_stats = get_bias_corrected_data(
-    #                station_id,
-    #                reach_id,
-    #                observed_data_path,
-    #                station_ensembles,
-    #                station_stats,
-    #                cache_path,
-    #            )
+        if bias_corrected:
+            if reach_id in stations_inflow_by_comid:
+                station_id = stations_inflow_by_comid[reach_id]
+                observed_data_path = os.path.join(observed_data_dir, f"{station_id}_FLOW_cmd.csv")
+                # if observed_data_list:
+                #     observed_data_path = observed_data_list[0]
+                station_ensembles, station_stats = get_bias_corrected_data(
+                    station_id,
+                    reach_id,
+                    observed_data_path,
+                    station_ensembles,
+                    station_stats,
+                    cache_path,
+                )
 
         ensembles_to_csv(
             workspace,
@@ -470,10 +442,39 @@ def main(
             station_stats,
         )
     for reach_id in MATCHED_IDS:
+        stations_matched_by_comid = {
+            750068601: "S71_S",
+            750052624: "S135_C",       # TODO: Should this be S135_C or S135_P?
+           #  750052624: "S308",       # NOTE: Same COMID as S135 — only one key allowed!
+            750053213: "FISHP",
+            750038416: "S77_S",
+            750050259: "S79_TOT",
+            750045514: "S80_S",
+            750058536: "S72_S",
+            750051428: "S49_S",
+            # 750038427: "S40",
+            750057357: "S191_S",
+            750028935: "S127_C", #TODO: Should this be S127_C or S127_P?
+        }
+
         station_ensembles = get_flow_forecast_ensembles(
             reach_id, forecast_date
         )
         station_stats = get_flow_forecast_stats(reach_id, forecast_date)
+        if bias_corrected:
+            if reach_id in stations_matched_by_comid:
+                station_id = stations_matched_by_comid[reach_id]
+                observed_data_path = os.path.join(observed_data_dir, f"{station_id}_FLOW_cmd.csv")
+                # if observed_data_list:
+                #     observed_data_path = observed_data_list[0]
+                station_ensembles, station_stats = get_bias_corrected_data(
+                    station_id,
+                    reach_id,
+                    observed_data_path,
+                    station_ensembles,
+                    station_stats,
+                    cache_path,
+                )
 
         ensembles_to_csv(
             workspace,

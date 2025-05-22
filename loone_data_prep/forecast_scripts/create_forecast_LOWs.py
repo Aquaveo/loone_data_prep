@@ -86,8 +86,8 @@ def generate_wind_forecasts(output_dir):
 
         # Compute wind speed and correction
         merged["wind_speed"] = (merged["u10"] ** 2 + merged["v10"] ** 2) ** 0.5
-        merged["wind_speed"] = merged["wind_speed"] * 2.23694  # m/s to mph
         merged["wind_speed_corrected"] = 0.4167 * merged["wind_speed"] + 4.1868
+        merged["wind_speed_corrected"] = merged["wind_speed_corrected"] * 2.23694  # m/s to mph
 
         results[f"Point_{point_index + 1}"] = merged
 
