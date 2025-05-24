@@ -19,5 +19,9 @@ dependencies = [
     "numpy<2",
     "pandas",
     "scipy",
-    "geoglows==0.27.1",
+    "geoglows>=2.0.0",
+    "herbie",
+    "openmeteo_requests",
+    "requests_cache",
+    "retry-requests"
 ]

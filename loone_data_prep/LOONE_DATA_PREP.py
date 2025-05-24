@@ -545,7 +545,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_TP_data_Inter['Mean_TP'] = LO_TP_data_Inter.mean(axis=1, numeric_only=True)
     LO_TP_data_Inter = LO_TP_data_Inter.set_index(['date'])
     LO_TP_data_Inter.index = pd.to_datetime(LO_TP_data_Inter.index, unit='ns')
-    LO_TP_Monthly_Inter = LO_TP_data_Inter.resample('M').mean()
+    LO_TP_Monthly_Inter = LO_TP_data_Inter.resample('ME').mean()
     Max = LO_TP_Monthly_Inter.max(axis=1)
     Min = LO_TP_Monthly_Inter.min(axis=1)
     LO_TP_Monthly_Inter['Max'] = Max.values
@@ -624,7 +624,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_NH4_Clean_Inter.to_csv(f'{output_dir}/LO_NH4_Clean_daily.csv', index=False)
     LO_NH4_Clean_Inter = LO_NH4_Clean_Inter.set_index(['date'])
     LO_NH4_Clean_Inter.index = pd.to_datetime(LO_NH4_Clean_Inter.index, unit='ns')
-    LO_NH4_Monthly_Inter = LO_NH4_Clean_Inter.resample('M').mean()
+    LO_NH4_Monthly_Inter = LO_NH4_Clean_Inter.resample('ME').mean()
     LO_NH4_Monthly_Inter.to_csv(f'{output_dir}/LO_NH4_Monthly_Inter.csv')
 
     # Interpolated NO Observations in Lake
@@ -967,6 +967,7 @@ def main(input_dir: str, output_dir: str) -> None:
     NO_list = {'S65_NO': S65_NO, 'S71_NO': S71_NO, 'S72_NO': S72_NO, 'S84_NO': S84_NO, 'S127_NO': S127_NO,
                'S133_NO': S133_NO, 'S154_NO': S154_NO, 'S191_NO': S191_NO, 'S308_NO': S308_NO,
                'FISHP_NO': FISHP_NO, 'L8_NO': L8_NO, 'S4_NO': S4_NO}
+    #TODO: Why is this date hard coded into this part?
     date_NO = pd.date_range(start='1/1/2008', end='3/31/2023', freq='D')
 
     NO_df = pd.DataFrame(date_NO, columns=['date'])
@@ -982,31 +983,47 @@ def main(input_dir: str, output_dir: str) -> None:
     Flow_df = DF_Date_Range(Flow_df, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
 
     # Determine NO Loads
-    NO_Loads_In = pd.DataFrame(date_NO, columns=['date'])
-    NO_Loads_In['S65_NO_Ld'] = Flow_df['S65_Q'].values * NO_df['S65_NO'].values * 1000
-    NO_Loads_In['S71_NO_Ld'] = Flow_df['S71_Q'].values * NO_df['S71_NO'].values * 1000
-    NO_Loads_In['S72_NO_Ld'] = Flow_df['S72_Q'].values * NO_df['S72_NO'].values * 1000
-    NO_Loads_In['S84_NO_Ld'] = Flow_df['S84_Q'].values * NO_df['S84_NO'].values * 1000
-    NO_Loads_In['S127_NO_Ld'] = Flow_df['S127_In'].values * NO_df['S127_NO'].values * 1000
-    NO_Loads_In['S133_NO_Ld'] = Flow_df['S133_P_Q'].values * NO_df['S133_NO'].values * 1000
+    # Ensure 'date' is datetime
+    NO_df['date'] = pd.to_datetime(NO_df['date'])
+    Flow_df['date'] = pd.to_datetime(Flow_df['date'])
+
+    # Merge the two dataframes on date - this will ensure that the dates match
+    merged = pd.merge(NO_df, Flow_df, on='date', how='inner')
+
+    # Compute NO Loads
+    NO_Loads_In = merged[['date']].copy()
+    NO_Loads_In['S65_NO_Ld'] = merged['S65_Q'] * merged['S65_NO'] * 1000
+    NO_Loads_In['S71_NO_Ld'] = merged['S71_Q'] * merged['S71_NO'] * 1000
+    NO_Loads_In['S71_NO_Ld'] = merged['S71_Q'] * merged['S71_NO'] * 1000
+    NO_Loads_In['S72_NO_Ld'] = merged['S72_Q'] * merged['S72_NO'] * 1000
+    NO_Loads_In['S84_NO_Ld'] = merged['S84_Q'] * merged['S84_NO'] * 1000
+    NO_Loads_In['S127_NO_Ld'] = merged['S127_In'] * merged['S127_NO'] * 1000
+    NO_Loads_In['S133_NO_Ld'] = merged['S133_P_Q'] * merged['S133_NO'] * 1000
     # NO_Loads_In['S135_NO_Ld'] = Flow_df['S135_In'].values * NO_df['S135_NO'].values * 1000
-    NO_Loads_In['S154_NO_Ld'] = Flow_df['S154_Q'].values * NO_df['S154_NO'].values * 1000
-    NO_Loads_In['S191_NO_Ld'] = Flow_df['S191_Q'].values * NO_df['S191_NO'].values * 1000
-    NO_Loads_In['S308_NO_Ld'] = Flow_df['S308_In'].values * NO_df['S308_NO'].values * 1000
-    NO_Loads_In['FISHP_NO_Ld'] = Flow_df['FISHP_Q'].values * NO_df['FISHP_NO'].values * 1000
-    NO_Loads_In['L8_NO_Ld'] = Flow_df['L8_In'].values * NO_df['L8_NO'].values * 1000
-    NO_Loads_In['S4_NO_Ld'] = Flow_df['S4_P_Q'].values * NO_df['S4_NO'].values * 1000
+    NO_Loads_In['S154_NO_Ld'] = merged['S154_Q'] * merged['S154_NO'] * 1000
+    NO_Loads_In['S191_NO_Ld'] = merged['S191_Q'] * merged['S191_NO'] * 1000
+    NO_Loads_In['S308_NO_Ld'] = merged['S308_In'] * merged['S308_NO'] * 1000
+    NO_Loads_In['FISHP_NO_Ld'] = merged['FISHP_Q'] * merged['FISHP_NO'] * 1000
+    NO_Loads_In['L8_NO_Ld'] = merged['L8_In'] * merged['L8_NO'] * 1000
+    NO_Loads_In['S4_NO_Ld'] = merged['S4_P_Q'] * merged['S4_NO'] * 1000
     # Calculate the total External Loads to Lake Okeechobee
     NO_Loads_In['External_NO_Ld_mg'] = NO_Loads_In.sum(axis=1, numeric_only=True)
     NO_Loads_In.to_csv(f'{output_dir}/LO_External_Loadings_NO.csv', index=False)
 
     # Determine Chla Loads
     # Create File (Chla_Loads_In)
+    # Read and date-filter Chla data
     S65E_Chla = pd.read_csv(f'{output_dir}/S65E_Chla_Merged.csv')
+    S65E_Chla['date'] = pd.to_datetime(S65E_Chla['date'])  # Ensure date column is datetime
     S65E_Chla = DF_Date_Range(S65E_Chla, St_Yr, St_M, St_D, En_Yr, En_M, En_D)
-    Chla_Loads_In = pd.DataFrame(date_NO, columns=['date'])
-    Chla_Loads_In['Chla_Loads'] = Flow_df['Inflows'].values * S65E_Chla['Data'].values
+    # Merge on date
+    merged = pd.merge(Flow_df[['date', 'Inflows']], S65E_Chla[['date', 'Data']], on='date', how='inner')
+    # Calculate Chlorophyll-a loads
+    merged['Chla_Loads'] = merged['Inflows'] * merged['Data']
+    # Save results
+    Chla_Loads_In = merged[['date', 'Chla_Loads']]
     Chla_Loads_In.to_csv(f'{output_dir}/Chla_Loads_In.csv', index=False)
+
 
     # Write Data into csv files
     # write Avg Stage (ft, m) Storage (acft, m3) SA (acres) to csv
