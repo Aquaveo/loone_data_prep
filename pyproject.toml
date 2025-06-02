@@ -20,7 +20,7 @@ dependencies = [
     "pandas",
     "scipy",
     "geoglows>=2.0.0",
-    "herbie-data",
+    "herbie-data[extras]",
     "openmeteo_requests",
     "requests_cache",
     "retry-requests"
