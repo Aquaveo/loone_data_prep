@@ -998,7 +998,15 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     
     # Group by the month and day, then calculate the average for each group
     average_values = filtered_data.groupby('month_day')['Data'].mean()
-    
+    # Interpolate in case there are missing values:
+    start_date = pd.to_datetime('2001-' + start_month_day)
+    end_date = pd.to_datetime('2001-' + end_month_day)
+
+    full_dates = pd.date_range(start=start_date, end=end_date)
+    full_index = full_dates.strftime('%m-%d')
+
+    average_values = average_values.reindex(full_index)
+    average_values = average_values.interpolate(method='linear')
     average_values_df = pd.DataFrame({
         'date': pd.date_range(start=date_start, end=date_end),
         'Data': average_values.values
