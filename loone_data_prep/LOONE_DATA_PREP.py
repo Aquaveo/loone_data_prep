@@ -34,7 +34,7 @@ def main(input_dir: str, output_dir: str) -> None:
     # Read LO Average Stage (ft)
     LO_Stage = pd.read_csv(f'{input_dir}/LO_Stage.csv')
     # Create Column (EOD Stg(ft, NGVD)) in File (SFWMM_Daily_Outputs)
-    LO_Stage = DF_Date_Range(LO_Stage, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
+    # LO_Stage = DF_Date_Range(LO_Stage, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
     # Calculate average
     if "Average_Stage" not in LO_Stage.columns:
         LO_Stage = LO_Stage.loc[:, ~LO_Stage.columns.str.contains('^Unnamed')]
