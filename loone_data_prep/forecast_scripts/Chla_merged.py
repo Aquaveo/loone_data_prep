@@ -10,6 +10,7 @@ def loads_predicted(input_dir, output_dir):
     """
     
     # Read forecast inflow file
+    # TODO: Should this be an average/median of all of the ensembles? worst case?
     Flow_df = pd.read_csv(f"{input_dir}/geoglows_flow_df_ens_01_predicted.csv")
     Flow_df['date'] = pd.to_datetime(Flow_df['date'])
 

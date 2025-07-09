@@ -9,6 +9,7 @@ def get_NO_Loads_predicted(input_dir, output_dir):
     output_dir: Directory where the output files will be saved.
     This function reads the forecast inflow file, retrieves nitrate data for specified stations,
     """
+    # TODO: Should this be an average/median of all of the ensembles? worst case?
     Q_in = pd.read_csv(os.path.join(input_dir, 'LO_Inflows_BK_forecast_01.csv'))
 
     datetime_str = Q_in['date'].iloc[0]
