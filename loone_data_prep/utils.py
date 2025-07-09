@@ -466,12 +466,15 @@ def wind_induced_waves(
     lo_stage_in: str = "LO_Stg_Sto_SA_2008-2023.csv",
     wind_shear_stress_out: str = "WindShearStress.csv",
     current_shear_stress_out: str = "Current_ShearStress.csv",
+    forecast: bool = False,
 ):
     # Read Mean Wind Speed in LO
     LO_WS = pd.read_csv(os.path.join(f"{input_dir}/", wind_speed_in))
     LO_WS["WS_mps"] = LO_WS["LO_Avg_WS_MPH"] * 0.44704  # MPH to m/s
     # Read LO Stage to consider water depth changes
     LO_Stage = pd.read_csv(os.path.join(f"{input_dir}/", lo_stage_in))
+    if forecast:
+        LO_Stage["Stage_ft"] = LO_Stage["Stage"].astype(float)
     LO_Stage["Stage_m"] = LO_Stage["Stage_ft"] * 0.3048
     Bottom_Elev = 0.5  # m (Karl E. Havens • Alan D. Steinman 2013)
     LO_Wd = LO_Stage["Stage_m"] - Bottom_Elev
@@ -998,7 +1001,15 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     
     # Group by the month and day, then calculate the average for each group
     average_values = filtered_data.groupby('month_day')['Data'].mean()
-    
+    # Interpolate in case there are missing values:
+    start_date = pd.to_datetime('2001-' + start_month_day)
+    end_date = pd.to_datetime('2001-' + end_month_day)
+
+    full_dates = pd.date_range(start=start_date, end=end_date)
+    full_index = full_dates.strftime('%m-%d')
+
+    average_values = average_values.reindex(full_index)
+    average_values = average_values.interpolate(method='linear')
     average_values_df = pd.DataFrame({
         'date': pd.date_range(start=date_start, end=date_end),
         'Data': average_values.values

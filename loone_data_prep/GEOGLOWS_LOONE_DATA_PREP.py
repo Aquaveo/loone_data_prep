@@ -44,7 +44,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Read LO Average Stage (ft)
     LO_Stage = pd.read_csv(f"{input_dir}/LO_Stage.csv")
     # Create Column (EOD Stg(ft, NGVD)) in File (SFWMM_Daily_Outputs)
-    LO_Stage = DF_Date_Range(LO_Stage, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
+    # LO_Stage = DF_Date_Range(LO_Stage, M3_Yr, M3_M, M3_D, En_Yr, En_M, En_D)
     LO_Stage.index = LO_Stage["date"]
     # Calculate average
     if "Average_Stage" not in LO_Stage.columns:
@@ -457,6 +457,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     LOWS["LZ40WS"] = LZ40WS["LZ40_WNDS_MPH"]
     LOWS = LOWS.set_index("date")
     LOWS["LO_Avg_WS_MPH"] = LOWS.mean(axis=1)
+    LOWS = LOWS.resample("D").mean()
     LOWS.to_csv(f"{output_dir}/LOWS_predicted.csv")
 
     # # RFVol acft
@@ -592,7 +593,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
 
     # Write Data into csv files
     # write Avg Stage (ft, m) Storage (acft, m3) SA (acres) to csv
-    LO_Stg_Sto_SA_df.to_csv(f"{output_dir}/Average_LO_Storage_3MLag_{ensemble_number}.csv", index=False)
+    # LO_Stg_Sto_SA_df.to_csv(f"{output_dir}/Average_LO_Storage_3MLag_{ensemble_number}.csv", index=False)
     # Write S65 TP concentrations (mg/L)
     S65_total_TP.to_csv(f"{output_dir}/S65_TP_3MLag_{ensemble_number}.csv", index=False)
     # TP External Loads 3 Months Lag (mg)

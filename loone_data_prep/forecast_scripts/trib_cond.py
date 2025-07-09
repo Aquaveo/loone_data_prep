@@ -50,7 +50,15 @@ def create_trib_cond (weather_data, net_inflows, main_tributary, PI, output, ens
 
     # Calculate NetRF and NetInf
     Trib_Cond_Wkly['NetRF'] = Net_RF_Weekly['tp_corrected'].values - Net_RF_Weekly['evapotranspiration'].values
-    Trib_Cond_Wkly['NetInf'] = Net_Inflow_Weekly['Net_Inflows'].values
+    # First, reset index so that 'date' becomes a column in Net_Inflow_Weekly
+    Net_Inflow_Weekly_reset = Net_Inflow_Weekly.reset_index()
+
+    # Merge the dataframes on 'date'
+    Trib_Cond_Wkly = Trib_Cond_Wkly.merge(Net_Inflow_Weekly_reset[['date', 'Net_Inflows']], on='date', how='left')
+
+    # Now Trib_Cond_Wkly will have a new 'Net_Inflows' column aligned by date
+    Trib_Cond_Wkly.rename(columns={'Net_Inflows': 'NetInf'}, inplace=True)
+
 
     # Select only the desired ensemble column and rename it
     S65E_selected = S65E_Weekly[[ensemble_col]].rename(columns={ensemble_col: "S65E"})

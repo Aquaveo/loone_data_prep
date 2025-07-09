@@ -392,10 +392,10 @@ def main(
 
     # Get the flow data for each station
     stations_inflow_by_comid = {
-        750072741: "S65E_S",   # TODO: Should this be S65E_total or S65E_S? - this is a station we definitely want
-        750069782: "S84_S",        # 
-        # 750053211: "S129_C",       # TODO: Should this be S129_C or S129_PMP_P? - Also right now it is all 0s
-        # 750035446: "S133_P",       # TODO: Should this be S133_P or S133_C? - Also right now it is all 0s
+        750072741: "S65E_S", 
+        750069782: "S84_S",       
+        # 750053211: "S129_C",
+        # 750035446: "S133_P",
         750064453: "S154_C",       # This is primarily 0s
     }
 
@@ -444,8 +444,7 @@ def main(
     for reach_id in MATCHED_IDS:
         stations_matched_by_comid = {
             750068601: "S71_S",
-            750052624: "S135_C",       # TODO: Should this be S135_C or S135_P?
-           #  750052624: "S308",       # NOTE: Same COMID as S135 — only one key allowed!
+            750052624: "S135_C",
             750053213: "FISHP",
             750038416: "S77_S",
             750050259: "S79_TOT",
@@ -454,7 +453,7 @@ def main(
             750051428: "S49_S",
             # 750038427: "S40",
             750057357: "S191_S",
-            750028935: "S127_C", #TODO: Should this be S127_C or S127_P?
+            750028935: "S127_C",
         }
 
         station_ensembles = get_flow_forecast_ensembles(
