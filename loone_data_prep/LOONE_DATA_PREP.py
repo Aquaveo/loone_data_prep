@@ -386,8 +386,17 @@ def main(input_dir: str, output_dir: str) -> None:
 
     # RFVol acft
     # Create File (RF_Volume)
-    RFVol = pd.DataFrame(RF_data['date'], columns=['date'])
-    RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
+    # Merge the DataFrames on date to ensure matching rows
+    RF_data_copy = RF_data.copy()
+    LO_Stg_Sto_SA_df_copy = LO_Stg_Sto_SA_df.copy()
+    RF_data_copy['date'] = pd.to_datetime(RF_data_copy['date'])
+    LO_Stg_Sto_SA_df_copy['date'] = pd.to_datetime(LO_Stg_Sto_SA_df_copy['date'])
+    merged_rf_sa = pd.merge(RF_data_copy[['date', 'average_rainfall']], 
+                            LO_Stg_Sto_SA_df_copy[['date', 'SA_acres']], 
+                            on='date', how='inner')
+    
+    RFVol = pd.DataFrame(merged_rf_sa['date'], columns=['date'])
+    RFVol['RFVol_acft'] = (merged_rf_sa['average_rainfall'].values/12) * merged_rf_sa['SA_acres'].values
     date_reference = RFVol['date'].iloc[0]
     date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
     df_insert = pd.DataFrame(data={'date': date_inserts, 'RFVol_acft': [0.0, 0.0]})
@@ -396,8 +405,17 @@ def main(input_dir: str, output_dir: str) -> None:
 
     # ETVol acft
     # Create File (ETVol)
-    ETVol = pd.DataFrame(ET_data['date'], columns=['date'])
-    ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df['SA_acres'].values
+    # Merge the DataFrames on date to ensure matching rows
+    ET_data_copy = ET_data.copy()
+    LO_Stg_Sto_SA_df_copy = LO_Stg_Sto_SA_df.copy()
+    ET_data_copy['date'] = pd.to_datetime(ET_data_copy['date'])
+    LO_Stg_Sto_SA_df_copy['date'] = pd.to_datetime(LO_Stg_Sto_SA_df_copy['date'])
+    merged_et_sa = pd.merge(ET_data_copy[['date', 'average_ETPI']],
+                            LO_Stg_Sto_SA_df_copy[['date', 'SA_acres']], 
+                            on='date', how='inner')
+
+    ETVol = pd.DataFrame(merged_et_sa['date'], columns=['date'])
+    ETVol['ETVol_acft'] = (merged_et_sa['average_ETPI'].values/12) * merged_et_sa['SA_acres'].values
     date_reference = ETVol['date'].iloc[0]
     date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
     df_insert = pd.DataFrame(data={'date': date_inserts, 'ETVol_acft': [0.0, 0.0]})
