@@ -2,8 +2,11 @@ import os
 from herbie import FastHerbie
 from datetime import datetime
 import pandas as pd
-from retry_requests import retry
+from retry_requests import retry as retry_requests
+from retry import retry
 import warnings
+from typing import Tuple
+from loone_data_prep.herbie_utils import get_fast_herbie_object
 
 
 def generate_wind_forecasts(output_dir):
@@ -26,7 +29,8 @@ def generate_wind_forecasts(output_dir):
     }
 
     today_str = datetime.today().strftime('%Y-%m-%d 00:00')
-    FH = FastHerbie([today_str], model="ifs", fxx=range(0, 360, 3))
+    FH = get_fast_herbie_object(today_str)
+    print("FastHerbie initialized.")
     dfs = []
 
     variables = {
@@ -45,36 +49,13 @@ def generate_wind_forecasts(output_dir):
             "latitude": [point.latitude]
         })
 
+        # Loop through variables for current point and extract data
         for var_key, var_name in variables.items():
+            # Get the current variable data at the current point
             print(f"  Variable: {var_key}")
+            df, var_name_actual = _download_herbie_variable(FH, var_key, var_name, point_df)
 
-            # Download and load dataset
-            FH.download(f":{var_key}")
-            ds = FH.xarray(f":{var_key}", backend_kwargs={"decode_timedelta": True})
-
-            # Extract point data
-            dsi = ds.herbie.pick_points(point_df, method="nearest")
-
-            # Get actual variable name
-            if var_name == "10u":
-                var_name_actual = "u10"  # Map 10u to u10
-            elif var_name == "10v":
-                var_name_actual = "v10"  # Map 10v to v10
-            elif var_name == "2t":
-                var_name_actual = "t2m" #TODO: check that this is correct
-
-            # Convert to DataFrame
-            time_series = dsi[var_name_actual].squeeze()
-            df = time_series.to_dataframe().reset_index()
-
-            # Handle datetime columns
-            if "valid_time" in df.columns:
-                df = df.rename(columns={"valid_time": "datetime"})
-            elif "step" in df.columns and "time" in dsi.coords:
-                df["datetime"] = dsi.time.values[0] + df["step"]
-
-            # Retain necessary columns
-            df = df[["datetime", var_name_actual]].drop_duplicates()
+            # Append the DataFrame and variable name to the list
             dfs.append((index, var_name_actual, df))
 
     # Merge and process data per point
@@ -125,3 +106,51 @@ def generate_wind_forecasts(output_dir):
         filepath = os.path.join(output_dir, airt_file_map[key])
         df_airt.to_csv(filepath, index=False)
 
+
+@retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
+def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str, variable_name: str, point_df: pd.DataFrame) -> Tuple[pd.DataFrame, str]:
+    """
+    Download a specific variable from the Herbie API.
+    
+    Args:
+        fast_herbie_object: An instance of the FastHerbie class.
+        variable_key: The key of the variable to download.
+        variable_name: The name of the variable to download.
+        point_df: A DataFrame containing the point of interest (longitude and latitude).
+
+    Returns:
+        A DataFrame containing the downloaded variable data.
+        
+    Example:
+        point_df = pd.DataFrame({"longitude": [-80.7934], "latitude": [27.1389]})
+        df, var_name_actual = _download_herbie_variable(FastHerbie('2020-05-16 00:00', model='ifs', fxx=range(0, 360, 3)), '10u', '10u', point_df)
+    """
+    # Download and load dataset
+    fast_herbie_object.download(f":{variable_key}")
+    ds = fast_herbie_object.xarray(f":{variable_key}", backend_kwargs={"decode_timedelta": True})
+
+    # Extract point data
+    dsi = ds.herbie.pick_points(point_df, method="nearest")
+
+    # Get actual variable name
+    if variable_name == "10u":
+        var_name_actual = "u10"  # Map 10u to u10
+    elif variable_name == "10v":
+        var_name_actual = "v10"  # Map 10v to v10
+    elif variable_name == "2t":
+        var_name_actual = "t2m" #TODO: check that this is correct
+
+    # Convert to DataFrame
+    time_series = dsi[var_name_actual].squeeze()
+    df = time_series.to_dataframe().reset_index()
+
+    # Handle datetime columns
+    if "valid_time" in df.columns:
+        df = df.rename(columns={"valid_time": "datetime"})
+    elif "step" in df.columns and "time" in dsi.coords:
+        df["datetime"] = dsi.time.values[0] + df["step"]
+
+    # Retain necessary columns
+    df = df[["datetime", var_name_actual]].drop_duplicates()
+    
+    return df, var_name_actual
