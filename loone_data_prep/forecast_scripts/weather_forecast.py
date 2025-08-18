@@ -4,13 +4,14 @@ import pandas as pd
 import openmeteo_requests
 import argparse
 import requests_cache
-from retry_requests import retry
+from retry_requests import retry as retry_requests
+from retry import retry
 import warnings
 
 warnings.filterwarnings("ignore", message="Will not remove GRIB file because it previously existed.")
 
 
-def download_weather_forecast (file_path):
+def download_weather_forecast(file_path):
     # Get today's date in the required format
     today_str = datetime.today().strftime('%Y-%m-%d 00:00')
 
@@ -22,57 +23,26 @@ def download_weather_forecast (file_path):
         "10v": "10v",
     }
 
-    # Define point of interest
-    points = pd.DataFrame({"longitude": [-80.7976], "latitude": [26.9690]})
-
     # Initialize FastHerbie
-    FH = FastHerbie([today_str], model="ifs", fxx=range(0, 360, 3))
+    FH = _get_fast_herbie_object(today_str)
+    print("FastHerbie initialized.")
+    
     dfs = []
 
     for var_key, var_name in variables.items():
+        # Download the current variable
         print(f"Processing {var_key}...")
-
         try:
-            # Download and load the dataset
-            FH.download(f":{var_key}")
-            ds = FH.xarray(f":{var_key}", backend_kwargs={"decode_timedelta": True})
-
-            # Extract point data
-            dsi = ds.herbie.pick_points(points, method="nearest")
-
-            # Extract the correct variable name dynamically
-            if var_name == "10u":
-                var_name_actual = "u10"  # Map 10u to u10
-            elif var_name == "10v":
-                var_name_actual = "v10"  # Map 10v to v10
-            else:
-                var_name_actual = var_name  # For ssrd and tp, use the same name
-
-            # Extract time series
-            time_series = dsi[var_name_actual].squeeze()
-
-            # Convert to DataFrame
-            df = time_series.to_dataframe().reset_index()
-
-            # Convert `valid_time` to datetime
-            if "valid_time" in df.columns:
-                df = df.rename(columns={"valid_time": "datetime"})
-            elif "step" in df.columns and "time" in dsi.coords:
-                df["datetime"] = dsi.time.values[0] + df["step"]
-
-            # Keep only datetime and variable of interest
-            df = df[["datetime", var_name_actual]].drop_duplicates()
-            
-            # Append to list
-            dfs.append(df)
-
-            # Print extracted data
-            # print(df)
+            df = _download_herbie_variable(FH, var_key, var_name)
         except Exception as e:
             print(f"Error processing {var_key}: {e}")
             print(f'Skipping {var_key}')
             continue
-    
+
+        # Append to list
+        if not df.empty:
+            dfs.append(df)
+
     try:
         # Merge all variables into a single DataFrame
         final_df = dfs[0]
@@ -97,7 +67,7 @@ def download_weather_forecast (file_path):
     try:
         # Setup the Open-Meteo API client with cache and retry on error
         cache_session = requests_cache.CachedSession('.cache', expire_after = 3600)
-        retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
+        retry_session = retry_requests(cache_session, retries = 5, backoff_factor = 0.2)
         openmeteo = openmeteo_requests.Client(session = retry_session)
 
         # Make sure all required weather variables are listed here
@@ -148,6 +118,88 @@ def download_weather_forecast (file_path):
         merged_df.to_csv(file_path, index=False)
     except Exception as e:
         print(f'Error retrieving openmeteo weather data: {e}')
+
+
+class NoGribFilesFoundError(Exception):
+    """Raised when no GRIB files are found for the specified date/model run."""
+    pass
+
+
+@retry(NoGribFilesFoundError, tries=5, delay=15, max_delay=60, backoff=2)
+def _get_fast_herbie_object(date: str) -> FastHerbie:
+    """
+    Get a FastHerbie object for the specified date. Raises an exception when no GRIB files are found.
+
+    Args:
+        date: pandas-parsable datetime string
+        
+    Returns:
+        A FastHerbie object configured for the specified date.
+        
+    Raises:
+        NoGribFilesFoundError: If no GRIB files are found for the specified date.
+    """
+    fast_herbie = FastHerbie([date], model="ifs", fxx=range(0, 360, 3))
+    
+    if len(fast_herbie.file_exists) == 0:
+        raise NoGribFilesFoundError(f"No GRIB files found for the specified date {date}.")
+    
+    return fast_herbie
+
+
+@retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
+def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str, variable_name: str) -> pd.DataFrame:
+    """
+    Download a specific variable from the Herbie API.
+    
+    Args:
+        fast_herbie_object: An instance of the FastHerbie class.
+        variable_key: The key of the variable to download.
+        variable_name: The name of the variable to download.
+
+    Returns:
+        A DataFrame containing the downloaded variable data.
+        
+    Example:
+        df = _download_herbie_variable(FastHerbie('2020-05-16 00:00', model='ifs', fxx=range(0, 360, 3)), '10u', '10u')
+    """
+    # Define point of interest
+    points = pd.DataFrame({"longitude": [-80.7976], "latitude": [26.9690]})
+    
+    # Download and load the dataset
+    fast_herbie_object.download(f":{variable_key}")
+    ds = fast_herbie_object.xarray(f":{variable_key}", backend_kwargs={"decode_timedelta": True})
+
+    # Extract point data
+    dsi = ds.herbie.pick_points(points, method="nearest")
+
+    # Extract the correct variable name dynamically
+    if variable_name == "10u":
+        var_name_actual = "u10"  # Map 10u to u10
+    elif variable_name == "10v":
+        var_name_actual = "v10"  # Map 10v to v10
+    else:
+        var_name_actual = variable_name  # For ssrd and tp, use the same name
+
+    # Extract time series
+    time_series = dsi[var_name_actual].squeeze()
+
+    # Convert to DataFrame
+    df = time_series.to_dataframe().reset_index()
+
+    # Convert `valid_time` to datetime
+    if "valid_time" in df.columns:
+        df = df.rename(columns={"valid_time": "datetime"})
+    elif "step" in df.columns and "time" in dsi.coords:
+        df["datetime"] = dsi.time.values[0] + df["step"]
+
+    # Keep only datetime and variable of interest
+    df = df[["datetime", var_name_actual]].drop_duplicates()
+
+    # Print extracted data
+    # print(df)
+    
+    return df
 
 
 def main():
