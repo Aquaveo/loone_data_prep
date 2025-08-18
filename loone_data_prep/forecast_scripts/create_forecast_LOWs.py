@@ -53,10 +53,16 @@ def generate_wind_forecasts(output_dir):
         for var_key, var_name in variables.items():
             # Get the current variable data at the current point
             print(f"  Variable: {var_key}")
-            df, var_name_actual = _download_herbie_variable(FH, var_key, var_name, point_df)
+            try:
+                df, var_name_actual = _download_herbie_variable(FH, var_key, var_name, point_df)
+            except Exception as e:
+                print(f"Error processing {var_key} for Point {index + 1} ({point.latitude}, {point.longitude}): {e}")
+                print(f'Skipping {var_key}')
+                continue
 
             # Append the DataFrame and variable name to the list
-            dfs.append((index, var_name_actual, df))
+            if not df.empty:
+                dfs.append((index, var_name_actual, df))
 
     # Merge and process data per point
     results = {}
