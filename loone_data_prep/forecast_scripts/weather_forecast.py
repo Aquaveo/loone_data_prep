@@ -7,6 +7,7 @@ import requests_cache
 from retry_requests import retry as retry_requests
 from retry import retry
 import warnings
+from loone_data_prep.herbie_utils import get_fast_herbie_object
 
 warnings.filterwarnings("ignore", message="Will not remove GRIB file because it previously existed.")
 
@@ -24,7 +25,7 @@ def download_weather_forecast(file_path):
     }
 
     # Initialize FastHerbie
-    FH = _get_fast_herbie_object(today_str)
+    FH = get_fast_herbie_object(today_str)
     print("FastHerbie initialized.")
     
     dfs = []
@@ -118,33 +119,6 @@ def download_weather_forecast(file_path):
         merged_df.to_csv(file_path, index=False)
     except Exception as e:
         print(f'Error retrieving openmeteo weather data: {e}')
-
-
-class NoGribFilesFoundError(Exception):
-    """Raised when no GRIB files are found for the specified date/model run."""
-    pass
-
-
-@retry(NoGribFilesFoundError, tries=5, delay=15, max_delay=60, backoff=2)
-def _get_fast_herbie_object(date: str) -> FastHerbie:
-    """
-    Get a FastHerbie object for the specified date. Raises an exception when no GRIB files are found.
-
-    Args:
-        date: pandas-parsable datetime string
-        
-    Returns:
-        A FastHerbie object configured for the specified date.
-        
-    Raises:
-        NoGribFilesFoundError: If no GRIB files are found for the specified date.
-    """
-    fast_herbie = FastHerbie([date], model="ifs", fxx=range(0, 360, 3))
-    
-    if len(fast_herbie.file_exists) == 0:
-        raise NoGribFilesFoundError(f"No GRIB files found for the specified date {date}.")
-    
-    return fast_herbie
 
 
 @retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
