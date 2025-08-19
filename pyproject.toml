@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loone_data_prep"
-version = "1.2.3"
+version = "1.2.4"
 description = "Prepare data to run the LOONE model."
 readme = "README.md"
 license = { file = "LICENSE" }
