@@ -138,6 +138,10 @@ def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str,
     # Extract point data
     dsi = ds.herbie.pick_points(point_df, method="nearest")
 
+    # Close and delete the original dataset to free up resources
+    ds.close()
+    del ds
+
     # Get actual variable name
     if variable_name == "10u":
         var_name_actual = "u10"  # Map 10u to u10
@@ -155,6 +159,10 @@ def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str,
         df = df.rename(columns={"valid_time": "datetime"})
     elif "step" in df.columns and "time" in dsi.coords:
         df["datetime"] = dsi.time.values[0] + df["step"]
+
+    # Close and delete the intermediate dataset to free memory
+    dsi.close()
+    del dsi, time_series
 
     # Retain necessary columns
     df = df[["datetime", var_name_actual]].drop_duplicates()
