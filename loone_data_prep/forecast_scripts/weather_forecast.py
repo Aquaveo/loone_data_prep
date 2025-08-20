@@ -146,6 +146,10 @@ def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str,
 
     # Extract point data
     dsi = ds.herbie.pick_points(points, method="nearest")
+    
+    # Close and delete the original dataset to free up resources
+    ds.close()
+    del ds
 
     # Extract the correct variable name dynamically
     if variable_name == "10u":
@@ -172,6 +176,9 @@ def _download_herbie_variable(fast_herbie_object: FastHerbie, variable_key: str,
 
     # Print extracted data
     # print(df)
+    
+    # Clean up intermediate datasets to free memory
+    del dsi, time_series
     
     return df
 
