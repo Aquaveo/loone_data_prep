@@ -16,6 +16,7 @@ from rpy2.robjects.vectors import (
     DataFrame as rpy2DataFrame,
 )
 from rpy2.rinterface_lib.embedded import RRuntimeError
+from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata
 
 
 DEFAULT_STATION_IDS = ["L001", "L005", "L006", "LZ40"]
@@ -266,6 +267,48 @@ def get_dbkeys(
     )
 
     return dbkeys
+
+
+def get_stations_latitude_longitude(station_ids: list[str]):
+    """Gets the latitudes and longitudes of the given stations.
+
+    Args:
+        station_ids (list[str]): The ids of the stations to get the
+            latitudes/longitudes of. Example: ['L OKEE', 'FISHP']
+
+    Returns:
+        (dict[str, tuple[numpy.float64, numpy.float64]]): A dictionary of
+            format dict<station_id:(latitude,longitude)>
+
+    If a station's latitude/longitude fails to download then its station_id
+        won't be a key in the returned dictionary.
+    """
+    # Dictionary to hold the latitude/longitude of each station
+    station_data = {}
+    
+    # Get the latitude and longitude for each station
+    for station_id in station_ids:
+        # Retrieve the current station's metadata
+        station_metadata = get_dbhydro_station_metadata(station_id)
+        
+        # Check if the metadata was successfully retrieved
+        if station_metadata is None:
+            print(f'Failed to get latitude/longitude for station {station_id} - No data given back from API')
+            continue
+        
+        # Extract the latitude and longitude from the metadata
+        try:
+            latitude = station_metadata['features'][0]['attributes']['LAT']
+            longitude = station_metadata['features'][0]['attributes']['LONG']
+        except KeyError:
+            print(f'Failed to get latitude/longitude for station {station_id} - Unexpected response structure from API')
+            continue
+        
+        # Add the latitude and longitude to the dictionary
+        station_data[station_id] = latitude, longitude
+    
+    # Return the dictionary of station latitudes and longitudes
+    return station_data
 
 
 def data_interpolations(

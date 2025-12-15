@@ -5,7 +5,6 @@ import rpy2.robjects as ro
 from rpy2.robjects import pandas2ri
 import geoglows
 import datetime
-from loone_data_prep.utils import get_dbkeys
 from loone_data_prep.flow_data.forecast_bias_correction import (
     get_bias_corrected_data,
 )
@@ -61,51 +60,6 @@ HOURS_IN_DAY = 24
 FORECAST_DATE = (datetime.datetime.now()).strftime("%Y%m%d")
 
 GEOGLOWS_ENDPOINT = "https://geoglows.ecmwf.int/api/"
-
-
-def get_stations_latitude_longitude(station_ids: list[str]):
-    """Gets the latitudes and longitudes of the given stations.
-
-    Args:
-        station_ids (list[str]): The ids of the stations to get the
-            latitudes/longitudes of
-
-    Returns:
-        (dict[str, tuple[numpy.float64, numpy.float64]]): A dictionary of
-            format dict<station_id:(latitude,longitude)>
-
-    If a station's latitude/longitude fails to download then its station_id
-        won't be a key in the returned dictionary.
-    """
-    # The dict that holds the data that gets returned
-    station_data = {}
-
-    # Get the station/dbkey data
-    r_dataframe = get_dbkeys(
-        station_ids=station_ids,
-        category="SW",
-        param="",
-        stat="",
-        recorder="",
-        detail_level="full",
-    )
-
-    # Convert the r dataframe to a pandas dataframe
-    with (ro.default_converter + pandas2ri.converter).context():
-        pd_dataframe = ro.conversion.get_conversion().rpy2py(r_dataframe)
-
-    # Filter out extra rows for each station from the dataframe
-    pd_dataframe.drop_duplicates(subset="Station", keep="first", inplace=True)
-
-    # Get latitude/longitude of each station
-    for index in pd_dataframe.index:
-        station = pd_dataframe["Station"][index]
-        latitude = pd_dataframe["Latitude"][index]
-        longitude = pd_dataframe["Longitude"][index]
-
-        station_data[station] = latitude, longitude
-
-    return station_data
 
 
 def get_reach_id(latitude: float, longitude: float):
