@@ -4,8 +4,7 @@ import requests
 import uuid
 from datetime import datetime
 from loone_data_prep.water_level_data import hydro
-from loone_data_prep.flow_data.get_forecast_flows import get_stations_latitude_longitude
-from loone_data_prep.utils import find_last_date_in_csv, dbhydro_data_is_latest
+from loone_data_prep.utils import find_last_date_in_csv, dbhydro_data_is_latest, get_stations_latitude_longitude
 import pandas as pd
 
 DATE_NOW = datetime.now().date().strftime("%Y-%m-%d")
