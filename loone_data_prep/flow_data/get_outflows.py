@@ -56,8 +56,8 @@ def _get_outflow_data_from_station_ids(workspace: str, station_ids: list) -> dic
         dict: Success or error message
     """
     # Get dbkeys from station ids
-    dbkeys = list(get_dbkeys(station_ids, "SW", "FLOW", "MEAN", "PREF", detail_level="dbkey"))
-    dbkeys.extend(list(get_dbkeys(station_ids, "SW", "FLOW", "MEAN", "DRV", detail_level="dbkey")))
+    dbkeys = get_dbkeys(station_ids, "SW", "FLOW", "MEAN", "PREF")
+    dbkeys.extend(get_dbkeys(station_ids, "SW", "FLOW", "MEAN", "DRV"))
 
     for dbkey in dbkeys:
         hydro.get(workspace, dbkey, "2000-01-01")

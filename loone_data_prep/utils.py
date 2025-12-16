@@ -10,13 +10,7 @@ import pandas as pd
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
-from rpy2.robjects import r
-from rpy2.robjects.vectors import (
-    StrVector as rpy2StrVector,
-    DataFrame as rpy2DataFrame,
-)
-from rpy2.rinterface_lib.embedded import RRuntimeError
-from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata
+from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata, get_dbhydro_continuous_timeseries_metadata
 
 
 DEFAULT_STATION_IDS = ["L001", "L005", "L006", "LZ40"]
@@ -225,7 +219,7 @@ DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
     "S135_P": {"a": 3.09890183766129, "b": 0.657896838486496},
 }
 
-@retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
+@retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
 def get_dbkeys(
     station_ids: list,
     category: str,
@@ -233,9 +227,8 @@ def get_dbkeys(
     stat: str,
     recorder: str,
     freq: str = "DA",
-    detail_level: str = "dbkey",
     *args: str,
-) -> rpy2StrVector | rpy2DataFrame:
+) -> list[str]:
     """Get dbkeys. See DBHydroR documentation for more information:
     https://cran.r-project.org/web/packages/dbhydroR/dbhydroR.pdf
 
@@ -246,27 +239,26 @@ def get_dbkeys(
         stat (str): Statistic of data to retrieve.
         recorder (str): Recorder of data to retrieve.
         freq (str, optional): Frequency of data to retrieve. Defaults to "DA".
-        detail_level (str, optional): Detail level of data to retrieve. Defaults to "dbkey". Options are "dbkey",
-            "summary", or "full".
 
     Returns:
-        rpy2StrVector | rpy2DataFrame: dbkeys info at the specified detail level.
+        list[str]: dbkeys info for the specified parameters.
     """
-
-    station_ids_str = '"' + '", "'.join(station_ids) + '"'
-
-    dbkeys = r(
-        f"""
-        library(dbhydroR)
-
-        station_ids <- c({station_ids_str})
-        dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}", stat = "{stat}", recorder="{recorder}", freq = "{freq}", detail.level = "{detail_level}")
-        print(dbkeys)
-        return(dbkeys)
-        """  # noqa: E501
-    )
-
-    return dbkeys
+    # Retrieve the metadata for the specified parameters
+    metadata = get_dbhydro_continuous_timeseries_metadata(station_ids, [category], [param], [stat], [recorder], [freq])
+    
+    # A set to hold the dbkeys to avoid duplicates
+    dbkeys = set()
+    
+    # No data returned from API
+    if metadata is None:
+        return list(dbkeys)
+    
+    # Get the dbkeys from the metadata
+    for result in metadata['results']:
+        dbkeys.add(result['timeseriesId'])
+    
+    # Return the dbkeys as a list
+    return list(dbkeys)
 
 
 def get_stations_latitude_longitude(station_ids: list[str]):

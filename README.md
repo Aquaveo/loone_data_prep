@@ -69,7 +69,6 @@ dbkeys = get_dbkeys(
     stat="MEAN",
     recorder="CR10",
     freq="DA",
-    detail_level="dbkey"
 )
 
 # Get water level data
