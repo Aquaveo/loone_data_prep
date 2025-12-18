@@ -991,24 +991,43 @@ def find_last_date_in_csv(workspace: str, file_name: str) -> str:
         return None
 
 
-def dbhydro_data_is_latest(date_latest: str):
+def dbhydro_data_is_latest(date_latest: str, dbkey: str | None = None) -> bool:
     """
     Checks whether the given date is the most recent date possible to get data from dbhydro.
     Can be used to check whether dbhydro data is up-to-date.
 
     Args:
         date_latest (str): The date of the most recent data of the dbhydro data you have
+        dbkey (str | None, optional): The dbkey of the data you are checking. Defaults to None.
 
     Returns:
         bool: True if the date_latest is the most recent date possible to get data from dbhydro, False otherwise
     """
-    date_latest_object = datetime.datetime.strptime(
-        date_latest, "%Y-%m-%d"
-    ).date()
-    return date_latest_object == (
-        datetime.datetime.now().date() - datetime.timedelta(days=1)
-    )
+    # Convert date_latest to a date object
+    date_latest_object = pd.to_datetime(date_latest).date()
+    
+    # No dbkey provided
+    if dbkey is None:
+        # Assume latest data available is yesterday
+        return date_latest_object == (datetime.datetime.now().date() - datetime.timedelta(days=1))
+    
+    # Get dbhydro api
+    dbhydro_api = get_dbhydro_api()
+    
+    # Retrieve the last date available from dbhydro for the given dbkey
+    data = dbhydro_api.get_daily_data([dbkey], 'id', '1900-01-01', '1900-01-02', 'NGVD29', False)
+    last_date = data.time_series[0].period_of_record.por_last_date
+    
+    # Use date part only (exclude time)
+    last_date = last_date.split("T")[0]
+    
+    # Convert last_date to a date object
+    last_date_object = datetime.datetime.strptime(last_date, "%Y-%m-%d").date()
+    
+    # Compare given date to last date from dbhydro
+    return date_latest_object >= last_date_object
 
+    
 
 def get_synthetic_data(date_start: str, df: pd.DataFrame):
     """
