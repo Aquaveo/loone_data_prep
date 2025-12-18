@@ -94,6 +94,8 @@ def main(workspace: str, dbkeys: dict = DBKEYS, station_ids: list = STATION_IDS)
     Returns:
         dict: Success or error message
     """
+    # Make a copy of the dbkeys dictionary because key value pairs will be removed as they are successfully downloaded
+    dbkeys = dbkeys.copy()
     
     # No dbkeys given, attempt to get data from station ids
     if dbkeys is None:
@@ -102,16 +104,16 @@ def main(workspace: str, dbkeys: dict = DBKEYS, station_ids: list = STATION_IDS)
     # Get outflow data from dbkeys
     for dbkey, station in dbkeys.copy().items():
         # Get the date of the latest data in the csv file (if any)
-        date_latest = find_last_date_in_csv(workspace, f"{station}_FLOW_cmd.csv")
+        date_latest = find_last_date_in_csv(workspace, f"{station.replace(' ', '_')}_FLOW_cmd.csv")
         
         # File with data for this dbkey does NOT already exist (or possibly some other error occurred)
         if date_latest is None:
             # Download all data
             print(f'Downloading all outflow data for {station}')
-            hydro.get(workspace, dbkey, "2000-01-01")
+            hydro.get(workspace=workspace, dbkey=dbkey, date_min="2000-01-01", station=station)
         else:
             # Check whether the latest data is already up to date.
-            if dbhydro_data_is_latest(date_latest):
+            if dbhydro_data_is_latest(date_latest, dbkey):
                 # Notify that the data is already up to date
                 print(f'Downloading of new outflow data skipped for Station {station} (dbkey: {dbkey}). Data is already up to date.')
                 
@@ -120,8 +122,9 @@ def main(workspace: str, dbkeys: dict = DBKEYS, station_ids: list = STATION_IDS)
                 continue
             
             # Download only the new data
-            print(f'Downloading new outflow data for {station} starting from date {date_latest}')
-            hydro.get(workspace, dbkey, date_latest)
+            date_next = (pd.to_datetime(date_latest) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            print(f'Downloading new outflow data for {station} starting from date {date_next}')
+            hydro.get(workspace=workspace, dbkey=dbkey, date_min=date_next, station=station)
             
             # Make sure both our original data and newly downloaded data exist
             df_old_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
