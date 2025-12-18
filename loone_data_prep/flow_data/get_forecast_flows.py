@@ -1,8 +1,6 @@
 import os
 import sys
 import pandas as pd
-import rpy2.robjects as ro
-from rpy2.robjects import pandas2ri
 import geoglows
 import datetime
 from loone_data_prep.flow_data.forecast_bias_correction import (

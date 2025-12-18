@@ -45,20 +45,22 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
     Returns:
         dict: Success or error message
     """
+    # Make a copy of the dbkeys dictionary because key value pairs will be removed as they are successfully downloaded
+    dbkeys = dbkeys.copy()
     
     # Retrieve inflow data
     for dbkey, station in dbkeys.copy().items():
-        file_name = f"{station}_FLOW_cmd.csv"
+        file_name = f"{station.replace(' ', '_')}_FLOW_cmd.csv"
         date_latest = find_last_date_in_csv(workspace, file_name)
         
         # File with data for this dbkey does NOT already exist (or possibly some other error occurred)
         if date_latest is None:
             # Download all the data
             print(f'Downloading all inflow data for {station}')
-            hydro.get(workspace, dbkey)
+            hydro.get(workspace=workspace, dbkey=dbkey, station=station)
         else:
             # Check whether the latest data is already up to date.
-            if dbhydro_data_is_latest(date_latest):
+            if dbhydro_data_is_latest(date_latest, dbkey):
                 # Notify that the data is already up to date
                 print(f'Downloading of new inflow data skipped for Station {station} (dbkey: {dbkey}). Data is already up to date.')
                 
@@ -67,8 +69,9 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
                 continue
             
             # Download only the new data
-            print(f'Downloading new inflow data for {station} starting from date {date_latest}')
-            hydro.get(workspace, dbkey, date_latest)
+            date_next = (pd.to_datetime(date_latest) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+            print(f'Downloading new inflow data for {station} starting from date {date_next}')
+            hydro.get(workspace=workspace, dbkey=dbkey, date_min=date_next, station=station)
             
             # Make sure both our original data and newly downloaded data exist
             df_original_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
@@ -94,7 +97,7 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
         S65E_total.get(workspace, date_max=datetime.now().strftime("%Y-%m-%d"))
     else:
         # Check whether the latest data is already up to date.
-        if dbhydro_data_is_latest(date_latest):
+        if dbhydro_data_is_latest(date_latest, '91656') and dbhydro_data_is_latest(date_latest, 'AL760'):
             # Notify that the data is already up to date
             print(f'Downloading of new inflow data skipped for S65E_total. Data is already up to date.')
         else:
@@ -104,8 +107,9 @@ def main(workspace: str, dbkeys: dict = DBKEYS) -> dict:
             
             try:
                 # Download only the new data
-                print(f'Downloading new S65E_total data starting from date {date_latest}')
-                S65E_total.get(workspace, date_min=date_latest, date_max=datetime.now().strftime("%Y-%m-%d"))
+                date_next = (pd.to_datetime(date_latest) + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+                print(f'Downloading new S65E_total data starting from date {date_next}')
+                S65E_total.get(workspace, date_min=date_next, date_max=datetime.now().strftime("%Y-%m-%d"))
                 
                 # Merge the new data with the original data
                 df_original = pd.read_csv(os.path.join(workspace, original_file_name), index_col=0)
