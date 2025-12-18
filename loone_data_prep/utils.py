@@ -10,6 +10,7 @@ import pandas as pd
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
+from dbhydro_py import DbHydroApi
 from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata, get_dbhydro_continuous_timeseries_metadata
 
 
@@ -1071,6 +1072,42 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     df.drop(columns=['month_day'], inplace=True)
         
     return df
+
+
+def get_dbhydro_api_keys_from_environment() -> dict[str, str]:
+    """Get DBHYDRO API keys from environment variables.
+
+    Returns:
+        Dict[str, str]: A dictionary containing the DBHYDRO API keys where dict keys are 'client_id' and 'client_secret'.
+    """
+    # Get API keys from environment variables
+    api_keys = {
+        "client_id": os.environ.get("DBHYDRO_API_CLIENT_ID", ""),
+        "client_secret": os.environ.get("DBHYDRO_API_CLIENT_SECRET", ""),
+    }
+    
+    # Return the API keys
+    return api_keys
+
+
+def get_dbhydro_api_keys() -> dict[str, str]:
+    """Get DBHYDRO API keys.
+
+    Returns:
+        Dict[str, str]: A dictionary containing the DBHYDRO API keys where dict keys are 'client_id' and 'client_secret'.
+    """
+    return get_dbhydro_api_keys_from_environment()
+
+
+def get_dbhydro_api() -> DbHydroApi:
+    """Get a configured DbHydroApi instance.
+
+    Returns:
+        DbHydroApi: An instance of the DbHydroApi class.
+    """
+    api_keys = get_dbhydro_api_keys()
+    dbhydro_api = DbHydroApi.with_default_adapter(client_id=api_keys["client_id"], client_secret=api_keys["client_secret"])
+    return dbhydro_api
 
 
 if __name__ == "__main__":
