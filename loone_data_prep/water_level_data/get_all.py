@@ -12,20 +12,17 @@ DATE_NOW = datetime.now().date().strftime("%Y-%m-%d")
 D = {
     "LO_Stage": {"dbkeys": ["16022", "12509", "12519", "16265", "15611"], "datum": "NGVD29"},
     "LO_Stage_2": {"dbkeys": ["94832"], "date_min": "2024-04-30", "datum": "NAVD88"},
-    "Stg_3ANW": {"dbkeys": ["LA369"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
-    "Stg_2A17": {"dbkeys": ["16531"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
-    "Stg_3A3": {"dbkeys": ["16532"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
-    "Stg_3A4": {"dbkeys": ["16537"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"},
-    "Stg_3A28": {"dbkeys": ["16538"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29"}
+    "Stg_3ANW": {"dbkeys": ["LA369"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29", "override_site_codes": {"G3ANW": "3A-NW"}},
+    "Stg_2A17": {"dbkeys": ["16531"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29", "override_site_codes": {"2A-17": "2-17"}},
+    "Stg_3A3": {"dbkeys": ["16532"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29", "override_site_codes": {"3A-3": "3-63"}},
+    "Stg_3A4": {"dbkeys": ["16537"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29", "override_site_codes": {"3A-4": "3-64"}},
+    "Stg_3A28": {"dbkeys": ["16538"], "date_min": "1972-01-01", "date_max": "2023-04-30", "datum": "NGVD29", "override_site_codes": {"3A-28": "3-65"}},
 }
 
 
 def main(workspace: str, d: dict = D) -> dict:
     missing_files = []
     failed_downloads = []   # List of file names that the script failed to get the latest data for (but the files still exist)
-    
-    # Get the date of the latest data in LO_Stage_2.csv
-    date_latest_lo_stage_2 = find_last_date_in_csv(workspace, "LO_Stage_2.csv")
     
     for name, params in d.items():
         # Get the date of the latest data in the csv file
@@ -34,10 +31,18 @@ def main(workspace: str, d: dict = D) -> dict:
         # File with data for this dbkey does NOT already exist (or possibly some other error occurred)
         if date_latest is None:
             print(f"Getting all water level data for {name}.")
+            params['date_max'] = DATE_NOW
             hydro.get(workspace, name, **params)
         else:
             # Check whether the latest data is already up to date.
-            if dbhydro_data_is_latest(date_latest):
+            requires_data_download = False
+            for dbkey in params['dbkeys']:
+                if not dbhydro_data_is_latest(date_latest, dbkey):
+                    requires_data_download = True
+                    break
+            
+            # Data is already up to date
+            if not requires_data_download:
                 # Notify that the data is already up to date
                 print(f'Downloading of new water level data skipped for {name}. Data is already up to date.')
                 continue
@@ -49,21 +54,19 @@ def main(workspace: str, d: dict = D) -> dict:
             
             try:
                 # Download only the new data
-                print(f'Downloading new water level data for {name} starting from date {date_latest}')
-                hydro.get(workspace, name, dbkeys=params['dbkeys'], date_min=date_latest, date_max=DATE_NOW, datum=params['datum'])
+                date_next = (datetime.strptime(date_latest, "%Y-%m-%d") + pd.DateOffset(days=1)).date().strftime("%Y-%m-%d")
+                print(f'Downloading new water level data for {name} starting from date {date_next}')
+                kwargs = {}
+                if 'override_site_codes' in params:
+                    kwargs['override_site_codes'] = params['override_site_codes']
+                hydro.get(workspace, name, dbkeys=params['dbkeys'], date_min=date_next, date_max=DATE_NOW, datum=params['datum'], **kwargs)
                 
                 # Read in the original data and the newly downloaded data
-                df_original = pd.read_csv(os.path.join(workspace, original_file_name_temp), index_col=0)
-                df_new = pd.read_csv(os.path.join(workspace, original_file_name), index_col=0)
-                
-                # For get_hydro() calls with multiple dbkeys, remove the row corresponding to the latest date from the downloaded data.
-                # When get_hydro() is given multiple keys its returned data starts from the date given instead of the day after like it
-                # does when given a single key.
-                if len(params['dbkeys']) > 1:
-                    df_new = df_new[df_new['date'] != date_latest]
+                df_original = pd.read_csv(os.path.join(workspace, original_file_name_temp), index_col='date')
+                df_new = pd.read_csv(os.path.join(workspace, original_file_name), index_col='date')
                 
                 # Merge the new data with the original data
-                df_merged = pd.concat([df_original, df_new], ignore_index=True)
+                df_merged = pd.concat([df_original, df_new], ignore_index=False)
                 
                 # Write out the merged data
                 df_merged.to_csv(os.path.join(workspace, original_file_name))
@@ -101,6 +104,10 @@ def main(workspace: str, d: dict = D) -> dict:
         lat_long_map = get_stations_latitude_longitude(["L OKEE"])
         latitude, longitude = lat_long_map["L OKEE"]
         
+        # Load the LO_Stage.csv file
+        df_lo_stage = pd.read_csv(os.path.join(workspace, "LO_Stage.csv"), index_col="date")
+        df_lo_stage.index = pd.to_datetime(df_lo_stage.index)
+        
         # Load the LO_Stage_2.csv file
         df_lo_stage_2 = pd.read_csv(os.path.join(workspace, "LO_Stage_2.csv"), index_col="date")
         df_lo_stage_2.index = pd.to_datetime(df_lo_stage_2.index)
@@ -108,21 +115,24 @@ def main(workspace: str, d: dict = D) -> dict:
         # Output Progress
         print("Converting NAVD88 to NGVD29 for 'L OKEE's new dbkey...\n")
         
-        # Use only the data that is not already in the LO_Stage.csv file
-        if date_latest_lo_stage_2 is not None:
-            date_start = datetime.strptime(date_latest_lo_stage_2, "%Y-%m-%d") + pd.DateOffset(days=1)
-            df_lo_stage_2 = df_lo_stage_2.loc[date_start:]
+        # Use only the data that is not already in the LO_Stage.csv file and exists in the LO_Stage_2.csv file
+        common_dates = df_lo_stage.index.intersection(df_lo_stage_2.index)
         
-        # Convert the stage values from NAVD88 to NGVD29
-        lo_stage_2_dates = df_lo_stage_2.index.tolist()
-        lo_stage_2_values_navd88 = df_lo_stage_2["L OKEE_STG_ft NGVD29"].tolist()
-        lo_stage_2_values_ngvd29 = []
+        missing_mask = (
+            df_lo_stage.loc[common_dates, "L OKEE_STG_ft NGVD29"].isna() &
+            df_lo_stage_2.loc[common_dates, "L OKEE_STG_ft NGVD29"].notna()
+        )
         
-        for i in range(0, len(lo_stage_2_values_navd88)):
-            date = lo_stage_2_dates[i]
-            value = lo_stage_2_values_navd88[i]
+        missing_dates: pd.DatetimeIndex = common_dates[missing_mask]
+        missing_dates = missing_dates.to_list()
+        
+        # Convert the stage values from NAVD88 to NGVD29 for the missing dates
+        converted_values = {}
+        for date in missing_dates:
             try:
-                lo_stage_2_values_ngvd29.append(_convert_navd88_to_ngvd29(latitude, longitude, value, date.year))
+                navd88_value = df_lo_stage_2.at[date, "L OKEE_STG_ft NGVD29"]
+                ngvd29_value = _convert_navd88_to_ngvd29(latitude, longitude, navd88_value, date.year)
+                converted_values[date] = ngvd29_value
             except Exception as e:
                 convert_failure = True
                 print(str(e))
@@ -131,20 +141,15 @@ def main(workspace: str, d: dict = D) -> dict:
         # Check for conversion failure
         if not convert_failure:        
             # Update the LO_Stage.csv file with the converted values
-            df_lo_stage = pd.read_csv(os.path.join(workspace, "LO_Stage.csv"), index_col="date")
-            df_lo_stage.index = pd.to_datetime(df_lo_stage.index)
-            
-            for i in range(0, len(lo_stage_2_values_ngvd29)):
-                # Get the current date and value
-                date = lo_stage_2_dates[i]
-                value = lo_stage_2_values_ngvd29[i]
-                
-                # Update the value in the LO_Stage dataframe
+            for date, value in converted_values.items():
                 df_lo_stage.at[date, "L OKEE_STG_ft NGVD29"] = value
             
             # Reset the index
             df_lo_stage.reset_index(inplace=True)
-            df_lo_stage.drop(columns=["Unnamed: 0"], inplace=True)
+            
+            # Drop Unnamed: 0 column that might have been added
+            if "Unnamed: 0" in df_lo_stage.columns:
+                df_lo_stage.drop(columns=["Unnamed: 0"], inplace=True)
             
             # Save the updated LO_Stage.csv file
             df_lo_stage.to_csv(os.path.join(workspace, "LO_Stage.csv"))
