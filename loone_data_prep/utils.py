@@ -996,14 +996,31 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     end_month_day = date_end.strftime('%m-%d')
     
     # Filter the DataFrame to include only rows between date_start and date_end for all previous years
-    mask = (df['month_day'] >= start_month_day) & (df['month_day'] <= end_month_day)
+    # (handle year wrap, e.g., Dec -> Jan)
+    wraps_year = start_month_day > end_month_day
+
+    if wraps_year:
+        mask = (
+            (df['month_day'] >= start_month_day) |
+            (df['month_day'] <= end_month_day)
+        )
+    else:
+        mask = (
+            (df['month_day'] >= start_month_day) &
+            (df['month_day'] <= end_month_day)
+        )
+
     filtered_data = df.loc[mask]
     
     # Group by the month and day, then calculate the average for each group
     average_values = filtered_data.groupby('month_day')['Data'].mean()
     # Interpolate in case there are missing values:
     start_date = pd.to_datetime('2001-' + start_month_day)
-    end_date = pd.to_datetime('2001-' + end_month_day)
+
+    if wraps_year:
+        end_date = pd.to_datetime('2002-' + end_month_day)
+    else:
+        end_date = pd.to_datetime('2001-' + end_month_day)
 
     full_dates = pd.date_range(start=start_date, end=end_date)
     full_index = full_dates.strftime('%m-%d')

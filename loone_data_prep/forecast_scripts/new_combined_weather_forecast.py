@@ -11,9 +11,6 @@ import requests_cache
 
 warnings.filterwarnings("ignore", message="Will not remove GRIB file because it previously existed.")
 
-# ======================
-# Define 4 points
-# ======================
 POINTS = pd.DataFrame({
     "station": ["L001", "L005", "L006", "LZ40"],
     "longitude": [-80.7934, -80.9724, -80.7828, -80.7890],
@@ -41,9 +38,6 @@ AIRT_COLUMN_MAP = {
     "LZ40": "LZ40_AIRT_Degrees Celsius"
 }
 
-# ======================
-# Download Herbie variable
-# ======================
 @retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
 def download_herbie_variable(FH, variable_key, variable_name, point_df):
     """Download a Herbie variable for a given point and return a DataFrame."""
@@ -55,7 +49,7 @@ def download_herbie_variable(FH, variable_key, variable_name, point_df):
         "10u": "u10",
         "10v": "v10",
         "2t": "t2m"
-    }.get(variable_name, variable_name)  # fallback for tp, ssrd
+    }.get(variable_name, variable_name) 
 
     ts = dsi[var_name].squeeze()
     df = ts.to_dataframe().reset_index()
@@ -70,9 +64,7 @@ def download_herbie_variable(FH, variable_key, variable_name, point_df):
     del ds, dsi, ts
     return df
 
-# ======================
 # Download ET from Open-Meteo
-# ======================
 def download_hourly_et(lat, lon):
     cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
     retry_session = retry_requests(cache_session, retries=5, backoff_factor=0.2)
@@ -100,17 +92,13 @@ def download_hourly_et(lat, lon):
     hourly_data["evapotranspiration"] = hourly_evap
     return pd.DataFrame(hourly_data)
 
-# ======================
 # Main generation function
-# ======================
 def generate_all_outputs(output_dir):
     os.makedirs(output_dir, exist_ok=True)
     today_str = datetime.today().strftime('%Y-%m-%d 00:00')
     FH = get_fast_herbie_object(today_str)
 
-    # ======================
     # Forecasted weather data (single point)
-    # ======================
     point_df = pd.DataFrame({"longitude": [-80.7976], "latitude": [26.9690]})
     forecast_vars = ["10u", "10v", "2t", "tp", "ssrd"]
     data = {var: download_herbie_variable(FH, var, var, point_df) for var in forecast_vars}
@@ -121,7 +109,7 @@ def generate_all_outputs(output_dir):
     merged = merged.merge(data["ssrd"], on="datetime")
 
     # Derived columns
-    merged["wind_speed"] = (merged["u10"]**2 + merged["v10"]**2)**0.5
+    merged["wind_speed"] = (merged["u10"]**2 + merged["v10"]**2)**0.5  # wind speed in m/s
     merged["wind_speed_corrected"] = 0.4167 * merged["wind_speed"] + 4.1868
     merged["tp_inc_m"] = merged["tp"].diff().clip(lower=0)
     # Convert incremental meters → mm
@@ -145,9 +133,7 @@ def generate_all_outputs(output_dir):
     merged = merged.merge(df_et, left_on="datetime", right_on="date", how="left").drop(columns=["date"])
     merged.to_csv(os.path.join(output_dir, "forecasted_weather_data.csv"), index=False)
 
-    # ======================
     # 4-point wind and air temp CSVs
-    # ======================
     for idx, row in POINTS.iterrows():
         station = row["station"]
         point_df = pd.DataFrame({"longitude": [row.longitude], "latitude": [row.latitude]})
@@ -171,9 +157,7 @@ def generate_all_outputs(output_dir):
             os.path.join(output_dir, AIRT_FILE_MAP[station]), index=False
         )
 
-    # ======================
     # Rainfall, ET, and SSRD 4-point CSVs
-    # ======================
     rainfall_dfs, et_dfs, ssrd_dfs = [], [], []
 
     for idx, row in POINTS.iterrows():
@@ -182,9 +166,9 @@ def generate_all_outputs(output_dir):
 
         # Rainfall
         df_tp = download_herbie_variable(FH, "tp", "tp", point_df)
-        # 1. Convert cumulative meters → incremental meters
+        # Convert cumulative meters → incremental meters
         df_tp["tp_inc_m"] = df_tp["tp"].diff().clip(lower=0)
-        # 2. Convert incremental meters → millimeters
+        # Convert incremental meters → millimeters
         df_tp["tp_inc_mm"] = df_tp["tp_inc_m"] * 1000.0
         df_tp["date_only"] = df_tp["datetime"].dt.date
         # Sum incremental precipitation per day
@@ -218,11 +202,8 @@ def generate_all_outputs(output_dir):
     et_df_all["average_ETPI"] = et_df_all[POINTS["station"]].mean(axis=1)
     et_df_all.to_csv(os.path.join(output_dir, "LOONE_AVERAGE_ETPI_DATA_FORECAST.csv"), index=False)
 
-    # Merge SSRD
     # Combine all SSRD DataFrames
     ssrd_df_all = pd.concat(ssrd_dfs, axis=0)
-
-    # Ensure 'date' is datetime
     ssrd_df_all["date"] = pd.to_datetime(ssrd_df_all["date"])
 
     # Compute the daily mean for each station
@@ -232,14 +213,8 @@ def generate_all_outputs(output_dir):
         .reset_index()
     )
 
-    # Rename the grouped column to 'date'
     daily_ssrd = daily_ssrd.rename(columns={"date": "date"})
-
-    # Compute daily mean across all stations
     daily_ssrd["Mean_RADT"] = daily_ssrd[POINTS["station"]].mean(axis=1)
-
-    # Save to CSV
     daily_ssrd.to_csv(os.path.join(output_dir, "LO_RADT_data_forecast.csv"), index=False)
-
 
     print("All outputs generated successfully.")

@@ -15,7 +15,7 @@ from loone_data_prep.utils import stg2sto, stg2ar
 import datetime
 
 START_DATE = datetime.datetime.now()
-END_DATE = START_DATE + datetime.timedelta(days=15)
+END_DATE = START_DATE + datetime.timedelta(days=14)
 
 M3_Yr = 2008
 M3_M = 1
