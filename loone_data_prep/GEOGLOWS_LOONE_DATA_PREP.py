@@ -373,8 +373,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     C44RO_df['C44RO_cmd'] = C44RO
     C43RO_df['C43RO'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
     C44RO_df['C44RO'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
-    C43RO_df.to_csv(f'{output_dir}/C43RO_{ensemble_number}.csv', index=False)
-    C44RO_df.to_csv(f'{output_dir}/C44RO_{ensemble_number}.csv', index=False)
+    C43RO_df.to_csv(f'{output_dir}/C43RO_{ensemble_number}.csv')
+    C44RO_df.to_csv(f'{output_dir}/C44RO_{ensemble_number}.csv')
     C43RO_df.index = pd.to_datetime(C43RO_df["date"])
     C43RO_df = C43RO_df.drop(columns="date")
 
@@ -384,13 +384,13 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     C43Mon = C43RO_df.resample('ME').mean()
     C44Mon = C44RO_df.resample('ME').mean()
 
-    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly_{ensemble_number}.csv', index=False)
-    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly_{ensemble_number}.csv', index=False)
+    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly_{ensemble_number}.csv')
+    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly_{ensemble_number}.csv')
     Basin_RO = pd.DataFrame(C44Mon.index, columns=['date'])
     # Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835  # cfs to acft
     Basin_RO['C44RO'] = C44Mon['C44RO'].values * 86400
     Basin_RO['C43RO'] = C43Mon['C43RO'].values * 86400
-    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs_{ensemble_number}.csv', index=False)
+    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs_{ensemble_number}.csv')
 
     # # Get monthly C43RO and C44RO from historical run
     # shutil.copyfile(os.path.join(historical_files_src, "C43RO_Monthly.csv"), os.path.join(output_dir, 'C43RO_Monthly.csv'))
