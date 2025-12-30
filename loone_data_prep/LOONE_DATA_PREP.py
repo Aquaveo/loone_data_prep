@@ -351,7 +351,6 @@ def main(input_dir: str, output_dir: str) -> None:
     S65E.index = pd.to_datetime(S65E.index, unit='ns')
     S65E_Weekly = S65E.resample('W-FRI').mean()
     # PI
-    # TODO
     # This is prepared manually
     # Weekly data is downloaded from https://www.ncei.noaa.gov/access/monitoring/weekly-palmers/time-series/0804
     # State:Florida Division:4.South Central

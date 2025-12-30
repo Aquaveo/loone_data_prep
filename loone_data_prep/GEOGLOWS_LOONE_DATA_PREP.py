@@ -15,7 +15,7 @@ from loone_data_prep.utils import stg2sto, stg2ar
 import datetime
 
 START_DATE = datetime.datetime.now()
-END_DATE = START_DATE + datetime.timedelta(days=15)
+END_DATE = START_DATE + datetime.timedelta(days=14)
 
 M3_Yr = 2008
 M3_M = 1
@@ -373,8 +373,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     C44RO_df['C44RO_cmd'] = C44RO
     C43RO_df['C43RO'] = C43RO_df['C43RO_cmd']/(0.0283168466 * 86400)
     C44RO_df['C44RO'] = C44RO_df['C44RO_cmd']/(0.0283168466 * 86400)
-    C43RO_df.to_csv(f'{output_dir}/C43RO_{ensemble_number}.csv', index=False)
-    C44RO_df.to_csv(f'{output_dir}/C44RO_{ensemble_number}.csv', index=False)
+    C43RO_df.to_csv(f'{output_dir}/C43RO_{ensemble_number}.csv')
+    C44RO_df.to_csv(f'{output_dir}/C44RO_{ensemble_number}.csv')
     C43RO_df.index = pd.to_datetime(C43RO_df["date"])
     C43RO_df = C43RO_df.drop(columns="date")
 
@@ -384,13 +384,13 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     C43Mon = C43RO_df.resample('ME').mean()
     C44Mon = C44RO_df.resample('ME').mean()
 
-    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly_{ensemble_number}.csv', index=False)
-    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly_{ensemble_number}.csv', index=False)
+    C43Mon.to_csv(f'{output_dir}/C43RO_Monthly_{ensemble_number}.csv')
+    C44Mon.to_csv(f'{output_dir}/C44RO_Monthly_{ensemble_number}.csv')
     Basin_RO = pd.DataFrame(C44Mon.index, columns=['date'])
     # Basin_RO['SLTRIB'] = SLTRIBMon['SLTRIB_cfs'].values * 1.9835  # cfs to acft
     Basin_RO['C44RO'] = C44Mon['C44RO'].values * 86400
     Basin_RO['C43RO'] = C43Mon['C43RO'].values * 86400
-    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs_{ensemble_number}.csv', index=False)
+    Basin_RO.to_csv(f'{output_dir}/Basin_RO_inputs_{ensemble_number}.csv')
 
     # # Get monthly C43RO and C44RO from historical run
     # shutil.copyfile(os.path.join(historical_files_src, "C43RO_Monthly.csv"), os.path.join(output_dir, 'C43RO_Monthly.csv'))
@@ -461,16 +461,47 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     LOWS.to_csv(f"{output_dir}/LOWS_predicted.csv")
 
     # # RFVol acft
-    # # Create File (RF_Volume)
-    # RFVol = pd.DataFrame(RF_data["date"], columns=["date"])
-    # RFVol["RFVol_acft"] = (RF_data["average_rainfall"].values / 12) * LO_Stg_Sto_SA_df["SA_acres"].values
-    # RFVol.to_csv(f"{output_dir}/RFVol_LORS_20082023.csv", index=False)
+    RF_data = pd.read_csv(f'{input_dir}/LAKE_RAINFALL_DATA_FORECAST.csv')
+    # RF_data_copy = RF_data.copy()
+    # LO_Stg_Sto_SA_df_copy = LO_Stg_Sto_SA_df.copy()
+    RF_data['date'] = pd.to_datetime(RF_data['date'])
+    # LO_Stg_Sto_SA_df_copy['date'] = pd.to_datetime(LO_Stg_Sto_SA_df_copy['date'])
+    # LO_Stg_Sto_SA_df_copy.index.name = None
 
-    # # ETVol acft
-    # # Create File (ETVol)
-    # ETVol = pd.DataFrame(ET_data["date"], columns=["date"])
-    # ETVol["ETVol_acft"] = (ET_data["average_ETPI"].values / 12) * LO_Stg_Sto_SA_df["SA_acres"].values
-    # ETVol.to_csv(f"{output_dir}/ETVol_LORS_20082023.csv", index=False)
+
+    # merged_rf_sa = pd.merge(RF_data_copy[['date', 'average_rainfall']], 
+    #                         LO_Stg_Sto_SA_df_copy[['date', 'SA_acres']], 
+    #                         on='date', how='inner')
+    #I am just using the most recent SA_acres value for all forecast dates since we do not have forecasted surface area
+    RFVol = pd.DataFrame(RF_data['date'], columns=['date'])
+    RFVol['RFVol_acft'] = (RF_data['average_rainfall'].values/12) * LO_Stg_Sto_SA_df["SA_acres"].iloc[-1]
+
+    date_reference = RFVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'RFVol_acft': [0.0, 0.0]})
+    RFVol = pd.concat([df_insert, RFVol])
+    RFVol.to_csv(f'{output_dir}/RFVol_Forecast.csv', index=False)
+    
+        # ETVol acft
+    # Create File (ETVol)
+    # Merge the DataFrames on date to ensure matching rows
+    ET_data = pd.read_csv(f'{input_dir}/LOONE_AVERAGE_ETPI_DATA_FORECAST.csv')
+    # ET_data_copy = ET_data.copy()
+    # LO_Stg_Sto_SA_df_copy = LO_Stg_Sto_SA_df.copy()
+    ET_data['date'] = pd.to_datetime(ET_data['date'])
+    # LO_Stg_Sto_SA_df_copy['date'] = pd.to_datetime(LO_Stg_Sto_SA_df_copy['date'])
+    # merged_et_sa = pd.merge(ET_data_copy[['date', 'average_ETPI']],
+    #                         LO_Stg_Sto_SA_df_copy[['date', 'SA_acres']], 
+    #                         on='date', how='inner')
+
+    ETVol = pd.DataFrame(ET_data['date'], columns=['date'])
+    ETVol['ETVol_acft'] = (ET_data['average_ETPI'].values/12) * LO_Stg_Sto_SA_df["SA_acres"].iloc[-1]
+    date_reference = ETVol['date'].iloc[0]
+    date_inserts = [date_reference - datetime.timedelta(days=2), date_reference - datetime.timedelta(days=1)]
+    df_insert = pd.DataFrame(data={'date': date_inserts, 'ETVol_acft': [0.0, 0.0]})
+    ETVol = pd.concat([df_insert, ETVol])
+    ETVol.to_csv(f'{output_dir}/ETVol_forecast.csv', index=False)
+
 
     # # WCA Stages
     # # Create File (WCA_Stages_Inputs)

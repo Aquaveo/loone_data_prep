@@ -9,7 +9,7 @@ def get_Chla_predicted(input_dir, output_dir):
     output_dir: Directory where the output files will be saved.
     """
     # Read forecast inflow file and get overall date range
-    # TODO: Should this be an average/median of all of the ensembles? worst case?
+    # We are only taking the dates, so it is okay to just use one ensemble because they all have the same dates
     Q_in = pd.read_csv(os.path.join(input_dir, 'LO_Inflows_BK_forecast_01.csv'))
     Q_in['date'] = pd.to_datetime(Q_in['date'])
     date_start = Q_in['date'].min()
