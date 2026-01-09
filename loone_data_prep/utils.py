@@ -1093,6 +1093,28 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     return df
 
 
+def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', 'N'}) -> pd.DataFrame:
+    """
+    Replace values in the 'value' column of the DataFrame with NaN where the 'qualifier' column contains specified qualifier codes.
+    
+    This was designed to work with dataframes created from dbhydro_py response data.
+    The dataframe must have 'value' and 'qualifier' columns.
+    Qualifier/Codes can be found here: https://insightsdata.sfwmd.gov/#/reference-tables?lookup=qualityCode
+    
+    Args:
+        df (pd.DataFrame): DataFrame that was created from a dbhydro_py response. Must have value and qualifier columns.
+        qualifier_codes (set, optional): Set of qualifier codes indicating missing data. Defaults to {'M', 'N'}.
+    
+    Returns:
+        pd.DataFrame: DataFrame with specified values replaced with NaN.
+    """
+    # Replace 0 values with NaN when their qualifier is in qualifier_codes
+    # 'M' = Missing, 'N' = Not Yet Available
+    # Qualifier/Codes can be found here: https://insightsdata.sfwmd.gov/#/reference-tables?lookup=qualityCode
+    df.loc[df['qualifier'].isin(qualifier_codes), 'value'] = np.nan
+    return df
+
+
 def get_dbhydro_api_keys_from_environment() -> dict[str, str]:
     """Get DBHYDRO API keys from environment variables.
 
