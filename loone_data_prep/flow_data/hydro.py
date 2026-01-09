@@ -2,7 +2,7 @@ import sys
 from datetime import datetime
 from retry import retry
 import pandas as pd
-from loone_data_prep.utils import get_dbhydro_api
+from loone_data_prep.utils import df_replace_missing_with_nan, get_dbhydro_api
 
 
 DATE_NOW = datetime.now().strftime("%Y-%m-%d")
@@ -40,7 +40,10 @@ def get(
         station = response.get_site_codes()[0]
     
     # Get the data as a dataframe
-    df = response.to_dataframe()
+    df = response.to_dataframe(True)
+    
+    # Replace flagged 0 values and -99999.0 with NaN
+    df = df_replace_missing_with_nan(df)
     
     # Convert flow from cfs to cmd
     df['value'] = df['value'] * (0.0283168466 * 86400)
