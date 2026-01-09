@@ -1,16 +1,17 @@
+import os
 import sys
 from datetime import datetime
 from retry import retry
-from rpy2.robjects import r
-from rpy2.rinterface_lib.embedded import RRuntimeError
 import pandas as pd
+from loone_data_prep.utils import df_replace_missing_with_nan, get_dbhydro_api
+import csv
 
 
 DEFAULT_DBKEYS = ["16021", "12515", "12524", "13081"]
 DATE_NOW = datetime.now().strftime("%Y-%m-%d")
 
 
-@retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
+@retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
 def get(
     workspace: str,
     param: str,
@@ -19,8 +20,15 @@ def get(
     date_max: str = DATE_NOW,
     **kwargs: str | list
 ) -> None:
-    dbkeys_str = "\"" + "\", \"".join(dbkeys) + "\""
-
+    """Fetches daily weather data from DBHYDRO for specified dbkeys and date range, and saves the data to CSV files in the specified workspace.
+    
+    Args:
+        workspace (str): The directory where the CSV files will be saved.
+        param (str): The type of weather data to fetch (e.g., "RAIN", "ETPI").
+        dbkeys (list, optional): List of DBHYDRO dbkeys to fetch data for. Defaults to DEFAULT_DBKEYS.
+        date_min (str, optional): The start date for data retrieval in "YYYY-MM-DD" format. Defaults to "2000-01-01".
+        date_max (str, optional): The end date for data retrieval in "YYYY-MM-DD" format. Defaults to the current date.
+    """
     data_type = param
     data_units_file = None
     data_units_header = None
@@ -28,92 +36,49 @@ def get(
     # Get the units for the file name and column header based on the type of data
     data_units_file, data_units_header = _get_file_header_data_units(data_type)
     
-    r_str = f"""
-        download_weather_data <- function()#workspace, dbkeys, date_min, date_max, data_type, data_units_file, data_units_header)
-        {{
-            library(dbhydroR)
-            library(dplyr)
-
-            dbkeys <- c({dbkeys_str})
-            successful_stations <- list()
-            
-            for (i in dbkeys) 
-            {{
-                # Retrieve data for the dbkey
-                data <- get_hydro(dbkey = i, date_min = "{date_min}", date_max = "{date_max}", raw = TRUE)
-                
-                # Give data.frame correct column names so it can be cleaned using the clean_hydro function
-                column_names <- c("station", "dbkey", "date", "data.value", "qualifer", "revision.date")
-                colnames(data) <- column_names
-                
-                # Check if the data.frame has any rows
-                if (nrow(data) > 0) 
-                {{
-                    # Get the station
-                    station <- data$station[1]
-                    
-                    # Add a type and units column to data so it can be cleaned using the clean_hydro function
-                    data$type <- "{data_type}"
-                    data$units <- "{data_units_header}"
-                    
-                    # Clean the data.frame
-                    data <- clean_hydro(data)
-                    
-                    # Get the filename of the output file
-                    filename <- ""
-                    
-                    if ("{param}" %in% c("RADP", "RADT")) 
-                    {{
-                        filename <- paste(station, "{data_type}", sep = "_")
-                    }}
-                    else
-                    {{
-                        filename <- paste(station, "{data_type}", "{data_units_file}", sep = "_")
-                    }}
-                    
-                    filename <- paste0(filename, ".csv")
-                    filename <- paste0("{workspace}/", filename)
-
-                    # Save data to a CSV file
-                    write.csv(data, file = filename)
-
-                    # Print a message indicating the file has been saved
-                    cat("CSV file", filename, "has been saved.\n")
-
-                    # Append the station to the list of successful stations
-                    successful_stations <- c(successful_stations, station)
-                }}
-                else
-                {{
-                    # No data given back, It's possible that the dbkey has reached its end date.
-                    print(paste("Empty data.frame returned for dbkey", i, "It's possible that the dbkey has reached its end date. Skipping to the next dbkey."))
-                }}
-
-                # Add a delay between requests
-                Sys.sleep(2) # Wait for 2 seconds before the next iteration
-            }}
-            
-            # Return the station and dbkey to the python code
-            return(successful_stations)
-        }}
-        """  # noqa: E501
+    # Retrieve the data
+    api = get_dbhydro_api()
+    response = api.get_daily_data(dbkeys, 'id', date_min, date_max, 'NGVD29', False)
     
-    # Download the weather data
-    r(r_str)
-    result = r.download_weather_data()
+    # Get the data as a dataframe
+    df = response.to_dataframe(True)
     
-    # Get the stations of the dbkeys who's data were successfully downloaded
-    stations = []
-    for value in result:
-        stations.append(value[0])
+    # Replace 0 values with NaN when their qualifier is either 'M' or 'N'
+    df = df_replace_missing_with_nan(df)
     
-    # Format files to expected layout
-    for station in stations:
-        if station in ["L001", "L005", "L006", "LZ40"]:
-            _reformat_weather_file(workspace, station, data_type, data_units_file, data_units_header)
-            
-            # Print a message indicating the file has been saved
-            print(f"CSV file {workspace}/{station}_{data_type}_{data_units_file}.csv has been reformatted.")
+    # Map each station to its own dataframe
+    station_dfs = {}
+    
+    for site_code in response.get_site_codes():
+        station_dfs[site_code] = df[df['site_code'] == site_code].copy()
+    
+    # Write out each station's data to its own file
+    for station, station_df in station_dfs.items():
+        # Get metadata for the station
+        parameter_code = station_df['parameter_code'].iloc[0]
+        unit_code = station_df['unit_code'].iloc[0]
+        
+        # Select only the desired columns
+        station_df = station_df[['value']].copy()
+        
+        # Rename datetime index
+        station_df.index.rename('date', inplace=True)
+        
+        # Rename the columns to the expected format
+        station_df.rename(columns={'value': f'{station}_{data_type}_{data_units_header}'}, inplace=True)
+        
+        # Make the date index a column and use an integer index (for backwards compatibility)
+        station_df = station_df.reset_index()
+        
+        # Get the name of the output file
+        file_name = ''
+        if data_type in ['RADP', 'RADT']:
+            file_name = f'{station}_{data_type}.csv'
+        else:
+            file_name = f'{station}_{data_type}_{data_units_file}.csv'
+        
+        # Write out the station's data to a csv file
+        station_df.to_csv(os.path.join(workspace, file_name), index=True)
 
 
 def merge_data(workspace: str, data_type: str):
@@ -127,103 +92,75 @@ def merge_data(workspace: str, data_type: str):
     
     # Merge the data files for the different stations (LAKE_RAINFALL_DATA.csv)
     if data_type == "RAIN":
-        r(
-            f"""
-            L001_RAIN_Inches <- read.csv("{workspace}/L001_RAIN_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            L005_RAIN_Inches = read.csv("{workspace}/L005_RAIN_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            L006_RAIN_Inches = read.csv("{workspace}/L006_RAIN_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            LZ40_RAIN_Inches = read.csv("{workspace}/LZ40_RAIN_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            #Replace NA values with zero
-            L001_RAIN_Inches[is.na(L001_RAIN_Inches)] <- 0
-            L005_RAIN_Inches[is.na(L005_RAIN_Inches)] <- 0
-            L006_RAIN_Inches[is.na(L006_RAIN_Inches)] <- 0
-            LZ40_RAIN_Inches[is.na(LZ40_RAIN_Inches)] <- 0
-            # Merge the files by the "date" column
-            merged_data <- merge(L001_RAIN_Inches, L005_RAIN_Inches, by = "date",all = TRUE)
-            merged_data <- merge(merged_data, L006_RAIN_Inches, by = "date",all = TRUE)
-            merged_data <- merge(merged_data, LZ40_RAIN_Inches, by = "date",all = TRUE)
-            # Calculate the average rainfall per day
-            merged_data$average_rainfall <- rowMeans(merged_data[, -1],na.rm = TRUE)
-
-            # View the updated merged data
-            head(merged_data)
-            # Save merged data as a CSV file
-            write.csv(merged_data, "{workspace}/LAKE_RAINFALL_DATA.csv", row.names = TRUE)
-            """  # noqa: E501
-        )
+        # Read in rain data
+        l001_rain_inches = pd.read_csv(os.path.join(workspace, 'L001_RAIN_Inches.csv'), index_col=0)
+        l005_rain_inches = pd.read_csv(os.path.join(workspace, 'L005_RAIN_Inches.csv'), index_col=0)
+        l006_rain_inches = pd.read_csv(os.path.join(workspace, 'L006_RAIN_Inches.csv'), index_col=0)
+        lz40_rain_inches = pd.read_csv(os.path.join(workspace, 'LZ40_RAIN_Inches.csv'), index_col=0)
+        
+        # Replace NaN values with 0
+        l001_rain_inches.fillna(0, inplace=True)
+        l005_rain_inches.fillna(0, inplace=True)
+        l006_rain_inches.fillna(0, inplace=True)
+        lz40_rain_inches.fillna(0, inplace=True)
+        
+        # Merge the data by the "date" column
+        merged_data = pd.merge(l001_rain_inches, l005_rain_inches, on="date", how="outer")
+        merged_data = pd.merge(merged_data, l006_rain_inches, on="date", how="outer")
+        merged_data = pd.merge(merged_data, lz40_rain_inches, on="date", how="outer")
+        
+        # Calculate the average rainfall per day
+        merged_data['average_rainfall'] = merged_data.iloc[:, 1:].mean(axis=1)
+        
+        # Make sure the integer index values are quoted in the csv file (for backwards compatibility)
+        merged_data.index = merged_data.index.astype(str)
+        
+        # Save merged data as a CSV file
+        merged_data.applymap(lambda x: round(x, 4) if isinstance(x, (float, int)) else x)
+        merged_data.to_csv(os.path.join(workspace, 'LAKE_RAINFALL_DATA.csv'), index=True, quoting=csv.QUOTE_NONNUMERIC)
 
     # Merge the data files for the different stations (LOONE_AVERAGE_ETPI_DATA.csv)
     if data_type == "ETPI":
-        r(
-            f"""
-            L001_ETPI_Inches <- read.csv("{workspace}/L001_ETPI_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            L005_ETPI_Inches = read.csv("{workspace}/L005_ETPI_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            L006_ETPI_Inches = read.csv("{workspace}/L006_ETPI_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-            LZ40_ETPI_Inches = read.csv("{workspace}/LZ40_ETPI_Inches.csv", colClasses = c("NULL", "character", "numeric"))
-
-            # Replace NA values with zero
-            L001_ETPI_Inches[is.na(L001_ETPI_Inches)] <- 0
-            L005_ETPI_Inches[is.na(L005_ETPI_Inches)] <- 0
-            L006_ETPI_Inches[is.na(L006_ETPI_Inches)] <- 0
-            LZ40_ETPI_Inches[is.na(LZ40_ETPI_Inches)] <- 0
-            # Merge the files by the "date" column
-            merged_data <- merge(L001_ETPI_Inches, L005_ETPI_Inches, by = "date",all = TRUE)
-            merged_data <- merge(merged_data, L006_ETPI_Inches, by = "date",all = TRUE)
-            merged_data <- merge(merged_data, LZ40_ETPI_Inches, by = "date",all = TRUE)
-            # Calculate the average rainfall per day
-            merged_data$average_ETPI <- rowMeans(merged_data[, -1],na.rm = TRUE)
-
-            # View the updated merged data
-            head(merged_data)
-            # Save merged data as a CSV file
-            write.csv(merged_data, "{workspace}/LOONE_AVERAGE_ETPI_DATA.csv", row.names = TRUE)
-            """  # noqa: E501
-        )
-
-
-def _reformat_weather_file(workspace: str, station: str, data_type: str, data_units_file: str, data_units_header: str) -> None:
-    '''
-    Reformats the dbhydro weather file to the layout expected by the rest of the LOONE scripts.
-    This function reads in and writes out a .csv file.
-    
-    Args:
-        workspace (str): The path to the workspace directory.
-        station (str): The station name. Ex: L001, L005, L006, LZ40.
-        data_type (str): The type of data. Ex: RAIN, ETPI, H2OT, RADP, RADT, AIRT, WNDS.
-        data_units_file (str): The units for the file name. Ex: Inches, Degrees Celsius, etc.
-        data_units_header (str): The units for the column header. Ex: Inches, Degrees Celsius, etc. Can differ from data_units_file when data_type is either RADP or RADT.
+        # Read in ETPI data
+        l001_etpi_inches = pd.read_csv(os.path.join(workspace, 'L001_ETPI_Inches.csv'), index_col=0)
+        l005_etpi_inches = pd.read_csv(os.path.join(workspace, 'L005_ETPI_Inches.csv'), index_col=0)
+        l006_etpi_inches = pd.read_csv(os.path.join(workspace, 'L006_ETPI_Inches.csv'), index_col=0)
+        lz40_etpi_inches = pd.read_csv(os.path.join(workspace, 'LZ40_ETPI_Inches.csv'), index_col=0)
         
-    Returns:
-        None
-    '''
-    # Read in the data
-    df = None
-    if data_type in ['RADP', 'RADT']:
-        df = pd.read_csv(f"{workspace}/{station}_{data_type}.csv")
-    else:
-        df = pd.read_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
-    
-    # Remove unneeded column columns
-    df.drop(f' _{data_type}_{data_units_header}', axis=1, inplace=True)
-    df.drop('Unnamed: 0', axis=1, inplace=True)
-    
-    # Convert date column to datetime
-    df['date'] = pd.to_datetime(df['date'], format='%d-%b-%Y')
-    
-    # Sort the data by date
-    df.sort_values('date', inplace=True)
-    
-    # Renumber the index
-    df.reset_index(drop=True, inplace=True)
-    
-    # Drop rows that are missing all their values
-    df.dropna(how='all', inplace=True)
-    
-    # Write the updated data back to the file
-    if data_type in ['RADP', 'RADT']:
-        df.to_csv(f"{workspace}/{station}_{data_type}.csv")
-    else:
-        df.to_csv(f"{workspace}/{station}_{data_type}_{data_units_file}.csv")
+        # Replace NaN values with 0
+        l001_etpi_inches.fillna(0, inplace=True)
+        l005_etpi_inches.fillna(0, inplace=True)
+        l006_etpi_inches.fillna(0, inplace=True)
+        lz40_etpi_inches.fillna(0, inplace=True)
+        
+        # Merge the data by the "date" column
+        merged_data = pd.merge(l001_etpi_inches, l005_etpi_inches, on="date", how="outer")
+        merged_data = pd.merge(merged_data, l006_etpi_inches, on="date", how="outer")
+        merged_data = pd.merge(merged_data, lz40_etpi_inches, on="date", how="outer")
+        
+        # Calculate the average ETPI per day
+        merged_data['average_ETPI'] = merged_data.iloc[:, 1:].mean(axis=1)
+        
+        # Make sure the integer index values are quoted in the csv file (for backwards compatibility)
+        merged_data.index = merged_data.index.astype(str)
+        
+        # Save merged data as a CSV file
+        merged_data.to_csv(os.path.join(workspace, 'LOONE_AVERAGE_ETPI_DATA.csv'), index=True, quoting=csv.QUOTE_NONNUMERIC, na_rep='NA')
+        
+        # Rewrite the file so NA values aren't quoted (for backwards compatibility)
+        file_path = os.path.join(workspace, 'LOONE_AVERAGE_ETPI_DATA.csv')
+        lines = []
+
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+        
+        with open(file_path, 'w', newline='') as file:
+            for line in lines:
+                line = line.replace(',"NA"', ',NA')
+                line = line.replace('"NA",', 'NA,')
+                line = line.replace(',"NaN"', ',NA')
+                line = line.replace('"NaN",', 'NA,')
+                file.write(line)
 
 
 def _get_file_header_data_units(data_type: str) -> tuple[str, str]:
