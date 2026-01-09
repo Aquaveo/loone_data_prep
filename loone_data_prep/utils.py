@@ -1093,7 +1093,7 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     return df
 
 
-def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', 'N'}) -> pd.DataFrame:
+def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', 'N'}, no_data_value: float = -99999.0) -> pd.DataFrame:
     """
     Replace values in the 'value' column of the DataFrame with NaN where the 'qualifier' column contains specified qualifier codes.
     
@@ -1104,6 +1104,7 @@ def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', '
     Args:
         df (pd.DataFrame): DataFrame that was created from a dbhydro_py response. Must have value and qualifier columns.
         qualifier_codes (set, optional): Set of qualifier codes indicating missing data. Defaults to {'M', 'N'}.
+        no_data_value (float, optional): Value representing no data. Defaults to -99999.0. Values equal to this will also be replaced with NaN.
     
     Returns:
         pd.DataFrame: DataFrame with specified values replaced with NaN.
@@ -1112,6 +1113,11 @@ def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', '
     # 'M' = Missing, 'N' = Not Yet Available
     # Qualifier/Codes can be found here: https://insightsdata.sfwmd.gov/#/reference-tables?lookup=qualityCode
     df.loc[df['qualifier'].isin(qualifier_codes), 'value'] = np.nan
+    
+    # Also replace no_data_value with NaN
+    df.loc[np.isclose(df['value'], no_data_value), 'value'] = np.nan
+    
+    # Return modified dataframe
     return df
 
 
