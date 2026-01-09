@@ -1,7 +1,7 @@
 import sys
 from retry import retry
 import pandas as pd
-from loone_data_prep.utils import get_dbhydro_api
+from loone_data_prep.utils import df_replace_missing_with_nan, get_dbhydro_api
 
 
 @retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
@@ -26,7 +26,8 @@ def get(
     if not s65e_s.has_data():
         return
     
-    df_s65e_s = s65e_s.to_dataframe()
+    df_s65e_s = s65e_s.to_dataframe(True)
+    df_s65e_s = df_replace_missing_with_nan(df_s65e_s)                                              # Replace flagged 0 values and -99999.0 with NaN
     df_s65e_s.reset_index(inplace=True)                                                             # Reset index so datetime is a column
     df_s65e_s['value'] = df_s65e_s['value'] * (0.0283168466 * 86400)                                # Convert flow from cfs to cmd
     df_s65e_s = df_s65e_s[['datetime', 'value']].copy()                                             # Grab only the columns we need
@@ -38,7 +39,8 @@ def get(
     if not s65ex1_s.has_data():
         return
     
-    df_s65ex1_s = s65ex1_s.to_dataframe()
+    df_s65ex1_s = s65ex1_s.to_dataframe(True)
+    df_s65ex1_s = df_replace_missing_with_nan(df_s65ex1_s)                                          # Replace flagged 0 values and -99999.0 with NaN
     df_s65ex1_s.reset_index(inplace=True)                                                           # Reset index so datetime is a column
     df_s65ex1_s['value'] = df_s65ex1_s['value'] * (0.0283168466 * 86400)                            # Convert flow from cfs to cmd
     df_s65ex1_s = df_s65ex1_s[['datetime', 'value']].copy()                                         # Grab only the columns we need
