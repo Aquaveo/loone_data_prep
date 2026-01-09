@@ -77,7 +77,7 @@ def get(
         df.drop(columns=['Unnamed: 0'], inplace=True)
     
     # Write the data to a csv file
-    df.to_csv(f"{workspace}/{name}.csv", index=False)
+    df.to_csv(f"{workspace}/{name}.csv", index=True)
 
 
 if __name__ == "__main__":

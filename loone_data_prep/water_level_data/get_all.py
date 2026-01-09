@@ -68,6 +68,10 @@ def main(workspace: str, d: dict = D) -> dict:
                 # Merge the new data with the original data
                 df_merged = pd.concat([df_original, df_new], ignore_index=False)
                 
+                # Ensure an integer index (for backwards compatibility)
+                df_merged.reset_index(inplace=True)
+                df_merged.drop(columns=['Unnamed: 0'], inplace=True, errors='ignore')
+                
                 # Write out the merged data
                 df_merged.to_csv(os.path.join(workspace, original_file_name))
                 
