@@ -2,7 +2,7 @@ import sys
 from datetime import datetime
 from retry import retry
 import pandas as pd
-from loone_data_prep.utils import get_dbhydro_api
+from loone_data_prep.utils import df_replace_missing_with_nan, get_dbhydro_api
 
 DEFAULT_DBKEYS = ["16022", "12509", "12519", "16265", "15611"]
 DATE_NOW = datetime.now().strftime("%Y-%m-%d")
@@ -42,7 +42,10 @@ def get(
     response = api.get_daily_data(dbkeys, 'id', date_min, date_max, datum, False)
     
     # Get the data as a dataframe
-    df = response.to_dataframe()
+    df = response.to_dataframe(True)
+    
+    # Replace flagged 0 values and -99999.0 with NaN
+    df = df_replace_missing_with_nan(df)
     
     # Make sure datetime exists as a column
     if 'datetime' not in df.columns:
