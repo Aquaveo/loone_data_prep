@@ -5,13 +5,14 @@ import math
 from glob import glob
 from calendar import monthrange
 import traceback
+from typing import Tuple
 import numpy as np
 import pandas as pd
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
 from dbhydro_py import DbHydroApi
-from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata, get_dbhydro_continuous_timeseries_metadata
+from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata, get_dbhydro_continuous_timeseries_metadata, get_dbhydro_water_quality_metadata
 
 
 DEFAULT_STATION_IDS = ["L001", "L005", "L006", "LZ40"]
@@ -1027,7 +1028,34 @@ def dbhydro_data_is_latest(date_latest: str, dbkey: str | None = None) -> bool:
     # Compare given date to last date from dbhydro
     return date_latest_object >= last_date_object
 
+
+def dbhydro_water_quality_data_is_latest(date_latest: str, station: str, test_number: int) -> bool:
+    """
+    Checks whether the given date is the most recent date possible to get water quality data from dbhydro.
+    Can be used to check whether dbhydro water quality data is up-to-date.
+
+    Args:
+        date_latest (str): The date of the most recent data of the dbhydro water quality data you have.
+        station (str): The station ID of the water quality data you are checking.
+        test_number (int): The test number of the water quality data you are checking. Test numbers map to parameters such as 'PHOSPHATE, TOTAL AS P'.
     
+    Returns:
+        bool: True if the date_latest is the most recent date possible to get water quality data from dbhydro, False otherwise
+    """
+    # Get the date range from dbhydro water quality data
+    date_start, date_end = get_dbhydro_water_quality_date_range(station, test_number)
+    
+    # No end date available
+    if date_end is None:
+        # Assume data is not up-to-date
+        return False
+    
+    # Convert date_latest to a datetime object
+    date_latest_object = pd.to_datetime(date_latest)
+    
+    # Compare given date to last date from dbhydro
+    return date_latest_object >= date_end
+
 
 def get_synthetic_data(date_start: str, df: pd.DataFrame):
     """
@@ -1120,6 +1148,40 @@ def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', '
     # Return modified dataframe
     return df
 
+
+def get_dbhydro_water_quality_date_range(station: str, test_number: int) -> Tuple[pd.Timestamp | None, pd.Timestamp | None]:
+    """Get the start date and end date for the given station and test number from DBHYDRO water quality data.
+    
+    Args:
+        station (str): The station names.
+        test_number (int): The test number of the data. Test numbers map to parameters such as 'PHOSPHATE, TOTAL AS P'.
+    
+    Returns:
+        Tuple[pd.Timestamp | None, pd.Timestamp | None]: A tuple containing the start date and end date in 'MM/DD/YYYY' format.
+    """
+    response = get_dbhydro_water_quality_metadata([station], [test_number])
+    
+    # No data given back by api
+    if response is None:
+        return (None, None)
+    
+    # Get the date range from the response
+    if 'results' in response:
+        if len(response['results']) > 0:
+            date_start = response['results'][0].get('startDate', None)
+            date_end = response['results'][0].get('endDate', None)
+            
+            # Convert dates to datetime objects
+            if date_start is not None:
+                date_start = pd.to_datetime(date_start)
+            if date_end is not None:
+                date_end = pd.to_datetime(date_end)
+            
+            return (date_start, date_end)
+    
+    # No results found
+    return (None, None)
+            
 
 def get_dbhydro_api_keys_from_environment() -> dict[str, str]:
     """Get DBHYDRO API keys from environment variables.

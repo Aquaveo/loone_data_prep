@@ -120,3 +120,72 @@ def get_dbhydro_continuous_timeseries_metadata(
     
     # Failure
     raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
+
+
+def get_dbhydro_water_quality_metadata(stations: list[str], test_numbers: list[int]) -> dict | None:
+    """Fetches metadata for water quality data from the DBHYDRO Insights service.
+    
+    Args:
+        stations (list[str]): List of station names to get water quality metadata for.
+        test_numbers (list[int]): List of test numbers to get data for. Test numbers map to parameters. Example: 25 maps to 'PHOSPHATE, TOTAL AS P'.
+    
+    Returns:
+        dict | None: The JSON response from the API if successful, otherwise None.
+    
+    Raises:
+        Exception: If the request fails.
+    """
+    # Build the request URL
+    request_url = 'https://insightsdata.api.sfwmd.gov/v1/insights-data/chem/ts'
+    
+    # Build the locations list
+    locations = []
+    
+    for station in stations:
+        # Build the location dictionary for this station/site
+        location = {
+            'name': station,
+            'type': 'SITE',
+        }
+        
+        # Add location to the locations list
+        locations.append(location)
+    
+    # Build the query parameters
+    query_parameters = {
+        'offset': 0,
+        'limit': 15,
+        'sort': 'project,location,parameterDesc,matrix,method',
+        'period': '365days',
+    }
+    
+    # Build the data payload
+    payload = {
+        'query': {
+            'locations': locations,
+            'matrices': ['ALL'],
+            'methods': ['ALL'],
+            'paramGroups': ['ALL'],
+            'parameters': [str(num) for num in test_numbers],
+            'projects': ['ALL'],
+            'sampleTypes': ['ALL'],
+        }
+    }
+    
+    # Send the POST request to the specified URL with the parameters
+    response = requests.post(request_url, params=query_parameters, json=payload)
+
+    # Successful Request
+    if response.status_code == 200:
+        # Parse the JSON response
+        json = response.json()
+        
+        # No data given back for given station ID
+        if not json['results']:
+            return None
+        
+        # Data given back, return the JSON response
+        return json
+    
+    # Failure
+    raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
