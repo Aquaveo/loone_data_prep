@@ -953,8 +953,16 @@ def find_last_date_in_csv(workspace: str, file_name: str) -> str:
 
     # Helper Functions
     def is_valid_date(date_string):
+        # Check for date without time part
         try:
             datetime.datetime.strptime(date_string, "%Y-%m-%d")
+            return True
+        except ValueError:
+            pass
+        
+        # Check for date with time part
+        try:
+            datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
             return True
         except ValueError:
             return False

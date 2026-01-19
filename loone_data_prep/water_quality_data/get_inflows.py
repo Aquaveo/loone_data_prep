@@ -1,26 +1,28 @@
+import csv
+import traceback
 import sys
 import os
 import uuid
 from datetime import datetime, timedelta
 import pandas as pd
 from loone_data_prep.water_quality_data import wq
-from loone_data_prep.utils import find_last_date_in_csv, dbhydro_data_is_latest
+from loone_data_prep.utils import find_last_date_in_csv, dbhydro_water_quality_data_is_latest
 
 
 D = {
-    "PHOSPHATE, TOTAL AS P": {"station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
+    "PHOSPHATE, TOTAL AS P": {"test_number": 25, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
                                               'CULV10A', 'S133', 'S127', 'S135']},
-    "AMMONIA-N": {"station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
+    "AMMONIA-N": {"test_number": 20, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
                                   'CULV10A', 'S133', 'S127', 'S135']},
-    "NITRATE+NITRITE-N": {"station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
+    "NITRATE+NITRITE-N": {"test_number": 18, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
                                           'CULV10A', 'S133', 'S127', 'S135']},
-    "TOTAL NITROGEN": {"station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
+    "TOTAL NITROGEN": {"test_number": 80, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
                                        'CULV10A', 'S133', 'S127', 'S135']},
-    "CHLOROPHYLL-A": {"station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133',
+    "CHLOROPHYLL-A": {"test_number": None, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133',
                                       'S127', 'S135', 'S191']},
-    "CHLOROPHYLL-A(LC)": {"station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A',
+    "CHLOROPHYLL-A(LC)": {"test_number": 179, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A',
                                           'S133', 'S127', 'S135', 'S191']},
-    "CHLOROPHYLL-A, CORRECTED": {"station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
+    "CHLOROPHYLL-A, CORRECTED": {"test_number": None, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
                                                  'CULV10A', 'S133', 'S127', 'S135', 'S191']}
 }
 
@@ -34,6 +36,9 @@ def main(workspace: str, d: dict = D) -> dict:
     for name, params in d.items():
         print(f"Getting {name} for the following station IDs: {params['station_ids']}.")
         
+        # Get the test_number for this parameter name
+        test_number = params['test_number']
+        
         # Get the date of the latest data in the csv file for each station id
         station_date_latest = {}
         for station_id in params["station_ids"]:
@@ -45,12 +50,12 @@ def main(workspace: str, d: dict = D) -> dict:
             if date_latest is None:
                 # Get all the water quality data for the name/station combination
                 print(f"Getting all {name} data for station ID: {station_id}.")
-                wq.get(workspace, name, [station_id])
+                wq.get(workspace, name, test_number, [station_id])
             else:
                 # Check whether we already have the latest data
-                if dbhydro_data_is_latest(date_latest):
+                if dbhydro_water_quality_data_is_latest(date_latest, station_id, test_number):
                     # Notify that the data is already up to date
-                    print(f'Downloading of new water quality data for test name: {name} station: {station} skipped. Data is already up to date.')
+                    print(f'Downloading of new water quality data for test name: {name} station: {station_id} skipped. Data is already up to date.')
                     continue
                 
                 # Temporarily rename current data file so it isn't over written
@@ -61,8 +66,8 @@ def main(workspace: str, d: dict = D) -> dict:
                 try:
                     # Get only the water quality data that is newer than the latest data in the csv file
                     print(f"Downloading new water quality data for test name: {name} station ID: {station_id} starting from date: {date_latest}.")
-                    date_latest = (datetime.strptime(date_latest, "%Y-%m-%d") + timedelta(days=1)).strftime("%Y-%m-%d")
-                    wq.get(workspace, name, [station_id], date_min=date_latest)
+                    date_latest = (datetime.strptime(date_latest, "%Y-%m-%d %H:%M:%S") + timedelta(days=1)).strftime("%Y-%m-%d %H:%M:%S")
+                    wq.get(workspace, name, test_number, [station_id], date_min=date_latest)
                     
                     # Data failed to download - It's possible the data's end date has been reached
                     if not os.path.exists(os.path.join(workspace, original_file_name)):
@@ -71,25 +76,38 @@ def main(workspace: str, d: dict = D) -> dict:
                     # Read in the original data
                     df_original = pd.read_csv(os.path.join(workspace, original_file_name_temp), index_col=0)
                     
-                    # Calculate the days column for the newly downloaded data
-                    df_original_date_min = df_original['date'].min()
-                    wq._calculate_days_column(workspace, original_file_name, df_original_date_min)
-                    
                     # Read in the newly downloaded data
                     df_new = pd.read_csv(os.path.join(workspace, original_file_name), index_col=0)
-                    df_new.reset_index(inplace=True)
+                    
+                    # Calculate the days column for the newly downloaded data
+                    df_original_date_min = df_original['date'].min()
+                    df_new = wq._calculate_days_column(workspace, df_new, df_original_date_min)
                     
                     # Merge the new data with the original data
-                    df_merged = pd.concat([df_original, df_new], ignore_index=True)
+                    df_merged = pd.concat([df_original, df_new], ignore_index=False)
+                    
+                    # Re-number the index
+                    df_merged.reset_index(inplace=True)
+                    df_merged.drop(['index'], axis=1, inplace=True)
+
+                    # Start index at 1 instead of 0 (for backwards compatibility)
+                    df_merged.index = df_merged.index + 1
+
+                    # Make sure the integer index values are quoted in the csv file (for backwards compatibility)
+                    df_merged.index = df_merged.index.astype(str)
                     
                     # Write out the merged data
-                    df_merged.to_csv(os.path.join(workspace, original_file_name))
+                    df_merged.to_csv(os.path.join(workspace, original_file_name), index=True, quoting=csv.QUOTE_NONNUMERIC)
+                    
+                    # Rewrite the file so dates don't have double quotes around them (for backwards compatibility)
+                    wq.rewrite_water_quality_file_without_date_quotes(workspace, original_file_name)
                     
                     # Remove the original renamed data file
                     os.remove(os.path.join(workspace, original_file_name_temp))
                 except Exception as e:
                     # Notify of the error
                     print(f"Error occurred while downloading new water quality data: {e}")
+                    traceback.print_exc()
                     
                     # Remove the newly downloaded data file if it exists
                     if os.path.exists(os.path.join(workspace, original_file_name)):
