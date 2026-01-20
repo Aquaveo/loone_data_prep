@@ -14,7 +14,6 @@ maintainers = [
     { name = "James Dolinar", email = "jdolinar@aquaveo.com" },
 ]
 dependencies = [
-    "rpy2",
     "retry",
     "numpy<2",
     "pandas",
