@@ -1175,9 +1175,31 @@ def get_dbhydro_water_quality_date_range(station: str, test_number: int) -> Tupl
     
     # Get the date range from the response
     if 'results' in response:
-        if len(response['results']) > 0:
-            date_start = response['results'][0].get('startDate', None)
-            date_end = response['results'][0].get('endDate', None)
+        results = response['results']
+        if len(results) > 0:
+            # Find the first non-None start and end dates
+            date_start = None
+            date_end = None
+            for result in results:
+                date_start = result.get('startDate', None)
+                date_end = result.get('endDate', None)
+                
+                # Dates found
+                if date_start is not None and date_end is not None:
+                    break
+            
+            # If no valid dates were found, return early
+            if date_start is None or date_end is None:
+                return (date_start, date_end)
+            
+            # Find the earliest start date and latest end date
+            for result in results:
+                date_start_current = result.get('startDate', None)
+                date_end_current = result.get('endDate', None)
+                if date_start_current is not None and pd.to_datetime(date_start_current) < pd.to_datetime(date_start):
+                    date_start = date_start_current
+                if date_end_current is not None and pd.to_datetime(date_end_current) > pd.to_datetime(date_end):
+                    date_end = date_end_current
             
             # Convert dates to datetime objects
             if date_start is not None:
@@ -1185,6 +1207,7 @@ def get_dbhydro_water_quality_date_range(station: str, test_number: int) -> Tupl
             if date_end is not None:
                 date_end = pd.to_datetime(date_end)
             
+            # Return the earliest start date and latest end date
             return (date_start, date_end)
     
     # No results found
