@@ -5,6 +5,7 @@ This module provides functions for fetching data from endpoints used
 by the South Florida Water Management District's DBHYDRO Insights app.
 """
 
+from datetime import datetime
 import requests
 
 
@@ -154,9 +155,11 @@ def get_dbhydro_water_quality_metadata(stations: list[str], test_numbers: list[i
     # Build the query parameters
     query_parameters = {
         'offset': 0,
-        'limit': 15,
+        'limit': 1000,
         'sort': 'project,location,parameterDesc,matrix,method',
-        'period': '365days',
+        'startDate': '19000101',
+        'endDate': datetime.now().strftime("%Y%m%d"),
+        'period': '',
     }
     
     # Build the data payload
