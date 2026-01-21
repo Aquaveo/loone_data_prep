@@ -10,25 +10,101 @@ from loone_data_prep.utils import find_last_date_in_csv,  dbhydro_water_quality_
 
 
 D = {
-    "PHOSPHATE, TOTAL AS P": {"test_number": 25, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "PHOSPHATE, ORTHO AS P": {"test_number": 23, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "AMMONIA-N": {"test_number": 20, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "NITRATE+NITRITE-N": {"test_number": 18, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "TOTAL NITROGEN": {"test_number": 80, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN HILR": {"test_number": 1023, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN HTYR": {"test_number": 1022, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN LA": {"test_number": 1005, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN LF": {"test_number": 1006, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN LR": {"test_number": 1007, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN LW": {"test_number": 1008, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN LY": {"test_number": 1009, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN RR": {"test_number": 1010, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN WR": {"test_number": 1011, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "MICROCYSTIN YR": {"test_number": 1012, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "CHLOROPHYLL-A": {"test_number": None, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "CHLOROPHYLL-A(LC)": {"test_number": 179, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "CHLOROPHYLL-A, CORRECTED": {"test_number": None, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]},
-    "DISSOLVED OXYGEN": {"test_number": 8, "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"]}
+    "PHOSPHATE, TOTAL AS P": {
+        "test_number": 25,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "PHOSPHATE, ORTHO AS P": {
+        "test_number": 23,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "AMMONIA-N": {
+        "test_number": 20,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "NITRATE+NITRITE-N": {
+        "test_number": 18,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "TOTAL NITROGEN": {
+        "test_number": 80,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN HILR": {
+        "test_number": 1023,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN HTYR": {
+        "test_number": 1022,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN LA": {
+        "test_number": 1005,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN LF": {
+        "test_number": 1006,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN LR": {
+        "test_number": 1007,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN LW": {
+        "test_number": 1008,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN LY": {
+        "test_number": 1009,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN RR": {
+        "test_number": 1010,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN WR": {
+        "test_number": 1011,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "MICROCYSTIN YR": {
+        "test_number": 1012,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "CHLOROPHYLL-A": {
+        "test_number": 61,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "CHLOROPHYLL-A(LC)": {
+        "test_number": 179,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "CHLOROPHYLL-A, CORRECTED": {
+        "test_number": 112,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    },
+    "DISSOLVED OXYGEN": {
+        "test_number": 8,
+        "station_ids": ["L001", "L004", "L005", "L006", "L007", "L008", "LZ40"],
+        "station_types": {"L001": "SITE", "L004": "SITE", "L005": "SITE", "L006": "SITE", "L007": "SITE", "L008": "SITE", "LZ40": "SITE"}
+    }
 }
 
 

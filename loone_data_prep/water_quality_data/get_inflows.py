@@ -10,20 +10,41 @@ from loone_data_prep.utils import find_last_date_in_csv, dbhydro_water_quality_d
 
 
 D = {
-    "PHOSPHATE, TOTAL AS P": {"test_number": 25, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
-                                              'CULV10A', 'S133', 'S127', 'S135']},
-    "AMMONIA-N": {"test_number": 20, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
-                                  'CULV10A', 'S133', 'S127', 'S135']},
-    "NITRATE+NITRITE-N": {"test_number": 18, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
-                                          'CULV10A', 'S133', 'S127', 'S135']},
-    "TOTAL NITROGEN": {"test_number": 80, "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
-                                       'CULV10A', 'S133', 'S127', 'S135']},
-    "CHLOROPHYLL-A": {"test_number": None, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133',
-                                      'S127', 'S135', 'S191']},
-    "CHLOROPHYLL-A(LC)": {"test_number": 179, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A',
-                                          'S133', 'S127', 'S135', 'S191']},
-    "CHLOROPHYLL-A, CORRECTED": {"test_number": None, "station_ids": ['S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C',
-                                                 'CULV10A', 'S133', 'S127', 'S135', 'S191']}
+    "PHOSPHATE, TOTAL AS P": {
+        "test_number": 25,
+        "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133', 'S127', 'S135'],
+        "station_types": {'S191': 'SITE', 'S65E': 'SITE', 'S84': 'SITE', 'S154': 'SITE', 'S71': 'SITE', 'S72': 'SITE', 'S4': 'SITE', 'FECSR78': 'STATION', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S133': 'SITE', 'S127': 'SITE', 'S135': 'SITE'}
+    },
+    "AMMONIA-N": {
+        "test_number": 20,
+        "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133', 'S127', 'S135'],
+        "station_types": {'S191': 'SITE', 'S65E': 'SITE', 'S84': 'SITE', 'S154': 'SITE', 'S71': 'SITE', 'S72': 'SITE', 'S4': 'SITE', 'FECSR78': 'STATION', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S133': 'SITE', 'S127': 'SITE', 'S135': 'SITE'}
+    },
+    "NITRATE+NITRITE-N": {
+        "test_number": 18,
+        "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133', 'S127', 'S135'],
+        "station_types": {'S191': 'SITE', 'S65E': 'SITE', 'S84': 'SITE', 'S154': 'SITE', 'S71': 'SITE', 'S72': 'SITE', 'S4': 'SITE', 'FECSR78': 'STATION', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S133': 'SITE', 'S127': 'SITE', 'S135': 'SITE'}
+    },
+    "TOTAL NITROGEN": {
+        "test_number": 80,
+        "station_ids": ['S191', 'S65E', 'S84', 'S154', 'S71', 'S72', 'S4', 'FECSR78', 'S308C', 'CULV10A', 'S133', 'S127', 'S135'],
+        "station_types": {'S191': 'SITE', 'S65E': 'SITE', 'S84': 'SITE', 'S154': 'SITE', 'S71': 'SITE', 'S72': 'SITE', 'S4': 'SITE', 'FECSR78': 'STATION', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S133': 'SITE', 'S127': 'SITE', 'S135': 'SITE'}
+    },
+    "CHLOROPHYLL-A": {
+        "test_number": 61,
+        "station_ids": ['S65E', 'S84', 'S4', 'S308C', 'CULV10A', 'S135'],
+        "station_types": {'S65E': 'SITE', 'S84': 'SITE', 'S4': 'SITE', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S135': 'SITE'}
+    },
+    "CHLOROPHYLL-A(LC)": {
+        "test_number": 179,
+        "station_ids": ['S65E', 'S154', 'S4', 'S308C', 'CULV10A', 'S133', 'S127', 'S191'],
+        "station_types": {'S65E': 'SITE', 'S154': 'SITE', 'S4': 'SITE', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S133': 'SITE', 'S127': 'SITE', 'S191': 'SITE'}
+    },
+    "CHLOROPHYLL-A, CORRECTED": {
+        "test_number": 112,
+        "station_ids": ['S65E', 'S84', 'S4', 'S308C', 'CULV10A', 'S135'],
+        "station_types": {'S65E': 'SITE', 'S84': 'SITE', 'S4': 'SITE', 'S308C': 'STATION', 'CULV10A': 'STATION', 'S135': 'SITE'}
+    },
 }
 
 
