@@ -46,6 +46,9 @@ def main(workspace: str, d: dict = D) -> dict:
         
         # Get the water quality data
         for station_id, date_latest in station_date_latest.items():
+            # Get the station type for this station ID
+            station_type = params["station_types"][station_id]
+            
             # File with data for this station/name combination does NOT already exist (or possibly some other error occurred)
             if date_latest is None:
                 # Get all the water quality data for the name/station combination
@@ -53,7 +56,7 @@ def main(workspace: str, d: dict = D) -> dict:
                 wq.get(workspace, name, test_number, [station_id])
             else:
                 # Check whether we already have the latest data
-                if dbhydro_water_quality_data_is_latest(date_latest, station_id, test_number):
+                if dbhydro_water_quality_data_is_latest(date_latest, station_id, station_type, test_number):
                     # Notify that the data is already up to date
                     print(f'Downloading of new water quality data for test name: {name} station: {station_id} skipped. Data is already up to date.')
                     continue

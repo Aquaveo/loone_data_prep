@@ -7,6 +7,7 @@ by the South Florida Water Management District's DBHYDRO Insights app.
 
 from datetime import datetime
 import requests
+from typing import Literal, Tuple
 
 
 def get_dbhydro_station_metadata(station_id: str) -> dict | None:
@@ -123,11 +124,11 @@ def get_dbhydro_continuous_timeseries_metadata(
     raise Exception(f"Request failed with status code {response.status_code}: {response.text}")
 
 
-def get_dbhydro_water_quality_metadata(stations: list[str], test_numbers: list[int]) -> dict | None:
+def get_dbhydro_water_quality_metadata(stations: list[Tuple[str,Literal['SITE', 'STATION']]], test_numbers: list[int]) -> dict | None:
     """Fetches metadata for water quality data from the DBHYDRO Insights service.
     
     Args:
-        stations (list[str]): List of station names to get water quality metadata for.
+        stations (list[Tuple[str, Literal['SITE', 'STATION']]]): List of tuples containing station names and station types ('SITE' or 'STATION') to get water quality metadata for.
         test_numbers (list[int]): List of test numbers to get data for. Test numbers map to parameters. Example: 25 maps to 'PHOSPHATE, TOTAL AS P'.
     
     Returns:
@@ -145,8 +146,8 @@ def get_dbhydro_water_quality_metadata(stations: list[str], test_numbers: list[i
     for station in stations:
         # Build the location dictionary for this station/site
         location = {
-            'name': station,
-            'type': 'SITE',
+            'name': station[0],
+            'type': station[1],
         }
         
         # Add location to the locations list

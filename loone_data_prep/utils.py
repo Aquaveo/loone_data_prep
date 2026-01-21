@@ -5,7 +5,7 @@ import math
 from glob import glob
 from calendar import monthrange
 import traceback
-from typing import Tuple
+from typing import Literal, Tuple
 import numpy as np
 import pandas as pd
 from retry import retry
@@ -1037,7 +1037,7 @@ def dbhydro_data_is_latest(date_latest: str, dbkey: str | None = None) -> bool:
     return date_latest_object >= last_date_object
 
 
-def dbhydro_water_quality_data_is_latest(date_latest: str, station: str, test_number: int) -> bool:
+def dbhydro_water_quality_data_is_latest(date_latest: str, station: str, station_type: Literal['SITE', 'STATION'], test_number: int) -> bool:
     """
     Checks whether the given date is the most recent date possible to get water quality data from dbhydro.
     Can be used to check whether dbhydro water quality data is up-to-date.
@@ -1051,7 +1051,7 @@ def dbhydro_water_quality_data_is_latest(date_latest: str, station: str, test_nu
         bool: True if the date_latest is the most recent date possible to get water quality data from dbhydro, False otherwise
     """
     # Get the date range from dbhydro water quality data
-    date_start, date_end = get_dbhydro_water_quality_date_range(station, test_number)
+    date_start, date_end = get_dbhydro_water_quality_date_range(station, station_type, test_number)
     
     # No end date available
     if date_end is None:
@@ -1157,17 +1157,18 @@ def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', '
     return df
 
 
-def get_dbhydro_water_quality_date_range(station: str, test_number: int) -> Tuple[pd.Timestamp | None, pd.Timestamp | None]:
+def get_dbhydro_water_quality_date_range(station: str, station_type: Literal['SITE', 'STATION'], test_number: int) -> Tuple[pd.Timestamp | None, pd.Timestamp | None]:
     """Get the start date and end date for the given station and test number from DBHYDRO water quality data.
     
     Args:
         station (str): The station names.
+        station_type (Literal['SITE', 'STATION']): The type of the station.
         test_number (int): The test number of the data. Test numbers map to parameters such as 'PHOSPHATE, TOTAL AS P'.
     
     Returns:
         Tuple[pd.Timestamp | None, pd.Timestamp | None]: A tuple containing the start date and end date in 'MM/DD/YYYY' format.
     """
-    response = get_dbhydro_water_quality_metadata([station], [test_number])
+    response = get_dbhydro_water_quality_metadata([(station, station_type)], [test_number])
     
     # No data given back by api
     if response is None:
