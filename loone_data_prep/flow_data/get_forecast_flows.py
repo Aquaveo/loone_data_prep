@@ -225,70 +225,32 @@ def _format_stats_DataFrame(dataframe: pd.core.frame.DataFrame):
     dataframe.index = dataframe.index.normalize()
 
     # Convert m^3/s data to m^3/h
-    dataframe = dataframe.transform(lambda x: x * SECONDS_IN_HOUR)
+    dataframe = dataframe * SECONDS_IN_HOUR
 
     # Make negative values 0
     dataframe.clip(0, inplace=True)
 
-    # Max Column (Max)
-    column_max = dataframe[["flow_max"]].copy()
-    column_max = column_max.groupby([column_max.index]).max()
+    grouped = dataframe.groupby(dataframe.index).mean()
+    # Convert from m^3/h → m^3/d
+    grouped = grouped * HOURS_IN_DAY
 
-    # 75th Percentile Column (Average)
-    column_75percentile = dataframe[["flow_75p"]].copy()
-    column_75percentile = column_75percentile.groupby(
-        [column_75percentile.index]
-    ).mean()
-
-    # Average Column (Weighted Average)
-    column_average = dataframe[["flow_avg"]].copy()
-    column_average.transform(lambda x: x / 8)
-    column_average = column_average.groupby([column_average.index]).sum()
-
-    # 25th Percentile Column (Average)
-    column_25percentile = dataframe[["flow_25p"]].copy()
-    column_25percentile = column_25percentile.groupby(
-        [column_25percentile.index]
-    ).mean()
-
-    # Min Column (Min)
-    column_min = dataframe[["flow_min"]].copy()
-    column_min = column_min.groupby([column_min.index]).min()
-
-    # Convert values in each column from m^3/h to m^3/d
-    column_max = column_max.transform(lambda x: x * HOURS_IN_DAY)
-    column_75percentile = column_75percentile.transform(
-        lambda x: x * HOURS_IN_DAY
+    # Rename columns
+    grouped = grouped.rename(
+        columns={
+            "flow_max": "flow_max_m^3/d",
+            "flow_75p": "flow_75%_m^3/d",
+            "flow_avg": "flow_avg_m^3/d",
+            "flow_med": "flow_med_m^3/d",
+            "flow_25p": "flow_25%_m^3/d",
+            "flow_min": "flow_min_m^3/d",
+        }
     )
-    column_average = column_average.transform(lambda x: x * HOURS_IN_DAY)
-    column_25percentile = column_25percentile.transform(
-        lambda x: x * HOURS_IN_DAY
-    )
-    column_min = column_min.transform(lambda x: x * HOURS_IN_DAY)
 
-    # Append modified columns into one pandas DataFrame
-    dataframe_result = pd.DataFrame()
-    dataframe_result.index = dataframe.groupby([dataframe.index]).mean().index
-    dataframe_result["flow_max_m^3/d"] = column_max["flow_max"].tolist()
-    dataframe_result["flow_75%_m^3/d"] = column_75percentile[
-        "flow_75p"
-    ].tolist()
-    dataframe_result["flow_avg_m^3/d"] = column_average[
-        "flow_avg"
-    ].tolist()
-    dataframe_result["flow_25%_m^3/d"] = column_25percentile[
-        "flow_25p"
-    ].tolist()
-    dataframe_result["flow_min_m^3/d"] = column_min["flow_min"].tolist()
+    # Format index as date string and rename
+    grouped.index = grouped.index.strftime("%Y-%m-%d")
+    grouped.index.name = "date"
 
-    # Format datetimes to just dates
-    dataframe_result.index = dataframe_result.index.strftime("%Y-%m-%d")
-
-    # Rename index from datetimes to date
-    dataframe_result.rename_axis("date", inplace=True)
-
-    # Return resulting DataFrame
-    return dataframe_result
+    return grouped
 
 
 def main(
