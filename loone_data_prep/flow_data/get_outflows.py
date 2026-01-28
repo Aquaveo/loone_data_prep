@@ -126,6 +126,12 @@ def main(workspace: str, dbkeys: dict = DBKEYS, station_ids: list = STATION_IDS)
             print(f'Downloading new outflow data for {station} starting from date {date_next}')
             hydro.get(workspace=workspace, dbkey=dbkey, date_min=date_next, station=station)
             
+            # Check if the station name contains a space
+            if ' ' in station:
+                # Replace space with underscore in the station name
+                station_previous = station
+                station = station.replace(' ', '_')
+            
             # Make sure both our original data and newly downloaded data exist
             df_old_path = os.path.join(workspace, f"{station}_FLOW_cmd.csv")
             df_new_path = os.path.join(workspace, f"{station}_FLOW_{dbkey}_cmd.csv")
