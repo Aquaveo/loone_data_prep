@@ -6,11 +6,6 @@ Prepare data for the LOONE water quality model.
 Line to the LOONE model: [https://pypi.org/project/loone](https://pypi.org/project/loone)
 Link to LOONE model repository: [https://github.com/Aquaveo/LOONE](https://github.com/Aquaveo/LOONE)
 
-## Prerequisites:
-
-* R ([https://www.r-project.org/](https://www.r-project.org/))
-* R packages: dbhydroR, rio, dplyr
-
 ## Installation:
 
 ```bash
