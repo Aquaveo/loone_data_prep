@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "loone_data_prep"
-version = "1.3.0"
+version = "1.3.1"
 description = "Prepare data to run the LOONE model."
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -14,7 +14,6 @@ maintainers = [
     { name = "James Dolinar", email = "jdolinar@aquaveo.com" },
 ]
 dependencies = [
-    "rpy2",
     "retry",
     "numpy<2",
     "pandas",
@@ -25,5 +24,6 @@ dependencies = [
     "requests_cache",
     "retry-requests",
     "eccodes==2.41.0",
-    "xarray==2025.4.0"
+    "xarray==2025.4.0",
+    "dbhydro-py"
 ]

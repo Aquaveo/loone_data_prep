@@ -38,7 +38,7 @@ def get_bias_corrected_data(
     # Prepare the observed data by filling NaN values with the 10yr average
     prepared_od = prep_observed_data(observed_data)
     historical_data = geoglows.data.retro_daily(reach_id)
-    # Get the historical simulation data for the given reach ID - TODO: Do we for sure want to cache the historical data?
+    # Get the historical simulation data for the given reach ID
     # I am reading the observed data that we queried earlier instead of caching it
     # historical_data = None
 

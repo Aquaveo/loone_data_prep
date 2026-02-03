@@ -88,7 +88,7 @@ def main(workspace: str, d: dict = D, dbkey_stations: dict = DBKEY_STATIONS) -> 
                 continue
 
             # Check whether the latest data is already up to date.
-            if dbhydro_data_is_latest(date_latest):
+            if dbhydro_data_is_latest(date_latest, dbkey):
                 # Notify that the data is already up to date
                 print(f'Downloading of new {name} data skipped for dbkey {dbkey}. Data is already up to date.')
                 continue
@@ -99,8 +99,10 @@ def main(workspace: str, d: dict = D, dbkey_stations: dict = DBKEY_STATIONS) -> 
             
             try:
                 # Download only the new data
-                print(f'Downloading new {name} data for dbkey {dbkey} starting from date {date_latest}')
-                weather.get(workspace, name, dbkeys=[dbkey], date_min=date_latest)
+                date_start = pd.to_datetime(date_latest) + pd.Timedelta(days=1)
+                date_start = date_start.strftime('%Y-%m-%d')
+                print(f'Downloading new {name} data for dbkey {dbkey} starting from date {date_start}')
+                weather.get(workspace, name, dbkeys=[dbkey], date_min=date_start)
                 
                 # Data failed to download - It's possible the data's end date has been reached
                 if not os.path.exists(os.path.join(workspace, original_file_name)):

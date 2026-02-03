@@ -5,17 +5,14 @@ import math
 from glob import glob
 from calendar import monthrange
 import traceback
+from typing import Literal, Tuple
 import numpy as np
 import pandas as pd
 from retry import retry
 from scipy.optimize import fsolve
 from scipy import interpolate
-from rpy2.robjects import r
-from rpy2.robjects.vectors import (
-    StrVector as rpy2StrVector,
-    DataFrame as rpy2DataFrame,
-)
-from rpy2.rinterface_lib.embedded import RRuntimeError
+from dbhydro_py import DbHydroApi
+from loone_data_prep.dbhydro_insights import get_dbhydro_station_metadata, get_dbhydro_continuous_timeseries_metadata, get_dbhydro_water_quality_metadata
 
 
 DEFAULT_STATION_IDS = ["L001", "L005", "L006", "LZ40"]
@@ -224,7 +221,7 @@ DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
     "S135_P": {"a": 3.09890183766129, "b": 0.657896838486496},
 }
 
-@retry(RRuntimeError, tries=5, delay=15, max_delay=60, backoff=2)
+@retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
 def get_dbkeys(
     station_ids: list,
     category: str,
@@ -232,9 +229,8 @@ def get_dbkeys(
     stat: str,
     recorder: str,
     freq: str = "DA",
-    detail_level: str = "dbkey",
     *args: str,
-) -> rpy2StrVector | rpy2DataFrame:
+) -> list[str]:
     """Get dbkeys. See DBHydroR documentation for more information:
     https://cran.r-project.org/web/packages/dbhydroR/dbhydroR.pdf
 
@@ -245,27 +241,68 @@ def get_dbkeys(
         stat (str): Statistic of data to retrieve.
         recorder (str): Recorder of data to retrieve.
         freq (str, optional): Frequency of data to retrieve. Defaults to "DA".
-        detail_level (str, optional): Detail level of data to retrieve. Defaults to "dbkey". Options are "dbkey",
-            "summary", or "full".
 
     Returns:
-        rpy2StrVector | rpy2DataFrame: dbkeys info at the specified detail level.
+        list[str]: dbkeys info for the specified parameters.
     """
+    # Retrieve the metadata for the specified parameters
+    metadata = get_dbhydro_continuous_timeseries_metadata(station_ids, [category], [param], [stat], [recorder], [freq])
+    
+    # A set to hold the dbkeys to avoid duplicates
+    dbkeys = set()
+    
+    # No data returned from API
+    if metadata is None:
+        return list(dbkeys)
+    
+    # Get the dbkeys from the metadata
+    for result in metadata['results']:
+        dbkeys.add(result['timeseriesId'])
+    
+    # Return the dbkeys as a list
+    return list(dbkeys)
 
-    station_ids_str = '"' + '", "'.join(station_ids) + '"'
 
-    dbkeys = r(
-        f"""
-        library(dbhydroR)
+def get_stations_latitude_longitude(station_ids: list[str]):
+    """Gets the latitudes and longitudes of the given stations.
 
-        station_ids <- c({station_ids_str})
-        dbkeys <- get_dbkey(stationid = station_ids,  category = "{category}", param = "{param}", stat = "{stat}", recorder="{recorder}", freq = "{freq}", detail.level = "{detail_level}")
-        print(dbkeys)
-        return(dbkeys)
-        """  # noqa: E501
-    )
+    Args:
+        station_ids (list[str]): The ids of the stations to get the
+            latitudes/longitudes of. Example: ['L OKEE', 'FISHP']
 
-    return dbkeys
+    Returns:
+        (dict[str, tuple[numpy.float64, numpy.float64]]): A dictionary of
+            format dict<station_id:(latitude,longitude)>
+
+    If a station's latitude/longitude fails to download then its station_id
+        won't be a key in the returned dictionary.
+    """
+    # Dictionary to hold the latitude/longitude of each station
+    station_data = {}
+    
+    # Get the latitude and longitude for each station
+    for station_id in station_ids:
+        # Retrieve the current station's metadata
+        station_metadata = get_dbhydro_station_metadata(station_id)
+        
+        # Check if the metadata was successfully retrieved
+        if station_metadata is None:
+            print(f'Failed to get latitude/longitude for station {station_id} - No data given back from API')
+            continue
+        
+        # Extract the latitude and longitude from the metadata
+        try:
+            latitude = station_metadata['features'][0]['attributes']['LAT']
+            longitude = station_metadata['features'][0]['attributes']['LONG']
+        except KeyError:
+            print(f'Failed to get latitude/longitude for station {station_id} - Unexpected response structure from API')
+            continue
+        
+        # Add the latitude and longitude to the dictionary
+        station_data[station_id] = latitude, longitude
+    
+    # Return the dictionary of station latitudes and longitudes
+    return station_data
 
 
 def data_interpolations(
@@ -916,8 +953,16 @@ def find_last_date_in_csv(workspace: str, file_name: str) -> str:
 
     # Helper Functions
     def is_valid_date(date_string):
+        # Check for date without time part
         try:
             datetime.datetime.strptime(date_string, "%Y-%m-%d")
+            return True
+        except ValueError:
+            pass
+        
+        # Check for date with time part
+        try:
+            datetime.datetime.strptime(date_string, "%Y-%m-%d %H:%M:%S")
             return True
         except ValueError:
             return False
@@ -955,23 +1000,69 @@ def find_last_date_in_csv(workspace: str, file_name: str) -> str:
         return None
 
 
-def dbhydro_data_is_latest(date_latest: str):
+def dbhydro_data_is_latest(date_latest: str, dbkey: str | None = None) -> bool:
     """
     Checks whether the given date is the most recent date possible to get data from dbhydro.
     Can be used to check whether dbhydro data is up-to-date.
 
     Args:
         date_latest (str): The date of the most recent data of the dbhydro data you have
+        dbkey (str | None, optional): The dbkey of the data you are checking. Defaults to None.
 
     Returns:
         bool: True if the date_latest is the most recent date possible to get data from dbhydro, False otherwise
     """
-    date_latest_object = datetime.datetime.strptime(
-        date_latest, "%Y-%m-%d"
-    ).date()
-    return date_latest_object == (
-        datetime.datetime.now().date() - datetime.timedelta(days=1)
-    )
+    # Convert date_latest to a date object
+    date_latest_object = pd.to_datetime(date_latest).date()
+    
+    # No dbkey provided
+    if dbkey is None:
+        # Assume latest data available is yesterday
+        return date_latest_object == (datetime.datetime.now().date() - datetime.timedelta(days=1))
+    
+    # Get dbhydro api
+    dbhydro_api = get_dbhydro_api()
+    
+    # Retrieve the last date available from dbhydro for the given dbkey
+    data = dbhydro_api.get_daily_data([dbkey], 'id', '1900-01-01', '1900-01-02', 'NGVD29', False)
+    last_date = data.time_series[0].period_of_record.por_last_date
+    
+    # Use date part only (exclude time)
+    last_date = last_date.split("T")[0]
+    
+    # Convert last_date to a date object
+    last_date_object = datetime.datetime.strptime(last_date, "%Y-%m-%d").date()
+    
+    # Compare given date to last date from dbhydro
+    return date_latest_object >= last_date_object
+
+
+def dbhydro_water_quality_data_is_latest(date_latest: str, station: str, station_type: Literal['SITE', 'STATION'], test_number: int) -> bool:
+    """
+    Checks whether the given date is the most recent date possible to get water quality data from dbhydro.
+    Can be used to check whether dbhydro water quality data is up-to-date.
+
+    Args:
+        date_latest (str): The date of the most recent data of the dbhydro water quality data you have.
+        station (str): The station ID of the water quality data you are checking.
+        test_number (int): The test number of the water quality data you are checking. Test numbers map to parameters such as 'PHOSPHATE, TOTAL AS P'.
+    
+    Returns:
+        bool: True if the date_latest is the most recent date possible to get water quality data from dbhydro, False otherwise
+    """
+    # Get the date range from dbhydro water quality data
+    date_start, date_end = get_dbhydro_water_quality_date_range(station, station_type, test_number)
+    
+    # No end date available
+    if date_end is None:
+        # Assume data is not up-to-date
+        return False
+    
+    # Convert date_latest to a datetime object
+    date_latest_object = pd.to_datetime(date_latest)
+    
+    # Compare given date to last date from dbhydro
+    return date_latest_object >= date_end
 
 
 def get_synthetic_data(date_start: str, df: pd.DataFrame):
@@ -1036,6 +1127,128 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     df.drop(columns=['month_day'], inplace=True)
         
     return df
+
+
+def df_replace_missing_with_nan(df: pd.DataFrame, qualifier_codes: set = {'M', 'N'}, no_data_value: float = -99999.0) -> pd.DataFrame:
+    """
+    Replace values in the 'value' column of the DataFrame with NaN where the 'qualifier' column contains specified qualifier codes.
+    
+    This was designed to work with dataframes created from dbhydro_py response data.
+    The dataframe must have 'value' and 'qualifier' columns.
+    Qualifier/Codes can be found here: https://insightsdata.sfwmd.gov/#/reference-tables?lookup=qualityCode
+    
+    Args:
+        df (pd.DataFrame): DataFrame that was created from a dbhydro_py response. Must have value and qualifier columns.
+        qualifier_codes (set, optional): Set of qualifier codes indicating missing data. Defaults to {'M', 'N'}.
+        no_data_value (float, optional): Value representing no data. Defaults to -99999.0. Values equal to this will also be replaced with NaN.
+    
+    Returns:
+        pd.DataFrame: DataFrame with specified values replaced with NaN.
+    """
+    # Replace 0 values with NaN when their qualifier is in qualifier_codes
+    # 'M' = Missing, 'N' = Not Yet Available
+    # Qualifier/Codes can be found here: https://insightsdata.sfwmd.gov/#/reference-tables?lookup=qualityCode
+    df.loc[df['qualifier'].isin(qualifier_codes), 'value'] = np.nan
+    
+    # Also replace no_data_value with NaN
+    df.loc[np.isclose(df['value'], no_data_value), 'value'] = np.nan
+    
+    # Return modified dataframe
+    return df
+
+
+def get_dbhydro_water_quality_date_range(station: str, station_type: Literal['SITE', 'STATION'], test_number: int) -> Tuple[pd.Timestamp | None, pd.Timestamp | None]:
+    """Get the start date and end date for the given station and test number from DBHYDRO water quality data.
+    
+    Args:
+        station (str): The station names.
+        station_type (Literal['SITE', 'STATION']): The type of the station.
+        test_number (int): The test number of the data. Test numbers map to parameters such as 'PHOSPHATE, TOTAL AS P'.
+    
+    Returns:
+        Tuple[pd.Timestamp | None, pd.Timestamp | None]: A tuple containing the start date and end date in 'MM/DD/YYYY' format.
+    """
+    response = get_dbhydro_water_quality_metadata([(station, station_type)], [test_number])
+    
+    # No data given back by api
+    if response is None:
+        return (None, None)
+    
+    # Get the date range from the response
+    if 'results' in response:
+        results = response['results']
+        if len(results) > 0:
+            # Find the first non-None start and end dates
+            date_start = None
+            date_end = None
+            for result in results:
+                date_start = result.get('startDate', None)
+                date_end = result.get('endDate', None)
+                
+                # Dates found
+                if date_start is not None and date_end is not None:
+                    break
+            
+            # If no valid dates were found, return early
+            if date_start is None or date_end is None:
+                return (date_start, date_end)
+            
+            # Find the earliest start date and latest end date
+            for result in results:
+                date_start_current = result.get('startDate', None)
+                date_end_current = result.get('endDate', None)
+                if date_start_current is not None and pd.to_datetime(date_start_current) < pd.to_datetime(date_start):
+                    date_start = date_start_current
+                if date_end_current is not None and pd.to_datetime(date_end_current) > pd.to_datetime(date_end):
+                    date_end = date_end_current
+            
+            # Convert dates to datetime objects
+            if date_start is not None:
+                date_start = pd.to_datetime(date_start)
+            if date_end is not None:
+                date_end = pd.to_datetime(date_end)
+            
+            # Return the earliest start date and latest end date
+            return (date_start, date_end)
+    
+    # No results found
+    return (None, None)
+            
+
+def get_dbhydro_api_keys_from_environment() -> dict[str, str]:
+    """Get DBHYDRO API keys from environment variables.
+
+    Returns:
+        Dict[str, str]: A dictionary containing the DBHYDRO API keys where dict keys are 'client_id' and 'client_secret'.
+    """
+    # Get API keys from environment variables
+    api_keys = {
+        "client_id": os.environ.get("DBHYDRO_API_CLIENT_ID", ""),
+        "client_secret": os.environ.get("DBHYDRO_API_CLIENT_SECRET", ""),
+    }
+    
+    # Return the API keys
+    return api_keys
+
+
+def get_dbhydro_api_keys() -> dict[str, str]:
+    """Get DBHYDRO API keys.
+
+    Returns:
+        Dict[str, str]: A dictionary containing the DBHYDRO API keys where dict keys are 'client_id' and 'client_secret'.
+    """
+    return get_dbhydro_api_keys_from_environment()
+
+
+def get_dbhydro_api() -> DbHydroApi:
+    """Get a configured DbHydroApi instance.
+
+    Returns:
+        DbHydroApi: An instance of the DbHydroApi class.
+    """
+    api_keys = get_dbhydro_api_keys()
+    dbhydro_api = DbHydroApi.with_default_adapter(client_id=api_keys["client_id"], client_secret=api_keys["client_secret"])
+    return dbhydro_api
 
 
 if __name__ == "__main__":
