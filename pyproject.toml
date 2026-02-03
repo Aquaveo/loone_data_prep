@@ -24,5 +24,6 @@ dependencies = [
     "requests_cache",
     "retry-requests",
     "eccodes==2.41.0",
-    "xarray==2025.4.0"
+    "xarray==2025.4.0",
+    "dbhydro-py"
 ]
