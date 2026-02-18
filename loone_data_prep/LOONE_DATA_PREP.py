@@ -13,6 +13,8 @@ from loone_data_prep.data_analyses_fns import DF_Date_Range
 from loone_data_prep.utils import stg2sto, stg2ar
 
 
+#TODO: Consider making this to not be hard coded
+
 M3_Yr = 2008
 M3_M = 1
 M3_D = 1
@@ -984,8 +986,12 @@ def main(input_dir: str, output_dir: str) -> None:
     NO_list = {'S65_NO': S65_NO, 'S71_NO': S71_NO, 'S72_NO': S72_NO, 'S84_NO': S84_NO, 'S127_NO': S127_NO,
                'S133_NO': S133_NO, 'S154_NO': S154_NO, 'S191_NO': S191_NO, 'S308_NO': S308_NO,
                'FISHP_NO': FISHP_NO, 'L8_NO': L8_NO, 'S4_NO': S4_NO}
-    #TODO: Why is this date hard coded into this part?
-    date_NO = pd.date_range(start='1/1/2008', end='3/31/2023', freq='D')
+    #TODO: Why is this date hard coded into this part? - Does not need to be hard coded
+    date_NO = pd.date_range(
+        start=f'{St_Yr}-{St_M:02d}-{St_D:02d}',
+        end=f'{En_Yr}-{En_M:02d}-{En_D:02d}',  # no more hard-coded end date
+        freq='D'
+    )
 
     NO_df = pd.DataFrame(date_NO, columns=['date'])
     for i in range(len(NO_names)):

@@ -270,7 +270,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     #Calculate the netflows by summing the inflows
     geoglows_flow_df["Inflows"] = geoglows_flow_df[INFLOW_IDS].sum(axis=1)
     geoglows_flow_df["Outflows"] = geoglows_flow_df[OUTFLOW_IDS].sum(axis=1)
-    # TODO: check if netflows are just the sum of the inflows or if they are the inflows minus the outflows
+    # The netflows are the inflows minus the outflows we do not model. These are not present in RFS so we only use the inflows
     geoglows_flow_df["Netflows"] = geoglows_flow_df["Inflows"] # - geoglows_flow_df["Outflows"]
     Netflows = pd.DataFrame(geoglows_flow_df["date"], columns=["date"])
     Netflows["Netflows_acft"] = geoglows_flow_df["Netflows"] / 1233.48  # Convert from m^3/d to ac-ft
