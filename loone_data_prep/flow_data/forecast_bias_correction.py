@@ -75,6 +75,10 @@ def get_bias_corrected_data(
 
     # Drop all rows with any NaN values - again not necessary but we can drop them because we don't need it
     station_ensembles.dropna(inplace=True)
+    station_ensembles = station_ensembles.astype(np.float64)
+    historical_data = historical_data.astype(np.float64)
+    prepared_od = prepared_od.astype(np.float64)
+    station_stats = station_stats.astype(np.float64)
 
     # Correct the forecast bias in the station ensembles
     station_ensembles = geoglows.bias.correct_forecast(

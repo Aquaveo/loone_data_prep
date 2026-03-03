@@ -278,8 +278,8 @@ def main(input_dir: str, output_dir: str) -> None:
     C44RO_df = C44RO_df.set_index(C44RO_df['date'])
     C43RO_df.index = pd.to_datetime(C43RO_df.index, unit='ns')
     C44RO_df.index = pd.to_datetime(C44RO_df.index, unit='ns')
-    C43Mon = C43RO_df.resample('M').mean()
-    C44Mon = C44RO_df.resample('M').mean()
+    C43Mon = C43RO_df.resample('ME').mean()
+    C44Mon = C44RO_df.resample('ME').mean()
     C43Mon.to_csv(f'{output_dir}/C43RO_Monthly.csv', index=False)
     C44Mon.to_csv(f'{output_dir}/C44RO_Monthly.csv', index=False)
 
@@ -296,7 +296,7 @@ def main(input_dir: str, output_dir: str) -> None:
     SLTRIB['SLTRIB_cfs'] = SLTRIB['SLTRIB_cmd']/(0.0283168466 * 86400)
     SLTRIB = SLTRIB.set_index(SLTRIB['date'])
     SLTRIB.index = pd.to_datetime(SLTRIB.index, unit='ns')
-    SLTRIBMon = SLTRIB.resample('M').mean()
+    SLTRIBMon = SLTRIB.resample('ME').mean()
     SLTRIB.drop(['date'], axis=1, inplace=True)
     SLTRIB = SLTRIB.reset_index()
     SLTRIB.to_csv(f'{output_dir}/SLTRIB.csv', index=False)
@@ -534,7 +534,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_TP_data['Mean_TP'] = LO_TP_data.mean(axis=1, numeric_only=True)
     LO_TP_data = LO_TP_data.set_index(['date'])
     LO_TP_data.index = pd.to_datetime(LO_TP_data.index, unit='ns')
-    LO_TP_Monthly = LO_TP_data.resample('M').mean()
+    LO_TP_Monthly = LO_TP_data.resample('ME').mean()
     LO_TP_Monthly.to_csv(f'{output_dir}/LO_TP_Monthly.csv')
 
     # Interpolated TP Observations in Lake
@@ -675,7 +675,7 @@ def main(input_dir: str, output_dir: str) -> None:
     # LO_NO_data_Inter.to_csv(f'{output_dir}/LO_NO_Clean_daily.csv')
     LO_NO_data_Inter = LO_NO_data_Inter.set_index(['date'])
     LO_NO_data_Inter.index = pd.to_datetime(LO_NO_data_Inter.index, unit='ns')
-    LO_NO_Monthly_Inter = LO_NO_data_Inter.resample('M').mean()
+    LO_NO_Monthly_Inter = LO_NO_data_Inter.resample('ME').mean()
     NO_Max = LO_NO_Monthly_Inter.max(axis=1)
     NO_Min = LO_NO_Monthly_Inter.min(axis=1)
     LO_NO_Monthly_Inter['Max'] = NO_Max.values
@@ -741,7 +741,7 @@ def main(input_dir: str, output_dir: str) -> None:
     LO_DO_data_Inter.to_csv(f'{output_dir}/LO_DO_Clean_daily.csv', index=False)
     LO_DO_data_Inter = LO_DO_data_Inter.set_index(['date'])
     LO_DO_data_Inter.index = pd.to_datetime(LO_DO_data_Inter.index, unit='ns')
-    LO_DO_Monthly_Inter = LO_DO_data_Inter.resample('M').mean()
+    LO_DO_Monthly_Inter = LO_DO_data_Inter.resample('ME').mean()
     LO_DO_Monthly_Inter.to_csv(f'{output_dir}/LO_DO_Monthly_Inter.csv')
 
     # RADT Data in Lake Okeechobee
@@ -814,7 +814,7 @@ def main(input_dir: str, output_dir: str) -> None:
     # Monthly
     LO_Chla_data_Inter = LO_Chla_data_Inter.set_index(['date'])
     LO_Chla_data_Inter.index = pd.to_datetime(LO_Chla_data_Inter.index, unit='ns')
-    LO_Chla_Monthly_Inter = LO_Chla_data_Inter.resample('M').mean()
+    LO_Chla_Monthly_Inter = LO_Chla_data_Inter.resample('ME').mean()
     LO_Chla_Monthly_Inter.to_csv(f'{output_dir}/LO_Chla_Monthly_Inter.csv')
 
     # Interpolated Chla LC Observations in Lake
@@ -847,7 +847,7 @@ def main(input_dir: str, output_dir: str) -> None:
     # Monthly
     LO_Chla_LC_data_Inter = LO_Chla_LC_data_Inter.set_index(['date'])
     LO_Chla_LC_data_Inter.index = pd.to_datetime(LO_Chla_LC_data_Inter.index, unit='ns')
-    LO_Chla_LC_Monthly_Inter = LO_Chla_LC_data_Inter.resample('M').mean()
+    LO_Chla_LC_Monthly_Inter = LO_Chla_LC_data_Inter.resample('ME').mean()
     LO_Chla_LC_Monthly_Inter.to_csv(f'{output_dir}/LO_Chla_LC_Monthly_Inter.csv')
 
     # Merge the Chla Data
@@ -865,7 +865,7 @@ def main(input_dir: str, output_dir: str) -> None:
 
     LO_Chla_Merge = LO_Chla_Merge.set_index(['date'])
     LO_Chla_Merge.index = pd.to_datetime(LO_Chla_Merge.index, unit='ns')
-    LO_Chla_Merge_Monthly_Inter = LO_Chla_Merge.resample('M').mean()
+    LO_Chla_Merge_Monthly_Inter = LO_Chla_Merge.resample('ME').mean()
     LO_Chla_Merge_Monthly_Inter.to_csv(f'{output_dir}/LO_Chla_Merge_Monthly_Inter.csv')
 
     # Create files (LO_Chla_Obs.csv, N_Merged_Chla.csv, and S_Merged_Chla.csv)
