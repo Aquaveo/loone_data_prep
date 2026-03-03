@@ -386,7 +386,7 @@ def data_interpolations(
                         1,
                     )
                 )
-                New_data.append(np.NaN)
+                New_data.append(np.nan)
 
         New_date = pd.to_datetime(New_date, format="%Y-%m-%d")
         Days = New_date.strftime("%d").astype(float)
