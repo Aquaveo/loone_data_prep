@@ -784,8 +784,11 @@ def nutrient_prediction(
             'S84_S': f"{input_dir}/750069782_INFLOW_cmd_geoglows.csv",
             'S133_P': f"{input_dir}/750035446_INFLOW_cmd_geoglows.csv",
             'S154_C': f"{input_dir}/750064453_INFLOW_cmd_geoglows.csv",
-            'S135_P': f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv",
-            'S135_C': f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv",
+            'S72_S': f"{input_dir}/750058536_MATCHED_cmd_geoglows.csv",
+            'S127_P': f"{input_dir}/750049656_MATCHED_cmd_geoglows.csv",
+            'S127_C': f"{input_dir}/750028935_MATCHED_cmd_geoglows.csv",
+            'S135_C': f"{input_dir}/750048473_INFLOW_cmd_geoglows.csv",
+            'S135_P': f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv",
         }
 
         if station in station_file_map:
