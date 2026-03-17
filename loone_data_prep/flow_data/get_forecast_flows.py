@@ -307,9 +307,13 @@ def main(
     stations_inflow_by_comid = {
         750072741: "S65E_S", 
         750069782: "S84_S",       
-        # 750053211: "S129_C",
-        # 750035446: "S133_P",
-        750064453: "S154_C",       # This is primarily 0s
+        750053211: "S129_C",
+        750035446: "S133_P",
+        750064453: "S154_C",
+        750048473: "S135_C",
+        750040186: "S135_PMP_P",
+
+        # This is primarily 0s
     }
 
 
@@ -357,16 +361,17 @@ def main(
     for reach_id in MATCHED_IDS:
         stations_matched_by_comid = {
             750068601: "S71_S",
-            750052624: "S135_C",
             750053213: "FISHP",
-            750038416: "S77_S",
+            750054400: "S77_S",
             750050259: "S79_TOT",
             750045514: "S80_S",
             750058536: "S72_S",
             750051428: "S49_S",
             # 750038427: "S40",
-            750057357: "S191_S",
+            750056166: "S191_S",
             750028935: "S127_C",
+            750068601: "S71_S",
+
         }
 
         station_ensembles = get_flow_forecast_ensembles(

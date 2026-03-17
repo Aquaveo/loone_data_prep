@@ -18,12 +18,28 @@ def get_bias_corrected_data(
     station_stats: pd.DataFrame,
     cache_path: str = None,
 ) -> dict:
-    # Load the observed data from a CSV file
+    expected_col = f"{station_id}_FLOW_cmd"
+
+    # Read only the header to check available columns
+    cols = pd.read_csv(observed_data_path, nrows=0).columns.tolist()
+
+    # If the expected column isn't there, pick the first column ending with 'FLOW_cmd'. 
+    # This fixes edge cases
+    if expected_col not in cols:
+        flow_candidates = [c for c in cols if c.endswith("FLOW_cmd")]
+        actual_col = flow_candidates[0]
+    else:
+        actual_col = expected_col
+
+    # Read CSV using exactly the same style as before
     observed_data = pd.read_csv(
         observed_data_path,
         index_col=0,
-        usecols=["date", f"{station_id}_FLOW_cmd"],
+        usecols=["date", actual_col],
     )
+    # Rename column to match ewhat it should have been 
+    observed_data.rename(columns={actual_col: expected_col}, inplace=True)
+    
     # Convert the index to datetime and localize it to UTC
     observed_data.index = pd.to_datetime(observed_data.index).tz_localize(
         "UTC"

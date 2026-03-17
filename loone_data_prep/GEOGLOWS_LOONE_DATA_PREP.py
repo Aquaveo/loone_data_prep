@@ -64,24 +64,24 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S65_total = pd.read_csv(f"{input_dir}/750072741_INFLOW_cmd_geoglows.csv")
 
     S71_S = pd.read_csv(f"{input_dir}/750068601_MATCHED_cmd_geoglows.csv")
-    # S72_S = pd.read_csv(f'{input_dir}/S72_S_FLOW_cmd.csv')
+    S72_S = pd.read_csv(f'{input_dir}/750058536_MATCHED_cmd_geoglows.csv')
     S84_S = pd.read_csv(f"{input_dir}/750069782_INFLOW_cmd_geoglows.csv")
-    # S127_C = pd.read_csv(f'{input_dir}/S127_C_FLOW_cmd.csv')
-    # S127_P = pd.read_csv(f'{input_dir}/S127_P_FLOW_cmd.csv')
+    S127_C = pd.read_csv(f'{input_dir}/750028935_MATCHED_cmd_geoglows.csv')
+    S127_P = pd.read_csv(f'{input_dir}/750049656_MATCHED_cmd_geoglows.csv')
     #THESE ARE BOTH THE SAME INFLOW - CHECK THIS
     S129_C = pd.read_csv(f"{input_dir}/750053211_INFLOW_cmd_geoglows.csv")
     S129_P = pd.read_csv(f"{input_dir}/750053211_INFLOW_cmd_geoglows.csv")
     
     S133_P = pd.read_csv(f"{input_dir}/750035446_INFLOW_cmd_geoglows.csv")
     #These are both the same inflow - CHECK THIS
-    S135_C = pd.read_csv(f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv")
-    S135_P = pd.read_csv(f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv")
+    S135_C = pd.read_csv(f"{input_dir}/750048473_INFLOW_cmd_geoglows.csv")
+    S135_P = pd.read_csv(f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv")
     
     S154_C = pd.read_csv(f"{input_dir}/750064453_INFLOW_cmd_geoglows.csv")
     # S191_S = pd.read_csv(f'{input_dir}/S191_S_FLOW_cmd.csv')
     
     #THIS MATCHES THE INFLOW OF S135_C
-    S308 = pd.read_csv(f"{input_dir}/750052624_MATCHED_cmd_geoglows.csv")
+    S308 = pd.read_csv(f"{input_dir}/750052028_MATCHED_cmd_geoglows.csv")
     
     #I said that these ones shouldn't be included
     # S351_S = pd.read_csv(f"{input_dir}/S351_S_FLOW_cmd_geoglows.csv")
@@ -96,7 +96,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # S3_P = pd.read_csv(f"{input_dir}/S3_P_FLOW_cmd_geoglows.csv")
     # S4_P = pd.read_csv(f'{input_dir}/S4_P_FLOW_cmd.csv')
 
-    S77_S = pd.read_csv(f"{input_dir}/750038416_MATCHED_cmd_geoglows.csv")
+    S77_S = pd.read_csv(f"{input_dir}/750054400_MATCHED_cmd_geoglows.csv")
     
     #???
     # INDUST = pd.read_csv(f"{input_dir}/INDUST_FLOW_cmd_geoglows.csv")
@@ -107,14 +107,14 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         ["date", f"ensemble_{ensemble_number}"]
     ]
     S71_TP = pd.read_csv(f"{input_dir}/S71_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
-    # S72_TP = pd.read_csv(f'{input_dir}/S72_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S72_TP = pd.read_csv(f'{input_dir}/S72_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}']]
     S84_TP = pd.read_csv(f"{input_dir}/S84_S_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
-    # S127_TP = pd.read_csv(f'{input_dir}/S127_C_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S127_TP = pd.read_csv(f'{input_dir}/S127_C_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}']]
     S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     # S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
-    # S308_TP = pd.read_csv(f'{input_dir}/water_quality_S308C_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', 'Data']]
+    # S308_TP = pd.read_csv(f'{input_dir}/S308_PHOSPHATE_predicted.csv')[['date', f"ensemble_{ensemble_number}"]]
     FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
     # S4_TP = pd.read_csv(f'{input_dir}/S4_P_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
@@ -126,8 +126,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # Set Date Range
     Q_names = [
         "S65_Q",
-        "S71_Q",  #'S72_Q',
-        "S84_Q",  #'S127_C_Q', 'S127_P_Q',
+        "S71_Q", 'S72_Q',
+        "S84_Q",  'S127_C_Q', 'S127_P_Q',
         "S129_C_Q",
         "S129_P_Q",
         "S133_P_Q",
@@ -147,6 +147,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     Q_list = {
         "S65_Q": S65_total,
         "S71_Q": S71_S,
+        'S72_Q': S72_S,
         "S84_Q": S84_S,
         "S129_C_Q": S129_C,
         "S129_P_Q": S129_P,
@@ -155,6 +156,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S135_P_Q": S135_P,
         "S154_Q": S154_C,
         "S308_Q": S308,
+        "S127_C_Q": S127_C,
+        "S127_P_Q": S127_P,
         # "S351_Q": S351_S,
         # "S352_Q": S352_S,
         # "S354_Q": S354_S,
@@ -195,6 +198,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S351_Q", "S351_In")
    #  _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S352_Q", "S352_In")
     # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, "S354_Q", "S354_In")
+    #TODO - should l8 be added?
     # _create_flow_inflow_q(geoglows_flow_df, ensemble_number, 'L8_Q', 'L8_In')
 
     _create_flow_outflow_q(geoglows_flow_df, "S308_Q", "S308_Out")
@@ -248,7 +252,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     INFLOW_IDS = [
         750059718, 750043742, 750035446, 750034865, 750055574, 750053211,
         750050248, 750065049, 750064453, 750049661, 750069195, 750051436,
-        750068005, 750063868, 750069782, 750072741
+        750068005, 750063868, 750069782, 750072741, 750040186,750048473
     ]
     OUTFLOW_IDS = [750053809, 750057949]
     # Ensure the date column exists and is used for geoglows_flow_df
@@ -277,8 +281,8 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     Netflows.to_csv(f"{output_dir}/Netflows_acft_geoglows_{ensemble_number}.csv", index=False)
     TP_names = [
         "S65_TP",
-        "S71_TP",  #'S72_TP',
-        "S84_TP",  #'S127_TP',
+        "S71_TP",  'S72_TP',
+        "S84_TP",  'S127_TP',
         "S133_TP",
         "S135_TP",
         "S154_TP",  #'S191_TP',
@@ -287,12 +291,12 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     ]  # , 'L8_TP']  #, 'S4_TP']
     TP_list = {
         "S65_TP": S65_total_TP,
-        "S71_TP": S71_TP,  #'S72_TP': S72_TP,
-        "S84_TP": S84_TP,  #'S127_TP': S127_TP,
+        "S71_TP": S71_TP,  'S72_TP': S72_TP,
+        "S84_TP": S84_TP,  'S127_TP': S127_TP,
         "S133_TP": S133_TP,
         "S135_TP": S135_TP,
         "S154_TP": S154_TP,  #'S191_TP': S191_TP,
-        # 'S308_TP': S308_TP,
+        # 'S308_TP': S308_TP, This is an outflow
         "FISHP_TP": FISHP_TP,
     }  # , 'L8_TP': L8_TP}, 'S4_TP': S4_TP}
     # Create TP Concentrations Dataframe
