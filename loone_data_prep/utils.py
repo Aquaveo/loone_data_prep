@@ -361,43 +361,22 @@ def data_interpolations(
         # Set index for the two dataframes
         Data_df = Data_df.set_index(["Yr_M"])
         Monthly_df = Monthly_df.set_index(["Yr_M"])
-        # for i in Monthly_df.index:
-        #     if i in Data_df.index:
-        #         if type(Data_df.loc[i]["date"]) == pd.Timestamp:
-        #             New_date.append(Data_df.loc[i]["date"])
-        #             New_data.append(
-        #                 Data_df.loc[i][
-        #                     "%s_%s_%s" % (station, parameter, units)
-        #                 ]
-        #             )
-        #         else:
-        #             for j in range(len(Data_df.loc[i]["date"])):
-        #                 New_date.append(Data_df.loc[i]["date"][j])
-        #                 New_data.append(
-        #                     Data_df.loc[i][
-        #                         "%s_%s_%s" % (station, parameter, units)
-        #                     ][j]
-        #                 )
-        #     elif i not in Data_df.index:
-        #         New_date.append(
-        #             datetime.datetime(
-        #                 Monthly_df.loc[i]["date"].year,
-        #                 Monthly_df.loc[i]["date"].month,
-        #                 1,
-        #             )
-        #         )
-        #         New_data.append(np.nan)
-        
         for i in Monthly_df.index:
             if i in Data_df.index:
-                subset = Data_df.loc[[i]]
-
-                New_date.extend(subset["date"].values)
-                New_data.extend(
-                    subset[f"{station}_{parameter}_{units}"].values
-                )
-
-            else:
+                if type(Data_df.loc[i]["date"]) == pd.Timestamp:
+                    New_date.append(Data_df.loc[i]["date"])
+                    New_data.append(
+                        Data_df.loc[i][
+                            "%s_%s_%s" % (station, parameter, units)
+                        ]
+                    )
+                else:
+                    for j in range(len(Data_df.loc[i]["date"])):
+                        New_date.append(Data_df.loc[i]["date"].iloc[j])
+                        New_data.append(
+                            Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)].iloc[j]
+                        )
+            elif i not in Data_df.index:
                 New_date.append(
                     datetime.datetime(
                         Monthly_df.loc[i]["date"].year,
