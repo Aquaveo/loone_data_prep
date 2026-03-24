@@ -116,7 +116,7 @@ def merge_data(workspace: str, data_type: str):
         merged_data.index = merged_data.index.astype(str)
         
         # Save merged data as a CSV file
-        merged_data.applymap(lambda x: round(x, 4) if isinstance(x, (float, int)) else x)
+        merged_data = merged_data.map(lambda x: round(x, 4) if isinstance(x, (float, int)) else x)
         merged_data.to_csv(os.path.join(workspace, 'LAKE_RAINFALL_DATA.csv'), index=True, quoting=csv.QUOTE_NONNUMERIC)
 
     # Merge the data files for the different stations (LOONE_AVERAGE_ETPI_DATA.csv)

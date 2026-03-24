@@ -21,7 +21,8 @@ def get_fast_herbie_object(date: str) -> FastHerbie:
     Raises:
         NoGribFilesFoundError: If no GRIB files are found for the specified date.
     """
-    fast_herbie = FastHerbie([date], model="ifs", fxx=range(0, 360, 3))
+    fxx = list(range(0, 144, 3)) + list(range(144, 360, 6))
+    fast_herbie = FastHerbie([date], model="ifs", fxx=fxx)
     
     if len(fast_herbie.file_exists) == 0:
         raise NoGribFilesFoundError(f"No GRIB files found for the specified date {date}.")

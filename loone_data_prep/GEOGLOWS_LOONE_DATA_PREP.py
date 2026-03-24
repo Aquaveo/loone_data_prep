@@ -78,7 +78,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S135_P = pd.read_csv(f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv")
     
     S154_C = pd.read_csv(f"{input_dir}/750064453_INFLOW_cmd_geoglows.csv")
-    # S191_S = pd.read_csv(f'{input_dir}/S191_S_FLOW_cmd.csv')
+    S191_S = pd.read_csv(f'{input_dir}/750056166_MATCHED_cmd_geoglows.csv')
     
     #THIS MATCHES THE INFLOW OF S135_C
     S308 = pd.read_csv(f"{input_dir}/750052028_MATCHED_cmd_geoglows.csv")
@@ -113,7 +113,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S133_TP = pd.read_csv(f"{input_dir}/S133_P_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     S135_TP = pd.read_csv(f"{input_dir}/S135_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     S154_TP = pd.read_csv(f"{input_dir}/S154_C_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
-    # S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
+    S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}']]
     # S308_TP = pd.read_csv(f'{input_dir}/S308_PHOSPHATE_predicted.csv')[['date', f"ensemble_{ensemble_number}"]]
     FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
     # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
@@ -133,7 +133,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S133_P_Q",
         "S135_C_Q",
         "S135_P_Q",
-        "S154_Q",  #'S191_Q',
+        "S154_Q",  'S191_Q',
         "S308_Q",
         # "S351_Q",
        # "S352_Q",
@@ -165,6 +165,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         # "S2_P_Q": S2_P,
         # "S3_P_Q": S3_P,
         "S77_Q": S77_S,
+        "S191_Q": S191_S,
         # "INDUST_Q": INDUST,
     }
     # Identify date range
@@ -285,7 +286,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S84_TP",  'S127_TP',
         "S133_TP",
         "S135_TP",
-        "S154_TP",  #'S191_TP',
+        "S154_TP",  'S191_TP',
         # 'S308_TP',
         "FISHP_TP",
     ]  # , 'L8_TP']  #, 'S4_TP']
@@ -295,7 +296,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         "S84_TP": S84_TP,  'S127_TP': S127_TP,
         "S133_TP": S133_TP,
         "S135_TP": S135_TP,
-        "S154_TP": S154_TP,  #'S191_TP': S191_TP,
+        "S154_TP": S154_TP,  'S191_TP': S191_TP,
         # 'S308_TP': S308_TP, This is an outflow
         "FISHP_TP": FISHP_TP,
     }  # , 'L8_TP': L8_TP}, 'S4_TP': S4_TP}

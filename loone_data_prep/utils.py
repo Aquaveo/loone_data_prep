@@ -361,24 +361,43 @@ def data_interpolations(
         # Set index for the two dataframes
         Data_df = Data_df.set_index(["Yr_M"])
         Monthly_df = Monthly_df.set_index(["Yr_M"])
+        # for i in Monthly_df.index:
+        #     if i in Data_df.index:
+        #         if type(Data_df.loc[i]["date"]) == pd.Timestamp:
+        #             New_date.append(Data_df.loc[i]["date"])
+        #             New_data.append(
+        #                 Data_df.loc[i][
+        #                     "%s_%s_%s" % (station, parameter, units)
+        #                 ]
+        #             )
+        #         else:
+        #             for j in range(len(Data_df.loc[i]["date"])):
+        #                 New_date.append(Data_df.loc[i]["date"][j])
+        #                 New_data.append(
+        #                     Data_df.loc[i][
+        #                         "%s_%s_%s" % (station, parameter, units)
+        #                     ][j]
+        #                 )
+        #     elif i not in Data_df.index:
+        #         New_date.append(
+        #             datetime.datetime(
+        #                 Monthly_df.loc[i]["date"].year,
+        #                 Monthly_df.loc[i]["date"].month,
+        #                 1,
+        #             )
+        #         )
+        #         New_data.append(np.nan)
+        
         for i in Monthly_df.index:
             if i in Data_df.index:
-                if type(Data_df.loc[i]["date"]) == pd.Timestamp:
-                    New_date.append(Data_df.loc[i]["date"])
-                    New_data.append(
-                        Data_df.loc[i][
-                            "%s_%s_%s" % (station, parameter, units)
-                        ]
-                    )
-                else:
-                    for j in range(len(Data_df.loc[i]["date"])):
-                        New_date.append(Data_df.loc[i]["date"][j])
-                        New_data.append(
-                            Data_df.loc[i][
-                                "%s_%s_%s" % (station, parameter, units)
-                            ][j]
-                        )
-            elif i not in Data_df.index:
+                subset = Data_df.loc[[i]]
+
+                New_date.extend(subset["date"].values)
+                New_data.extend(
+                    subset[f"{station}_{parameter}_{units}"].values
+                )
+
+            else:
                 New_date.append(
                     datetime.datetime(
                         Monthly_df.loc[i]["date"].year,
@@ -789,6 +808,7 @@ def nutrient_prediction(
             'S127_C': f"{input_dir}/750028935_MATCHED_cmd_geoglows.csv",
             'S135_C': f"{input_dir}/750048473_INFLOW_cmd_geoglows.csv",
             'S135_P': f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv",
+            'S191_S': f"{input_dir}/750056166_INFLOW_cmd_geoglows.csv",
         }
 
         if station in station_file_map:
