@@ -808,7 +808,7 @@ def nutrient_prediction(
             'S127_C': f"{input_dir}/750028935_MATCHED_cmd_geoglows.csv",
             'S135_C': f"{input_dir}/750048473_INFLOW_cmd_geoglows.csv",
             'S135_P': f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv",
-            'S191_S': f"{input_dir}/750056166_INFLOW_cmd_geoglows.csv",
+            'S191_S': f"{input_dir}/750056166_MATCHED_cmd_geoglows.csv",
         }
 
         if station in station_file_map:
@@ -1102,6 +1102,10 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     date_end = date_start + datetime.timedelta(days=15)
 
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    df = df.set_index('date')
+    df['Data'] = df['Data'].interpolate(method='time')
+    df = df.reset_index()
+
     # Extract the month and day from the 'date' column
     df['month_day'] = df['date'].dt.strftime('%m-%d')
     
@@ -1140,7 +1144,6 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     full_index = full_dates.strftime('%m-%d')
 
     average_values = average_values.reindex(full_index)
-    average_values = average_values.interpolate(method='linear')
     average_values_df = pd.DataFrame({
         'date': pd.date_range(start=date_start, end=date_end),
         'Data': average_values.values
