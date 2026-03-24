@@ -80,6 +80,7 @@ def get_Chla_predicted(input_dir, output_dir):
             if merged is None:
                 merged = df
             else:
+                merged.drop(columns=["index_x", "index_y", "index"], inplace=True, errors="ignore")
                 merged = pd.merge(merged, df, on="date", how="left")
             merged = merged.loc[:, ~merged.columns.str.startswith("Unnamed")]
         return merged

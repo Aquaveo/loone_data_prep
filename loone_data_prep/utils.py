@@ -1081,9 +1081,11 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     date_end = date_start + datetime.timedelta(days=15)
 
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
-    df = df.set_index('date')
+    full_dates = pd.date_range(df['date'].min(), df['date'].max())
+    df = df.set_index('date').reindex(full_dates)
     df['Data'] = df['Data'].interpolate(method='time')
-    df = df.reset_index()
+    df = df.reset_index().rename(columns={'index': 'date'})
+    df = df.reset_index()    
 
     # Extract the month and day from the 'date' column
     df['month_day'] = df['date'].dt.strftime('%m-%d')
