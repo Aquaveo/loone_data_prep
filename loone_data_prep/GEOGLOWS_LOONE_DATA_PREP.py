@@ -89,7 +89,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     # S354_S = pd.read_csv(f"{input_dir}/S354_S_FLOW_cmd_geoglows.csv")
     
     FISHP = pd.read_csv(f"{input_dir}/750053213_MATCHED_cmd_geoglows.csv")
-    # L8 = pd.read_csv(f'{input_dir}/L8.441_FLOW_cmd_geoglows.csv')
+    L8 = pd.read_csv(f'{input_dir}/750057358_MATCHED_cmd_geoglows.csv')
     
     #I said that these ones should now be included in the model
     # S2_P = pd.read_csv(f"{input_dir}/S2_P_FLOW_cmd_geoglows.csv")
@@ -116,7 +116,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
     S191_TP = pd.read_csv(f'{input_dir}/S191_S_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}']]
     # S308_TP = pd.read_csv(f'{input_dir}/S308_PHOSPHATE_predicted.csv')[['date', f"ensemble_{ensemble_number}"]]
     FISHP_TP = pd.read_csv(f"{input_dir}/FISHP_PHOSPHATE_predicted.csv")[["date", f"ensemble_{ensemble_number}"]]
-    # L8_TP = pd.read_csv(f'{input_dir}/water_quality_CULV10A_PHOSPHATE, TOTAL AS P_Interpolated.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']] # ? Missing
+    # L8_TP = pd.read_csv(f'{input_dir}/L8_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}']] # ? Missing
     # S4_TP = pd.read_csv(f'{input_dir}/S4_P_PHOSPHATE_predicted.csv')[['date', f'ensemble_{ensemble_number}_m^3/d']]
 
     # Set date range for S65 TP
@@ -138,7 +138,7 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         # "S351_Q",
        # "S352_Q",
         # "S354_Q",
-        "FISHP_Q",  #'L8_Q',
+        "FISHP_Q",  'L8_Q',
         # "S2_P_Q",
         # "S3_P_Q",  #'S4_P_Q',
         "S77_Q",
@@ -161,11 +161,15 @@ def main(input_dir: str, output_dir: str, ensemble_number: str) -> None:  # , hi
         # "S351_Q": S351_S,
         # "S352_Q": S352_S,
         # "S354_Q": S354_S,
-        "FISHP_Q": FISHP,  #'L8_Q': L8,
+        "FISHP_Q": FISHP,  
+        'L8_Q': L8,
         # "S2_P_Q": S2_P,
         # "S3_P_Q": S3_P,
         "S77_Q": S77_S,
         "S191_Q": S191_S,
+        "S135_P_Q": S135_P,
+        "S129_P_Q": S129_P,
+        "S129_C_Q": S129_C,
         # "INDUST_Q": INDUST,
     }
     # Identify date range
