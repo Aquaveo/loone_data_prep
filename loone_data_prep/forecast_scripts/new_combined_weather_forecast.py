@@ -42,7 +42,7 @@ AIRT_COLUMN_MAP = {
 def download_herbie_variable(FH, variable_key, variable_name, point_df):
     """Download a Herbie variable for a given point and return a DataFrame."""
     FH.download(f":{variable_key}")
-    ds = FH.xarray(f":{variable_key}", backend_kwargs={"decode_timedelta": True})
+    ds = FH.xarray(f":{variable_key}")
     dsi = ds.herbie.pick_points(point_df, method="nearest")
 
     var_name = {

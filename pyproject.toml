@@ -19,11 +19,11 @@ dependencies = [
     "pandas",
     "scipy",
     "geoglows>=2.0.0",
-    "herbie-data[extras]==2025.5.0",
+    "herbie-data[extras]==2026.3.0",
     "openmeteo_requests",
     "requests_cache",
     "retry-requests",
-    "eccodes==2.41.0",
+    "eccodes==2.46.0",
     "xarray==2025.4.0",
     "dbhydro-py"
 ]

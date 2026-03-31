@@ -189,6 +189,9 @@ DEFAULT_PREDICTION_STATIONS_IDS = [
     "S154_C",
     "S135_P",
     "S135_C",
+    # "S129_P",
+    # "S129_C"
+    "L8"
 ]
 DEFAULT_EXPFUNC_PHOSPHATE_CONSTANTS = {
     "S65E_S": {"a": 2.00040151533473, "b": 0.837387838314323},
@@ -204,6 +207,7 @@ DEFAULT_EXPFUNC_PHOSPHATE_CONSTANTS = {
     "S154_C": {"a": 3.10305150879462, "b": 0.7099895764193},
     "S135_P": {"a": 2.50975664040355, "b": 0.760702496334553},
     "S135_C": {"a": 2.43076251736749, "b": 0.759494593788417},
+    "L8": {"a": 2.85270576092534, "b": 0.724935760736887},
 }
 DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
     "FISHP": {"a": 3.45714698709252, "b": 0.592252136022012},
@@ -219,6 +223,7 @@ DEFAULT_EXPFUNC_NITROGEN_CONSTANTS = {
     "S191_S": {"a": 3.99798269355392, "b": 0.586177156114969},
     "S135_C": {"a": 6.44418674308781, "b": 0.322821841402605},
     "S135_P": {"a": 3.09890183766129, "b": 0.657896838486496},
+    "L8": {"a": 3.14466834277287, "b": 0.690309893480229},
 }
 
 @retry(Exception, tries=5, delay=15, max_delay=60, backoff=2)
@@ -372,11 +377,9 @@ def data_interpolations(
                     )
                 else:
                     for j in range(len(Data_df.loc[i]["date"])):
-                        New_date.append(Data_df.loc[i]["date"][j])
+                        New_date.append(Data_df.loc[i]["date"].iloc[j])
                         New_data.append(
-                            Data_df.loc[i][
-                                "%s_%s_%s" % (station, parameter, units)
-                            ][j]
+                            Data_df.loc[i]["%s_%s_%s" % (station, parameter, units)].iloc[j]
                         )
             elif i not in Data_df.index:
                 New_date.append(
@@ -789,6 +792,10 @@ def nutrient_prediction(
             'S127_C': f"{input_dir}/750028935_MATCHED_cmd_geoglows.csv",
             'S135_C': f"{input_dir}/750048473_INFLOW_cmd_geoglows.csv",
             'S135_P': f"{input_dir}/750040186_INFLOW_cmd_geoglows.csv",
+            'S191_S': f"{input_dir}/750056166_MATCHED_cmd_geoglows.csv",
+            'L8': f"{input_dir}/750057358_MATCHED_cmd_geoglows.csv",
+            'S129_P': f"{input_dir}/750053211_INFLOW_cmd_geoglows.csv",
+            'S129_C': f"{input_dir}/750053211_INFLOW_cmd_geoglows.csv",
         }
 
         if station in station_file_map:
@@ -1082,6 +1089,12 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     date_end = date_start + datetime.timedelta(days=15)
 
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    full_dates = pd.date_range(df['date'].min(), df['date'].max())
+    df = df.set_index('date').reindex(full_dates)
+    df['Data'] = df['Data'].interpolate(method='time')
+    df = df.reset_index().rename(columns={'index': 'date'})
+    df = df.reset_index()    
+
     # Extract the month and day from the 'date' column
     df['month_day'] = df['date'].dt.strftime('%m-%d')
     
@@ -1120,7 +1133,6 @@ def get_synthetic_data(date_start: str, df: pd.DataFrame):
     full_index = full_dates.strftime('%m-%d')
 
     average_values = average_values.reindex(full_index)
-    average_values = average_values.interpolate(method='linear')
     average_values_df = pd.DataFrame({
         'date': pd.date_range(start=date_start, end=date_end),
         'Data': average_values.values
