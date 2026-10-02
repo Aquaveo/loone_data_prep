@@ -1035,7 +1035,14 @@ def dbhydro_data_is_latest(date_latest: str, dbkey: str | None = None) -> bool:
     
     # Retrieve the last date available from dbhydro for the given dbkey
     data = dbhydro_api.get_daily_data([dbkey], 'id', '1900-01-01', '1900-01-02', 'NGVD29', False)
-    last_date = data.time_series[0].period_of_record.por_last_date
+    try:
+        last_date = data.time_series[0].period_of_record.por_last_date
+    except Exception as e:
+        # Notify of failure
+        print(f"Error retrieving last date for dbkey {dbkey}: {e}")
+        
+        # Assume data is not up-to-date
+        return False
     
     # Use date part only (exclude time)
     last_date = last_date.split("T")[0]
